@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -145,6 +146,9 @@ func (h *Handler) ListItemsUI(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].DueDate.Time.Before(tasks[j].DueDate.Time)
+	})
 	tasksObject := map[string][]Item{"Tasks": tasks}
 	err = h.templates.Render(w, "todolist", tasksObject)
 	if err != nil {
