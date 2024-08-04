@@ -1,0 +1,238 @@
+package todo
+
+import (
+	"encoding/json"
+	"fmt"
+	"go-do-the-thing/database"
+	"go-do-the-thing/helpers"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+type Handler struct {
+	repo      Repo
+	templates helpers.Templates
+}
+
+func New(r Repo, templates helpers.Templates) *Handler {
+	return &Handler{r, templates}
+}
+
+type idResponse struct {
+	Id int64 `json:"id" json:"id"`
+}
+
+func (h *Handler) CreateItemAPI(w http.ResponseWriter, r *http.Request) {
+	var item Item
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&item)
+	if err != nil {
+		println("failed to decode todo item")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	id, err := h.repo.InsertItem(item)
+	if err != nil {
+		println("failed to insert item")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	idResponse := idResponse{
+		Id: id,
+	}
+	jsonBytes, err := json.Marshal(idResponse)
+	if err != nil {
+		println("failed to marshal id response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonBytes)
+	if err != nil {
+		println("failed to write response")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) GetItemAPI(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	item, err := h.repo.GetItem(id)
+	if err != nil {
+		println("failed to get todo item")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	items := make([]Item, 1)
+	items[0] = item
+	jsonBytes, err := json.Marshal(items)
+	if err != nil {
+		println("failed to marshal todo item")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonBytes)
+	if err != nil {
+		println("failed to write response")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (h *Handler) DeleteItemAPI(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = h.repo.DeleteItem(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (h *Handler) UpdateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	newStatus, err := strconv.ParseInt(r.FormValue("status"), 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = h.repo.UpdateItemStatus(id, newStatus)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (h *Handler) ListItemsAPI(w http.ResponseWriter, _ *http.Request) {
+	items, err := h.repo.GetItems()
+	if err != nil {
+		println("failed to get todo items")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	jsonBytes, err := json.Marshal(items)
+	if err != nil {
+		println("failed to marshal todo items")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonBytes)
+	if err != nil {
+		println("failed to write response")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func (h *Handler) ListItemsUI(w http.ResponseWriter, _ *http.Request) {
+	tasks, err := h.repo.GetItems()
+	if err != nil {
+		fmt.Println("failed to get todo tasks")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tasksObject := map[string][]Item{"Tasks": tasks}
+	err = h.templates.Render(w, "todolist", tasksObject)
+	if err != nil {
+		fmt.Println("Failed to execute tmpl for the home page")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+func (h *Handler) ToggleItemUI(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httpError("failed to parse id from path", err, w)
+		return
+	}
+	task, err := h.repo.GetItem(id)
+	if err != nil {
+		httpError("failed to get todo item", err, w)
+		return
+	}
+	var newStatus ItemStatus
+	if task.Status == Scheduled {
+		newStatus = Completed
+	} else {
+		newStatus = Scheduled
+	}
+
+	if err = h.repo.UpdateItemStatus(id, int64(newStatus)); err != nil {
+		httpError("Failed to update todo item", err, w)
+		return
+	}
+	task, err = h.repo.GetItem(id)
+	if err != nil {
+		httpError("failed to get todo item", err, w)
+		return
+	}
+
+	if err = h.templates.Render(w, "todo-item-row", task); err != nil {
+		httpError("Failed to execute tmpl for the home page", err, w)
+		return
+	}
+}
+
+func (h *Handler) CreateItemUI(w http.ResponseWriter, r *http.Request) {
+	dateRaw := r.FormValue("due_date")
+	date, err := time.Parse("2006-01-02", dateRaw)
+	if err != nil {
+		httpError("failed to parse due date", err, w)
+		return
+	}
+	item := Item{
+		Description: r.FormValue("description"),
+		AssignedTo:  r.FormValue("assigned_to"),
+		DueDate:     &database.SqLiteTime{Time: date},
+		CreatedBy:   "System", //todo logins
+		CreateDate:  &database.SqLiteTime{Time: time.Now()},
+		IsDeleted:   false,
+	}
+	id, err := h.repo.InsertItem(item)
+	if err != nil {
+		httpError("failed to insert todo item", err, w)
+		return
+	}
+	task, err := h.repo.GetItem(id)
+	if err != nil {
+		httpError("failed to get todo item", err, w)
+		return
+	}
+
+	if err = h.templates.Render(w, "todo-item-row", task); err != nil {
+		httpError("Failed to execute tmpl for the home page", err, w)
+		return
+	}
+}
+
+func (h *Handler) DeleteItemUI(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httpError("failed to parse id from path", err, w)
+		return
+	}
+	err = h.repo.DeleteItem(id)
+	if err != nil {
+		httpError("failed to delete todo item", err, w)
+		return
+	}
+}
+
+func httpError(message string, err error, w http.ResponseWriter) {
+	fmt.Println(message)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
