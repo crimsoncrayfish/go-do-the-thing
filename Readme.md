@@ -1,9 +1,4 @@
 
-
-
-
-
-
 ## Scripts for initializing the DB
 
 CREATE TODO items
@@ -20,6 +15,18 @@ CREATE TABLE IF NOT EXISTS todo (
 );
 ```
 
+### Some requirements
+
 ```cmd
 npm install htmx.org@2.0.1
 ```
+
+### Compilation issues on a Windows machine
+
+If there are compilation issues one of these is likely to fix it
+```cmd
+$env:GOTMPDIR = "PATH TO TEMP DIR"
+go env -w CGO_ENABLED=1
+go env -w CC="zig cc"
+```
+Ensure ZIG is installed on the pc

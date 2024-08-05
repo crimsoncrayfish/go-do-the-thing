@@ -16,6 +16,11 @@ import (
 
 //go:embed static
 var static embed.FS
+var faviconLocation string
+
+func faviconHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, faviconLocation)
+}
 
 func main() {
 	router := http.NewServeMux()
@@ -24,6 +29,7 @@ func main() {
 		println(err.Error())
 		panic(err)
 	}
+	faviconLocation = workingDir + "/static/img/todo.ico"
 	renderer := helpers.NewRenderer(workingDir)
 	fmt.Println("Setting up TODO items")
 	err = todo.InitTodo(router, *renderer)
@@ -34,6 +40,7 @@ func main() {
 	setupHello(router)
 	home.SetupHome(router, *renderer)
 	router.Handle("/static/", http.FileServer(http.FS(static)))
+	router.HandleFunc("/favicon.ico", faviconHandler)
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: router,
