@@ -1,0 +1,26 @@
+{{ block "sidebar" . }}
+    <div
+            id="sidebar"
+            class="fixed top-0 left-0 z-40 w-96 h-screen p-4 overflow-y-auto transition-transform -translate-x-full bg-white dark:bg-gray-800">
+        <h5 class="text-base font-semibold text-gray-500 uppercase dark:text-gray-400">
+            Menu
+        </h5>
+        <button onclick="toggleClassForId('-translate-x-full','sidebar')"
+                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 end-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+            Close
+        </button>
+        <div class="py-4 overflow-y-auto">
+            <ul class="space-y-2 font-medium">
+                <li>
+                    <a href="/todo/list" class="flex items-center p-2 text-gray-900 dark:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                             stroke="currentColor" class="size-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
+                        </svg>
+                        <span class="ms-3">Whats on my list?</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+{{ end }}

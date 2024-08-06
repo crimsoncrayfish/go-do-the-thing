@@ -5,7 +5,8 @@
 
 <body class="dark:bg-gray-900 antialiased">
 {{ template "navbar" }}
-<div class="w-full text-gray-900 dark:text-white">
+
+<div class="px-[10%] w-full text-gray-900 dark:text-white">
     <svg class="px-[20%] pt-20 text-white m-auto" viewBox="0 0 33 15">
         <path d="M2.49998 12L3.49998 11L4.49998 12L5.49998 11L6.49998 12L7.49998 11L8.49998 12L9.49998 11L10.5 12L11.5 11L12.5 12L13.5 11L14.5 12L15.5 11L16.5 12L17.5 11L18.5 12L19.5 11L20.5 12L21.5 11L22.5 12L23.5 11L24.5 12L25.5 11L26.5 12L27.5 11L28.5 12L29.5 11L30.5 12V12.5L29.5 11.5L28.5 12.5L27.5 11.5L26.5 12.5L25.5 11.5L24.5 12.5L23.5 11.5L22.5 12.5L21.5 11.5L20.5 12.5L19.5 11.5L18.5 12.5L17.5 11.5L16.5 12.5L15.5 11.5L14.5 12.5L13.5 11.5L12.5 12.5L11.5 11.5L10.5 12.5L9.49998 11.5L8.49998 12.5L7.49998 11.5L6.49998 12.5L5.49998 11.5L4.49998 12.5L3.49998 11.5L2.49998 12.5V12Z"
               fill="currentColor"/>
@@ -35,89 +36,11 @@
                    href="https://tailwindcss.com/">Tailwind</a>
         </h2>
     </div>
+    <div>
+        //Hello World!
+    </div>
 </div>
 
 </body>
 </html>
-{{ end }}
-
-{{ block "count" . }}
-    Count {{ .Count }}
-{{ end }}
-
-{{ block "test-form" . }}
-    <div class="py-5">
-        <div>
-            <button onclick="toggleElementVisibilityById('contact-form')"
-                    class="flex items-center justify-between h-14 w-full font-medium text-lg p-5 rtl:text-right text-gray-500 border border-gray-200 rounded-t-xl dark:border-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 gap-3">
-                <span>Contacts Form</span>
-                <svg class="w-3 h-3 rotate-180 shrink-0" fill="none" viewBox="0 0 10 6" aria-hidden="true"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 5 5 1 1 5"/>
-                </svg>
-            </button>
-        </div>
-        <div id="contact-form" class="hidden mb-1">
-            <form hx-target="#contacts" hx-post="/contacts/add"
-                  class="px-5 pt-5 pb-1 border border-gray-200 dark:border-gray-700 mb-0 dark:bg-gray-900 ">
-                <div class="mb-5">
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name
-                        <input type="text" name="name"
-                               class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/></label>
-                </div>
-                <div class="mb-5">
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email
-                        <input type="email" name="email"
-                               class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/></label>
-                </div>
-
-                <button type="submit"
-                        class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800">
-                    <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
-                        Add Contact
-                    </span>
-                </button>
-            </form>
-        </div>
-    </div>
-{{ end }}
-
-{{ block "contacts" . }}
-    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-                <th scope="col" class="px-6 py-3">
-                    Name
-                </th>
-                <th scope="col" class="px-6 py-3">
-                    Email
-                </th>
-
-            </tr>
-            </thead>
-            <tbody>
-            {{ if .Contacts }}
-                {{ range .Contacts }}
-                    <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                            {{ .Name }}
-                        </th>
-                        <td class="px-6 py-4">
-                            {{ .Email }}
-                        </td>
-                    </tr>
-                {{ end }}
-            {{ else }}
-                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                    <td class="px-6 py-4">
-                        <p>No contacts found</p>
-                    </td>
-                </tr>
-            {{end}}
-
-            </tbody>
-        </table>
-    </div>
 {{ end }}
