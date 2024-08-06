@@ -8,7 +8,6 @@
         <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap" rel="stylesheet">
         <title>TODO: Add title</title>
         <link rel="stylesheet" href="/static/css/tailwind.css"/>
-        <link rel="stylesheet" href="/static/css/custom.css"/>
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
         <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
         <script>
@@ -19,6 +18,15 @@
                 } else {
                     elem.style.display = 'block';
                 }
+            }
+
+            function toggleClassForId(className, elementId) {
+                const elem = document.getElementById(elementId)
+                if (elem.classList.contains(className)) {
+                    elem.classList.remove(className);
+                    return;
+                }
+                elem.classList.add(className);
             }
         </script>
     </head>
