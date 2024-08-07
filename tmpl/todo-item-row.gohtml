@@ -5,7 +5,7 @@
         even:bg-gray-50 even:dark:bg-gray-800
         hover:bg-gray-100 hover:dark:bg-gray-700 border-b dark:border-gray-700 ">
         <td hx-swap="outerHTML" hx-target="closest tr" hx-post="/todo/toggle/{{.Id}}"
-            class="pl-5 mx-auto {{ if eq .Status 1 }} text-green-400 {{ else if .DueDate.BeforeNow }} text-red-500 {{ else }} text-yellow-400 {{end}}">
+            class="pl-5 w-0 mx-auto {{ if eq .Status 1 }} text-green-400 {{ else if .DueDate.BeforeNow }} text-red-500 {{ else }} text-yellow-400 {{end}}">
             {{ if eq .Status 1 }}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                      stroke="currentColor" class="size-6">
