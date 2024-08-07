@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/navigation"
 	"net/http"
 	"sort"
 	"strconv"
@@ -12,12 +13,13 @@ import (
 )
 
 type Handler struct {
-	repo      Repo
-	templates helpers.Templates
+	repo          Repo
+	templates     helpers.Templates
+	activeScreens navigation.NavBarObject
 }
 
 func New(r Repo, templates helpers.Templates) *Handler {
-	return &Handler{r, templates}
+	return &Handler{repo: r, templates: templates, activeScreens: navigation.NavBarObject{IsTodoList: true}}
 }
 
 type idResponse struct {
@@ -139,6 +141,11 @@ func (h *Handler) ListItemsAPI(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+type ListModel struct {
+	Tasks         []Item
+	ActiveScreens navigation.NavBarObject
+}
+
 func (h *Handler) ListItemsUI(w http.ResponseWriter, _ *http.Request) {
 	tasks, err := h.repo.GetItems()
 	if err != nil {
@@ -149,8 +156,8 @@ func (h *Handler) ListItemsUI(w http.ResponseWriter, _ *http.Request) {
 	sort.Slice(tasks, func(i, j int) bool {
 		return tasks[i].DueDate.Time.Before(tasks[j].DueDate.Time)
 	})
-	tasksObject := map[string][]Item{"Tasks": tasks}
-	err = h.templates.Render(w, "todolist", tasksObject)
+	responseObject := ListModel{tasks, h.activeScreens}
+	err = h.templates.Render(w, "todolist", responseObject)
 	if err != nil {
 		fmt.Println("Failed to execute tmpl for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

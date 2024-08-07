@@ -13,19 +13,34 @@
             <ul class="space-y-2 font-medium">
                 <li>
                     <a href="/home" class="flex items-center p-2 text-gray-900 dark:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
-                        </svg>
+                        {{ if .ActiveScreens.IsHome }}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path d="M4.75 16.6853L9.25 4.31026M8.75 16.6853L13.25 4.31026" stroke-linejoin="round" stroke-linecap="round"/>
+                            </svg>
+
+                        {{ else }}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
+                            </svg>
+                        {{ end }}
                         <span class="ms-3">Take me back home</span>
                     </a>
                 </li>
                 <li>
                     <a href="/todo/list" class="flex items-center p-2 text-gray-900 dark:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
-                        </svg>
+                        {{ if .ActiveScreens.IsTodoList }}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path d="M4.75 16.6853L9.25 4.31026M8.75 16.6853L13.25 4.31026" stroke-linejoin="round" stroke-linecap="round"/>
+                            </svg>
+                        {{ else }}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
+                            </svg>
+                        {{ end }}
                         <span class="ms-3">Whats on the agenda?</span>
                     </a>
                 </li>
