@@ -6,13 +6,19 @@
 <div>
     {{ template "navbar" }}
     <div class="w-full px-4 mx-auto max-w-8xl">
-        <div class="pt-5 px-5 flex w-full justify-between">
+        <div class="pt-5 px-5 flex w-full  items-center justify-between">
             <p class="text-xl text-gray-900 dark:text-white">TODO: Items</p>
             <div>
-                <button class="text-gray-900 dark:text-white"
-                        onclick="toggleElementVisibilityById('create-task-modal')">
+                <button type="button"
+                        onclick="toggleElementVisibilityById('create-task-modal')"
+                        class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4
+                        focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                        me-2 mb-2 dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
+                        dark:focus:ring-green-800 flex items-center">
+
+                    Add task
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-6">
+                         stroke="currentColor" class="size-6 ml-2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                     </svg>
@@ -80,11 +86,18 @@
                             <input type="text" name="assigned_to"
                                    class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/></label>
                     </div>
-                    <button hx-swap="afterbegin" hx-target="#contact-rows" type="submit" hx-post="/todo/item"
-                            class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800">
-                    <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
-                        Add Task
-                    </span>
+                    <button type="submit"
+                            class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4
+                        focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                        me-2 mb-2 dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
+                        dark:focus:ring-green-800 flex items-center">
+
+                        Add task
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                             stroke="currentColor" class="size-6 ml-2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                        </svg>
                     </button>
                 </form>
             </div>
