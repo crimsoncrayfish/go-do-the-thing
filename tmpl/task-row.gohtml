@@ -1,30 +1,31 @@
-{{ block "todo-item-row" . }}
+{{ block "task-row" . }}
     <tr id="todo-item-{{.Id}}"
         class="transition-transform cursor-pointer text-gray-900 dark:text-gray-50
         odd:bg-white odd:dark:bg-gray-900
         even:bg-gray-50 even:dark:bg-gray-800
         hover:bg-gray-100 hover:dark:bg-gray-700 border-b dark:border-gray-700 ">
-        <td hx-swap="outerHTML" hx-target="closest tr" hx-post="/todo/toggle/{{.Id}}"
-            class="pl-5 w-0 mx-auto {{ if eq .Status 1 }} text-green-400 {{ else if .DueDate.BeforeNow }} text-red-500 {{ else }} text-yellow-400 {{end}}">
-            {{ if eq .Status 1 }}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="size-6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                </svg>
-            {{ else }}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="size-6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                </svg>
-            {{ end }}
+        <td
+                class="pl-5 w-0 mx-auto {{ if eq .Status 1 }} text-green-400 {{ else if .DueDate.BeforeNow }} text-red-500 {{ else }} text-yellow-400 {{end}}">
+            <div hx-swap="outerHTML" hx-target="closest tr" hx-post="/todo/toggle/{{.Id}}">{{ if eq .Status 1 }}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                         stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                    </svg>
+                {{ else }}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                         stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                    </svg>
+                {{ end }}
+            </div>
         </td>
-        <td hx-swap="outerHTML" hx-target="closest tr" hx-post="/todo/toggle/{{.Id}}"
+        <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
             class="px-6 py-4">{{.Description}}</td>
-        <td hx-swap="outerHTML" hx-target="closest tr" hx-post="/todo/toggle/{{.Id}}"
+        <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
             class="px-6 py-4">{{.AssignedTo}}</td>
-        <td hx-swap="outerHTML" hx-target="closest tr" hx-post="/todo/toggle/{{.Id}}"
+        <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
             class="px-6 py-4">{{.DueDate.Time.Format "2006-01-02" }}</td>
         <td class="px-6 py-4">
             <button class="text-red-500" hx-swap="outerHTML swap:0.5s" hx-target="closest tr"
@@ -38,4 +39,10 @@
             </button>
         </td>
     </tr>
+{{ end }}
+
+{{ block "task-row-oob" . }}
+    <tbody hx-swap-oob="afterbegin:#task-rows">
+    {{ template "task-row" .}}
+    </tbody>
 {{ end }}

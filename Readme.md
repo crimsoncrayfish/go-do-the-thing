@@ -20,6 +20,13 @@ CREATE TABLE IF NOT EXISTS todo (
 ```cmd
 npm install htmx.org@2.0.1
 ```
+for hot reloading
+```cmd
+--installation
+go install github.com/cosmtrek/air@latest
+--running
+
+```
 
 ### Compilation issues on a Windows machine
 

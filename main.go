@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/home"
+	"go-do-the-thing/middleware"
 	"go-do-the-thing/todo"
-	"io"
 	"net/http"
 	"os"
 )
@@ -37,13 +37,13 @@ func main() {
 		println("Failed to initialize todo")
 		panic(err)
 	}
-	setupHello(router)
 	home.SetupHome(router, *renderer)
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
+	stack := middleware.CreateStack(middleware.Logging, middleware.Authentication)
 	server := http.Server{
 		Addr:    ":8080",
-		Handler: router,
+		Handler: stack(router),
 	}
 
 	fmt.Println("Start server")
@@ -51,25 +51,4 @@ func main() {
 		fmt.Println("Something went wrong")
 		panic(err)
 	}
-}
-
-func setupHello(router *http.ServeMux) {
-	helloWorld := func(w http.ResponseWriter, r *http.Request) {
-		param := r.PathValue("name")
-
-		var helloString string
-		if len(param) == 0 {
-			helloString = "Hello World"
-		} else {
-			helloString = fmt.Sprintf("Hello, %s!", param)
-		}
-
-		_, err := io.WriteString(w, helloString)
-		if err != nil {
-			panic(err)
-		}
-		return
-	}
-	router.HandleFunc("/hello/{name}", helloWorld)
-	router.HandleFunc("/hello", helloWorld)
 }

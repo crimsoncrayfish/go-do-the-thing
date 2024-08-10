@@ -11,7 +11,7 @@ type SqLiteTime struct {
 }
 
 func (t *SqLiteTime) Scan(v interface{}) error {
-	vt, err := time.Parse(timeFormat, v.(string))
+	vt, err := time.Parse(DateTimeFormat, v.(string))
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,8 @@ func (t *SqLiteTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.Time)
 }
 
-const timeFormat = "2006-01-02 15:04:05"
+const DateTimeFormat = "2006-01-02 15:04:05"
+const DateFormat = "2006-01-02"
 
 func (t *SqLiteTime) UnmarshalJSON(data []byte) error {
 	s := strings.Trim(string(data), "\"")
@@ -36,7 +37,7 @@ func (t *SqLiteTime) UnmarshalJSON(data []byte) error {
 		*t = SqLiteTime{time.Time{}}
 		return nil
 	}
-	temp, err := time.Parse(timeFormat, s)
+	temp, err := time.Parse(DateTimeFormat, s)
 	if err != nil {
 		return err
 	}
@@ -45,7 +46,10 @@ func (t *SqLiteTime) UnmarshalJSON(data []byte) error {
 }
 
 func (t *SqLiteTime) String() string {
-	return t.Time.Format(timeFormat)
+	return t.Time.Format(DateTimeFormat)
+}
+func (t *SqLiteTime) StringF(format string) string {
+	return t.Time.Format(format)
 }
 
 func (t *SqLiteTime) BeforeNow() bool {

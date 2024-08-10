@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/navigation"
+	"go-do-the-thing/shared"
 	"net/http"
 	"sort"
 	"strconv"
@@ -24,6 +25,30 @@ func New(r Repo, templates helpers.Templates) *Handler {
 
 type idResponse struct {
 	Id int64 `json:"id" json:"id"`
+}
+
+func (item *Item) isValid() (bool, map[string]string) {
+	errors := make(map[string]string)
+	isValid := true
+
+	now := time.Now()
+	if item.DueDate.Before(now) {
+		isValid = false
+		errors["due_date"] = "Due date is before now"
+	}
+	return isValid, errors
+}
+
+func (item *Item) FormDataFromCreateItem() (shared.FormData, bool) {
+	formData := shared.NewFormData()
+	formData.Values["description"] = item.Description
+	formData.Values["assigned_to"] = item.AssignedTo
+	formData.Values["due_date"] = item.DueDate.StringF(database.DateFormat)
+	isValid, errors := item.isValid()
+	if !isValid {
+		formData.Errors = errors
+	}
+	return formData, isValid
 }
 
 func (h *Handler) CreateItemAPI(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +182,7 @@ func (h *Handler) ListItemsUI(w http.ResponseWriter, _ *http.Request) {
 		return tasks[i].DueDate.Time.Before(tasks[j].DueDate.Time)
 	})
 	responseObject := ListModel{tasks, h.activeScreens}
-	err = h.templates.Render(w, "todolist", responseObject)
+	err = h.templates.RenderOk(w, "task-list", responseObject)
 	if err != nil {
 		fmt.Println("Failed to execute tmpl for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -192,13 +217,14 @@ func (h *Handler) ToggleItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.templates.Render(w, "todo-item-row", task); err != nil {
+	if err = h.templates.RenderOk(w, "task-row", task); err != nil {
 		httpError("Failed to execute tmpl for the home page", err, w)
 		return
 	}
 }
 
 func (h *Handler) CreateItemUI(w http.ResponseWriter, r *http.Request) {
+	//Read data from submitted form
 	dateRaw := r.FormValue("due_date")
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil {
@@ -209,10 +235,21 @@ func (h *Handler) CreateItemUI(w http.ResponseWriter, r *http.Request) {
 		Description: r.FormValue("description"),
 		AssignedTo:  r.FormValue("assigned_to"),
 		DueDate:     &database.SqLiteTime{Time: date},
-		CreatedBy:   "System", //todo logins
+		CreatedBy:   "CurrentUser", //todo logins
 		CreateDate:  &database.SqLiteTime{Time: time.Now()},
 		IsDeleted:   false,
 	}
+
+	//Check if form is valid and respond with any error
+	formData, isValid := item.FormDataFromCreateItem()
+	if !isValid {
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "create-task-form-content", formData); err != nil {
+			httpError("Failed to render template for formData", err, w)
+		}
+		return
+	}
+
+	//update data
 	id, err := h.repo.InsertItem(item)
 	if err != nil {
 		httpError("failed to insert todo item", err, w)
@@ -223,11 +260,17 @@ func (h *Handler) CreateItemUI(w http.ResponseWriter, r *http.Request) {
 		httpError("failed to get todo item", err, w)
 		return
 	}
-
-	if err = h.templates.Render(w, "todo-item-row", task); err != nil {
-		httpError("Failed to execute tmpl for the home page", err, w)
+	//Respond with templates
+	if err = h.templates.RenderOk(w, "task-row-oob", task); err != nil {
+		httpError("Failed to render item row", err, w)
 		return
 	}
+	err = h.templates.RenderOk(w, "create-task-form-content", shared.NewFormData())
+	if err != nil {
+		httpError("Failed to render form", err, w)
+		return
+	}
+
 }
 
 func (h *Handler) DeleteItemUI(w http.ResponseWriter, r *http.Request) {

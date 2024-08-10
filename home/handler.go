@@ -23,9 +23,8 @@ func New(templates helpers.Templates) *Handler {
 	}
 }
 
-func (h *Handler) Index(w http.ResponseWriter, _ *http.Request) {
-	err := h.templates.Render(w, "index", h.model)
-	if err != nil {
+func (h *Handler) Home(w http.ResponseWriter, _ *http.Request) {
+	if err := h.templates.RenderOk(w, "index", h.model); err != nil {
 		fmt.Println("Failed to execute tmpl for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
