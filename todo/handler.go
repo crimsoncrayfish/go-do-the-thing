@@ -184,11 +184,38 @@ func (h *Handler) ListItemsUI(w http.ResponseWriter, _ *http.Request) {
 	responseObject := ListModel{tasks, h.activeScreens}
 	err = h.templates.RenderOk(w, "task-list", responseObject)
 	if err != nil {
-		fmt.Println("Failed to execute tmpl for the home page")
+		fmt.Println("Failed to execute tmpl for the item list page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
+
+type ItemPageModel struct {
+	Task          Item
+	ActiveScreens navigation.NavBarObject
+}
+
+func (h *Handler) GetItemUI(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httpError("failed to parse id from path", err, w)
+		return
+	}
+	task, err := h.repo.GetItem(id)
+	if err != nil {
+		fmt.Println("failed to get todo tasks")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	model := ItemPageModel{task, h.activeScreens}
+	err = h.templates.RenderOk(w, "task-item", model)
+	if err != nil {
+		fmt.Println("Failed to execute tmpl for the item page")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (h *Handler) ToggleItemUI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -238,6 +265,7 @@ func (h *Handler) CreateItemUI(w http.ResponseWriter, r *http.Request) {
 		CreatedBy:   "CurrentUser", //todo logins
 		CreateDate:  &database.SqLiteTime{Time: time.Now()},
 		IsDeleted:   false,
+		Tag:         r.FormValue("tag"),
 	}
 
 	//Check if form is valid and respond with any error

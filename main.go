@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/home"
 	"go-do-the-thing/middleware"
@@ -29,10 +30,18 @@ func main() {
 		println(err.Error())
 		panic(err)
 	}
+	fmt.Printf("Running project in dir %s\n", workingDir)
 	faviconLocation = workingDir + "/static/img/todo.ico"
 	renderer := helpers.NewRenderer(workingDir)
 	fmt.Println("Setting up TODO items")
-	err = todo.InitTodo(router, *renderer)
+
+	dbConnection, err := database.Init("todo")
+	if err != nil {
+		fmt.Println(err.Error())
+		panic(err)
+	}
+
+	err = todo.SetupTodo(dbConnection, router, *renderer)
 	if err != nil {
 		println("Failed to initialize todo")
 		panic(err)
@@ -40,6 +49,12 @@ func main() {
 	home.SetupHome(router, *renderer)
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
+	router.HandleFunc("/hello", func(writer http.ResponseWriter, request *http.Request) {
+		_, err := fmt.Fprintf(writer, "Hello World")
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+	})
 	stack := middleware.CreateStack(middleware.Logging, middleware.Authentication)
 	server := http.Server{
 		Addr:    ":8080",

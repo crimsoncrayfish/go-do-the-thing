@@ -1,8 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
 {{ block "sidebar" . }}
 
     <div
             id="sidebar"
-            class="fixed top-0 left-0 z-40 w-96 h-screen p-4 overflow-y-auto transition-transform -translate-x-full bg-white dark:bg-gray-800">
+            class="fixed top-0 left-0 z-40 w-[100%] sm:w-96 h-[100%] p-4 transition-transform -translate-x-full bg-white dark:bg-gray-800">
         <h5 class="text-base font-semibold text-gray-500 uppercase dark:text-gray-400">
             Menu
         </h5>
@@ -13,7 +15,8 @@
         <div class="py-4 overflow-y-auto">
             <ul class="space-y-2 font-medium">
                 <li>
-                    <a href="/home" class="flex items-center p-2 text-gray-900 dark:text-white">
+                    <a hx-get="/home" hx-target="body"
+                       class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
                         {{ if .ActiveScreens.IsHome }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                  stroke="currentColor" class="size-6">
@@ -30,7 +33,8 @@
                     </a>
                 </li>
                 <li>
-                    <a href="/todo/list" class="flex items-center p-2 text-gray-900 dark:text-white">
+                    <a hx-get="/todo/list" hx-target="body"
+                       class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
                         {{ if .ActiveScreens.IsTodoList }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                  stroke="currentColor" class="size-6">
@@ -79,40 +83,66 @@
 
     </div>
     <script>
-        if ('dark-mode' in localStorage) {
-            if (localStorage.getItem('dark-mode') === 'true') {
+        if (typeof lightSwitches === 'undefined') {
+            if ('dark-mode' in localStorage) {
+                if (localStorage.getItem('dark-mode') === 'true') {
+                    document.querySelector('html').classList.add('dark');
+                } else {
+                    document.querySelector('html').classList.remove('dark');
+                }
+            } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
                 document.querySelector('html').classList.add('dark');
             } else {
                 document.querySelector('html').classList.remove('dark');
             }
-        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            document.querySelector('html').classList.add('dark');
-        } else {
-            document.querySelector('html').classList.remove('dark');
-        }
+            let lightSwitches = document.querySelectorAll('.light-switch');
 
-        const lightSwitches = document.querySelectorAll('.light-switch');
-        if (lightSwitches.length > 0) {
-            lightSwitches.forEach((lightSwitch, i) => {
-                if (localStorage.getItem('dark-mode') === 'true') {
-                    lightSwitch.checked = true;
-                }
-                lightSwitch.addEventListener('change', () => {
-                    const {checked} = lightSwitch;
-                    lightSwitches.forEach((el, n) => {
-                        if (n !== i) {
-                            el.checked = checked;
+            if (lightSwitches.length > 0) {
+                lightSwitches.forEach((lightSwitch, i) => {
+                    if (localStorage.getItem('dark-mode') === 'true') {
+                        lightSwitch.checked = true;
+                    }
+                    lightSwitch.addEventListener('change', () => {
+                        const {checked} = lightSwitch;
+                        lightSwitches.forEach((el, n) => {
+                            if (n !== i) {
+                                el.checked = checked;
+                            }
+                        });
+                        if (lightSwitch.checked) {
+                            document.documentElement.classList.add('dark');
+                            localStorage.setItem('dark-mode', true);
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                            localStorage.setItem('dark-mode', false);
                         }
                     });
-                    if (lightSwitch.checked) {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('dark-mode', true);
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('dark-mode', false);
-                    }
                 });
-            });
+            }
+
+            if (lightSwitches.length > 0) {
+                lightSwitches.forEach((lightSwitch, i) => {
+                    if (localStorage.getItem('dark-mode') === 'true') {
+                        lightSwitch.checked = true;
+                    }
+                    lightSwitch.addEventListener('change', () => {
+                        const {checked} = lightSwitch;
+                        lightSwitches.forEach((el, n) => {
+                            if (n !== i) {
+                                el.checked = checked;
+                            }
+                        });
+                        if (lightSwitch.checked) {
+                            document.documentElement.classList.add('dark');
+                            localStorage.setItem('dark-mode', true);
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                            localStorage.setItem('dark-mode', false);
+                        }
+                    });
+                });
+            }
         }
     </script>
 {{ end }}
+</html>

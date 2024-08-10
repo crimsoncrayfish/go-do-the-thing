@@ -9,13 +9,14 @@ import (
 
 type Item struct {
 	Id          int64                `json:"id,omitempty"`
-	Description string               `json:"description" json:"description"`
-	Status      ItemStatus           `json:"status" json:"status"`
-	AssignedTo  string               `json:"assigned_to" json:"assigned_to"`
-	DueDate     *database.SqLiteTime `json:"due_date" json:"due_date"`
-	CreatedBy   string               `json:"created_by" json:"created_by"`
-	CreateDate  *database.SqLiteTime `json:"create_date" json:"create_date"`
-	IsDeleted   bool                 `json:"is_deleted" json:"is_deleted"`
+	Description string               `json:"description"`
+	Status      ItemStatus           `json:"status"`
+	AssignedTo  string               `json:"assigned_to"`
+	DueDate     *database.SqLiteTime `json:"due_date"`
+	CreatedBy   string               `json:"created_by"`
+	CreateDate  *database.SqLiteTime `json:"create_date"`
+	IsDeleted   bool                 `json:"is_deleted"`
+	Tag         string               `json:"tag,omitempty"`
 }
 
 type ItemStatus int
@@ -25,9 +26,13 @@ const (
 	Completed
 )
 
-func InitTodo(router *http.ServeMux, templates helpers.Templates) error {
+func SetupTodo(
+	dbConnection database.DatabaseConnection,
+	router *http.ServeMux,
+	templates helpers.Templates,
+) error {
 	fmt.Println("Setting up repo")
-	todoRepo, err := Init()
+	todoRepo, err := Init(dbConnection)
 	if err != nil {
 		fmt.Println("failed to initialize todo repo")
 		return err
@@ -35,7 +40,7 @@ func InitTodo(router *http.ServeMux, templates helpers.Templates) error {
 
 	todoHandler := New(todoRepo, templates)
 	fmt.Println("Setting up routes")
-	//control apis
+	// control apis
 	router.HandleFunc("GET /api/todo/item/{id}", todoHandler.GetItemAPI)
 	router.HandleFunc("GET /api/todo/items", todoHandler.ListItemsAPI)
 	router.HandleFunc("PUT /api/todo/item", todoHandler.CreateItemAPI)
@@ -43,8 +48,9 @@ func InitTodo(router *http.ServeMux, templates helpers.Templates) error {
 	router.HandleFunc("DELETE /api/todo/item/{id}", todoHandler.DeleteItemAPI)
 	router.HandleFunc("POST /api/todo/item/restore/{id}", todoHandler.DeleteItemAPI)
 
-	//UI apis
+	// UI apis
 	router.HandleFunc("/todo/list", todoHandler.ListItemsUI)
+	router.HandleFunc("GET /todo/item/{id}", todoHandler.GetItemUI)
 	router.HandleFunc("POST /todo/toggle/{id}", todoHandler.ToggleItemUI)
 	router.HandleFunc("POST /todo/item", todoHandler.CreateItemUI)
 	router.HandleFunc("DELETE /todo/item/{id}", todoHandler.DeleteItemUI)

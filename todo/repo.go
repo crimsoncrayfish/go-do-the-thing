@@ -7,17 +7,21 @@ import (
 )
 
 type Repo struct {
-	database *sql.DB
+	database database.DatabaseConnection
 }
 
-const RepoName = "todo"
+const RepoName = "items"
 
-func Init() (Repo, error) {
-	db, err := database.Init(RepoName)
+func Init(database database.DatabaseConnection) (Repo, error) {
+	_, err := database.Exec(createTable)
 	if err != nil {
-		return Repo{nil}, err
+		return Repo{}, err
 	}
-	return Repo{db}, nil
+	err = database.AddColumnToTable(RepoName, "tag", "TEXT default 'a' not null")
+	if err != nil {
+		return Repo{}, err
+	}
+	return Repo{database}, nil
 }
 
 func (r *Repo) GetItems() (items []Item, err error) {
@@ -47,7 +51,16 @@ func (r *Repo) GetItems() (items []Item, err error) {
 }
 
 func (r *Repo) InsertItem(item Item) (id int64, err error) {
-	insert := fmt.Sprintf(insertItem, item.Description, item.Status, item.AssignedTo, item.DueDate.String(), item.CreatedBy, item.CreateDate.String())
+	insert := fmt.Sprintf(
+		insertItem,
+		item.Description,
+		item.Status,
+		item.AssignedTo,
+		item.DueDate.String(),
+		item.CreatedBy,
+		item.CreateDate.String(),
+		item.Tag,
+	)
 	result, err := r.database.Exec(insert)
 	if err != nil {
 		return 0, err
@@ -94,17 +107,50 @@ func (r *Repo) GetItem(id int64) (Item, error) {
 	return temp, nil
 }
 
-const getItems = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted] FROM items"
-const getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted] FROM items WHERE is_deleted=0"
-const getItem = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted] FROM items WHERE id = %d"
-const insertItem = `INSERT INTO items ([description], [status], [assigned_to], [due_date], [created_by], [create_date]) VALUES ("%s", %d, "%s", "%s", "%s", "%s")`
-const updateItemStatus = `UPDATE items SET [status] = %d WHERE id = %d`
-const deleteItem = `UPDATE items SET [is_deleted] = 1 WHERE id = %d`
-const restoreItem = `UPDATE items SET [is_deleted] = 0 WHERE id = %d`
+const (
+	createTable = `CREATE TABLE IF NOT EXISTS items (
+	[id] INTEGER PRIMARY KEY,
+   	[description] TEXT,
+	[status] INTEGER DEFAULT 0,
+	[assigned_to] TEXT,
+    [due_date] TEXT,
+    [created_by] TEXT,
+    [create_date] TEXT,
+	[is_deleted] INTEGER
+);`
+	getItems           = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted] FROM items"
+	getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag] FROM items WHERE is_deleted=0"
+	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag] FROM items WHERE id = %d"
+	insertItem         = `INSERT INTO items ([description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES ("%s", %d, "%s", "%s", "%s", "%s", "%s")`
+	updateItemStatus   = `UPDATE items SET [status] = %d WHERE id = %d`
+	deleteItem         = `UPDATE items SET [is_deleted] = 1 WHERE id = %d`
+	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = %d`
+)
 
 func ScanItemFromRow(row *sql.Row, item *Item) error {
-	return row.Scan(&item.Id, &item.Description, &item.Status, &item.AssignedTo, &item.DueDate, &item.CreatedBy, &item.CreateDate, &item.IsDeleted)
+	return row.Scan(
+		&item.Id,
+		&item.Description,
+		&item.Status,
+		&item.AssignedTo,
+		&item.DueDate,
+		&item.CreatedBy,
+		&item.CreateDate,
+		&item.IsDeleted,
+		&item.Tag,
+	)
 }
+
 func ScanItemFromRows(rows *sql.Rows, item *Item) error {
-	return rows.Scan(&item.Id, &item.Description, &item.Status, &item.AssignedTo, &item.DueDate, &item.CreatedBy, &item.CreateDate, &item.IsDeleted)
+	return rows.Scan(
+		&item.Id,
+		&item.Description,
+		&item.Status,
+		&item.AssignedTo,
+		&item.DueDate,
+		&item.CreatedBy,
+		&item.CreateDate,
+		&item.IsDeleted,
+		&item.Tag,
+	)
 }

@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 {{ block "task-row" . }}
     <tr id="todo-item-{{.Id}}"
         class="transition-transform cursor-pointer text-gray-900 dark:text-gray-50
@@ -22,11 +24,23 @@
             </div>
         </td>
         <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
-            class="px-6 py-4">{{.Description}}</td>
+            class="px-6 py-4">
+            {{.Description}}
+            <dl class="lg:hidden">
+                <dt class="sr-only sm:hidden">Assigned To</dt>
+                <dd class=" sm:hidden"> {{.AssignedTo }}</dd>
+                <dt class="sr-only md:hidden"> Due date</dt>
+                <dd class=" md:hidden"> {{.DueDate.Time.Format "2006-01-02" }}</dd>
+                <dt class="sr-only"> Tag</dt>
+                <dd> {{.Tag}}</dd>
+            </dl>
+        </td>
         <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
-            class="px-6 py-4">{{.AssignedTo}}</td>
+            class="hidden sm:table-cell px-6 py-4">{{.AssignedTo}}</td>
         <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
-            class="px-6 py-4">{{.DueDate.Time.Format "2006-01-02" }}</td>
+            class="hidden md:table-cell px-6 py-4">{{.DueDate.Time.Format "2006-01-02" }}</td>
+        <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
+            class="hidden lg:table-cell px-6 py-4">{{.Tag }}</td>
         <td class="px-6 py-4">
             <button class="text-red-500" hx-swap="outerHTML swap:0.5s" hx-target="closest tr"
                     hx-on::after-request="toggleClassForId('-translate-x-full','todo-item-{{.Id}}')"
@@ -46,3 +60,4 @@
     {{ template "task-row" .}}
     </tbody>
 {{ end }}
+</html>
