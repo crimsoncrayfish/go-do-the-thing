@@ -30,6 +30,7 @@ func (h *Handler) Index(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 }
+
 func (h *Handler) Home(w http.ResponseWriter, _ *http.Request) {
 	if err := h.templates.RenderOk(w, "home", h.model); err != nil {
 		fmt.Println("Failed to execute tmpl for the home page")

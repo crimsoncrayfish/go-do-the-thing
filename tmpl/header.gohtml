@@ -14,21 +14,27 @@
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
         <script src="/static/js/htmx.js"></script>
         <script>
-            document.addEventListener("DOMContentLoaded", (event) => {
+            htmx.config.useTemplateFragments = true;
+            htmx.config.allowNestedOobSwaps = true;
+            document.addEventListener("DOMContentLoaded", (_) => {
                 document.body.addEventListener('htmx:beforeSwap', function (evt) {
                     if (evt.detail.xhr.status === 422) {
                         evt.detail.shouldSwap = true;
                         evt.detail.isError = false;
                     }
-                })
+                    if (evt.detail.xhr.status === 500) {
+                        evt.detail.shouldSwap = true;
+                        evt.detail.isError = false;
+                    }
+                });
                 document.body.addEventListener('htmx:configRequest', function (evt) {
                     evt.detail.headers['accept'] = 'text/html'
-                    evt.detail.parameters['auth_token'] = getAuthToken(); // add a new parameter into the mix
+                    evt.detail.headers['authorization'] = getAuthToken(); // add a new parameter into the mix
                 });
             })
 
             function getAuthToken() {
-                return "placeholder token"
+                return "bearer placeholder token"
             }
 
             function toggleClassForId(className, elementId) {

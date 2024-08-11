@@ -69,6 +69,15 @@ func (r *Repo) InsertItem(item Item) (id int64, err error) {
 	return result.LastInsertId()
 }
 
+func (r *Repo) UpdateItem(item Item) (err error) {
+	update := fmt.Sprintf(updateItem, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
+	_, err = r.database.Exec(update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *Repo) UpdateItemStatus(id int64, status int64) (err error) {
 	update := fmt.Sprintf(updateItemStatus, status, id)
 	_, err = r.database.Exec(update)
@@ -123,6 +132,7 @@ const (
 	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag] FROM items WHERE id = %d"
 	insertItem         = `INSERT INTO items ([description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES ("%s", %d, "%s", "%s", "%s", "%s", "%s")`
 	updateItemStatus   = `UPDATE items SET [status] = %d WHERE id = %d`
+	updateItem         = `UPDATE items SET [description] = "%s", [assigned_to] = "%s", [due_date] = "%s", [tag] = "%s" WHERE id = %d`
 	deleteItem         = `UPDATE items SET [is_deleted] = 1 WHERE id = %d`
 	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = %d`
 )

@@ -37,3 +37,8 @@ go env -w CGO_ENABLED=1
 go env -w CC="zig cc"
 ```
 Ensure ZIG is installed on the pc
+
+### HTMX is wierd
+- Cant process <body></body> as an oob swap
+- oob swaps before main swap
+- oob swaps with rows are [wierd](https://htmx.org/attributes/hx-swap-oob/)

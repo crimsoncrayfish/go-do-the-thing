@@ -4,11 +4,19 @@
     <div id="create-task-form">
         <form hx-post="/todo/item"
               class="px-5 pt-5 pb-1 border border-gray-200 dark:border-gray-700 mb-0 dark:bg-gray-900 ">
-            {{ template "create-task-form-content" . }}
+            {{ template "task-form-content" . }}
         </form>
     </div>
 {{ end }}
-{{ block "create-task-form-content" . }}
+{{ block "edit-task-form" .}}
+    <div id="edit-task-form">
+        <form hx-post="/todo/item/{{.Task.Id}}"
+              class="px-5 pt-5 pb-1 border border-gray-200 dark:border-gray-700 mb-0 dark:bg-gray-900 ">
+            {{ template "task-form-content" .FormData }}
+        </form>
+    </div>
+{{ end}}
+{{ block "task-form-content" . }}
     <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Description
             <input type="text"
@@ -29,15 +37,14 @@
     </div>
     <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Tag
+            <select
+                    name="tag"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option {{ if eq .Values.tag "Project 1" }}selected{{end}} value="Project 1">Project 1</option>
+                <option {{ if eq .Values.tag "Project 2" }}selected{{end}} value="Project 2">Project 2</option>
+                <option {{ if eq .Values.tag "Personal" }}selected{{end}} value="Personal">Personal</option>
+            </select>
         </label>
-        <select
-                name="tag"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-            <option {{ if eq .Values.tag "Project 1" }}selected{{end}} value="Project 1">Project 1</option>
-            <option {{ if eq .Values.tag "Project 2" }}selected{{end}} value="Project 2">Project 2</option>
-            <option {{ if eq .Values.tag "Personal" }}selected{{end}} value="Personal">Personal</option>
-        </select>
-
     </div>
     {{ if .Errors}}
         {{ range $key, $value := .Errors }}
@@ -52,7 +59,7 @@
                         me-2 mb-2 dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
                         dark:focus:ring-green-800 flex items-center">
 
-        Add task
+        {{ .Submit }} task
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
              stroke="currentColor" class="size-6 ml-2">
             <path stroke-linecap="round" stroke-linejoin="round"

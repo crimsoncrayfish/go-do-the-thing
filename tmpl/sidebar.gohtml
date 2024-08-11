@@ -53,6 +53,17 @@
                         <span class="ms-3">Lets form a habbit!</span>
                     </a>
                 </li>
+                <li>
+                    <a hx-get="/error"
+                       class="flex items-center p-2 text-gray-900 dark:text-white">
+                        {{ if .ActiveScreens.IsError}}
+                            {{ template "bracket-svg"}}
+                        {{ else }}
+                            {{ template "slash-svg"}}
+                        {{ end }}
+                        <span class="ms-3">This is an ERROR</span>
+                    </a>
+                </li>
             </ul>
         </div>
 

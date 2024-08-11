@@ -44,7 +44,9 @@ func SetupTodo(
 	router.HandleFunc("GET /todo/items", todoHandler.ListItems)
 	router.HandleFunc("POST /todo/item/status/{id}", todoHandler.UpdateItemStatus)
 	router.HandleFunc("POST /todo/item", todoHandler.CreateItem)
-	router.HandleFunc("DELETE /api/todo/item/{id}", todoHandler.DeleteItem)
+	router.HandleFunc("POST /todo/item/{id}", todoHandler.UpdateItem)
+	router.HandleFunc("DELETE /todo/item/{id}", todoHandler.DeleteItem)
+	router.HandleFunc("GET /error", todoHandler.TestError)
 	//	router.HandleFunc("POST /todo/restore/{id}", todoHandler.RestoreItemUI)
 	return nil
 }
