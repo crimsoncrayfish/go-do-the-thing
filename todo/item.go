@@ -40,20 +40,11 @@ func SetupTodo(
 
 	todoHandler := New(todoRepo, templates)
 	fmt.Println("Setting up routes")
-	// control apis
-	router.HandleFunc("GET /api/todo/item/{id}", todoHandler.GetItemAPI)
-	router.HandleFunc("GET /api/todo/items", todoHandler.ListItemsAPI)
-	router.HandleFunc("PUT /api/todo/item", todoHandler.CreateItemAPI)
-	router.HandleFunc("POST /api/todo/item/{id}", todoHandler.UpdateItemStatusAPI)
-	router.HandleFunc("DELETE /api/todo/item/{id}", todoHandler.DeleteItemAPI)
-	router.HandleFunc("POST /api/todo/item/restore/{id}", todoHandler.DeleteItemAPI)
-
-	// UI apis
-	router.HandleFunc("/todo/list", todoHandler.ListItemsUI)
-	router.HandleFunc("GET /todo/item/{id}", todoHandler.GetItemUI)
-	router.HandleFunc("POST /todo/toggle/{id}", todoHandler.ToggleItemUI)
-	router.HandleFunc("POST /todo/item", todoHandler.CreateItemUI)
-	router.HandleFunc("DELETE /todo/item/{id}", todoHandler.DeleteItemUI)
+	router.HandleFunc("GET /todo/item/{id}", todoHandler.GetItem)
+	router.HandleFunc("GET /todo/items", todoHandler.ListItems)
+	router.HandleFunc("POST /todo/item/status/{id}", todoHandler.UpdateItemStatus)
+	router.HandleFunc("POST /todo/item", todoHandler.CreateItem)
+	router.HandleFunc("DELETE /api/todo/item/{id}", todoHandler.DeleteItem)
 	//	router.HandleFunc("POST /todo/restore/{id}", todoHandler.RestoreItemUI)
 	return nil
 }

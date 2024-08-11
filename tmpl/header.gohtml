@@ -21,7 +21,15 @@
                         evt.detail.isError = false;
                     }
                 })
+                document.body.addEventListener('htmx:configRequest', function (evt) {
+                    evt.detail.headers['accept'] = 'text/html'
+                    evt.detail.parameters['auth_token'] = getAuthToken(); // add a new parameter into the mix
+                });
             })
+
+            function getAuthToken() {
+                return "placeholder token"
+            }
 
             function toggleClassForId(className, elementId) {
                 const elem = document.getElementById(elementId)
