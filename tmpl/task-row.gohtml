@@ -39,20 +39,20 @@
                 <dt class="sr-only">Description</dt>
                 <dd class="font-light text-wrap"> {{.Description }}</dd>
             {{end}}
-            <dt class="sr-only sm:hidden">Assigned To</dt>
-            <dd class="font-light sm:hidden"> {{.AssignedTo }}</dd>
+            <dt class="sr-only lg:hidden">Assigned To</dt>
+            <dd class="font-light lg:hidden"> {{.AssignedTo }}</dd>
             <dt class="sr-only md:hidden"> Due date</dt>
             <dd class="font-light md:hidden"> {{.DueDate.Time.Format "2006-01-02" }}</dd>
-            <dt class="sr-only lg:hidden"> Tag</dt>
-            <dd class="font-light lg:hidden"> {{.Tag}}</dd>
+            <dt class="sr-only xl:hidden"> Tag</dt>
+            <dd class="font-light xl:hidden"> {{.Tag}}</dd>
         </dl>
     </td>
     <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
-        class="hidden sm:table-cell px-6 py-4">{{.AssignedTo}}</td>
-    <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
         class="hidden md:table-cell px-6 py-4">{{.DueDate.Time.Format "2006-01-02" }}</td>
     <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
-        class="hidden lg:table-cell px-6 py-4">{{.Tag }}</td>
+        class="hidden lg:table-cell px-6 py-4">{{.AssignedTo}}</td>
+    <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
+        class="hidden xl:table-cell px-6 py-4">{{.Tag }}</td>
     <td class="px-6 py-4">
         <button class="text-red-500" hx-swap="outerHTML swap:0.5s" hx-target="closest tr"
                 hx-on--after-request="toggleClassForId('-translate-x-full','task-row-{{.Id}}')"
