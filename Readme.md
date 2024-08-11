@@ -1,3 +1,6 @@
+# A todo app to explore GO, HTMX and Tailwind
+
+![demo](https://github.com/user-attachments/assets/b7878ba7-3ec4-45ea-8d48-1a2cc8728cc6)
 
 ## Scripts for initializing the DB
 
