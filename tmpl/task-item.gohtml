@@ -2,7 +2,7 @@
 <html lang="en">
 {{ block "task-item" . }}
     {{template "navbar" . }}
-    <div id="item-view" class="w-full md:w-[80%] m-auto px-1 md:px-[10%] pt-5 text-gray-900 dark:text-white">
+    <div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-gray-900 dark:text-white">
         <div class="flex w-full justify-between items-center">
             <div class="flex items-center">
                 <button hx-get="/todo/items" hx-target="body"
@@ -57,12 +57,12 @@
         <div class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
             <div class="relative bg-white shadow dark:bg-gray-700">
                 <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-gray-600">
-                    <div class="flex w-full justify-between items-center">
+                    <div class="sm:flex w-full sm:justify-between items-center">
                         <div class="flex items-center">
                             {{ template "task-status-icon" .Task}}
                             <div class="mx-4 text-xl ">{{.Task.Description}}</div>
                         </div>
-                        <div class="flex items-center">
+                        <div class="pt-2 sm:pt-0 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                  stroke-width="1.5" stroke="currentColor" class="size-6 text-orange-400">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -75,9 +75,9 @@
                 </div>
             </div>
             <div class="p-4 bg-transparent border-b dark:border-gray-600 divide-black dark:divide-gray-600">
-                <div class="flex w-full justify-between items-center">
+                <div class="sm:flex w-full sm:justify-between items-center">
                     <p>Assigned To: {{.Task.AssignedTo}}</p>
-                    <p>Due on: {{.Task.DueDate.Time.Format "2006-01-02" }}</p>
+                    <p class="pt-2 sm:p-0">Due on: {{.Task.DueDate.Time.Format "2006-01-02" }}</p>
                 </div>
                 <div>Created by: {{.Task.CreatedBy}}</div>
                 <div>Created on: {{.Task.CreateDate}}</div>
