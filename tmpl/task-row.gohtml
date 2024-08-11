@@ -24,15 +24,15 @@
             </div>
         </td>
         <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
-            class="px-6 py-4">
+            class="px-6 py-4 font-medium">
             {{.Description}}
             <dl class="lg:hidden">
                 <dt class="sr-only sm:hidden">Assigned To</dt>
-                <dd class=" sm:hidden"> {{.AssignedTo }}</dd>
+                <dd class="font-light sm:hidden"> {{.AssignedTo }}</dd>
                 <dt class="sr-only md:hidden"> Due date</dt>
-                <dd class=" md:hidden"> {{.DueDate.Time.Format "2006-01-02" }}</dd>
+                <dd class="font-light md:hidden"> {{.DueDate.Time.Format "2006-01-02" }}</dd>
                 <dt class="sr-only"> Tag</dt>
-                <dd> {{.Tag}}</dd>
+                <dd class="font-light"> {{.Tag}}</dd>
             </dl>
         </td>
         <td hx-swap="outerHTML" hx-target="body" hx-get="/todo/item/{{.Id}}"
