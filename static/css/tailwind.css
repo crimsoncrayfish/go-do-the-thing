@@ -748,6 +748,16 @@ video {
   cursor: pointer;
 }
 
+.columns-2xs {
+  -moz-columns: 18rem;
+       columns: 18rem;
+}
+
+.columns-xl {
+  -moz-columns: 36rem;
+       columns: 36rem;
+}
+
 .flex-col {
   flex-direction: column;
 }
@@ -797,6 +807,10 @@ video {
 
 .whitespace-nowrap {
   white-space: nowrap;
+}
+
+.text-wrap {
+  text-wrap: wrap;
 }
 
 .rounded-lg {

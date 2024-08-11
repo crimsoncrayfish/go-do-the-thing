@@ -17,7 +17,15 @@ func Init(database database.DatabaseConnection) (Repo, error) {
 	if err != nil {
 		return Repo{}, err
 	}
-	err = database.AddColumnToTable(RepoName, "tag", "TEXT default 'a' not null")
+	err = database.AddColumnToTable(RepoName, "tag", "TEXT default '' not null")
+	if err != nil {
+		return Repo{}, err
+	}
+	err = database.AddColumnToTable(RepoName, "complete_date", "TEXT default '' not null")
+	if err != nil {
+		return Repo{}, err
+	}
+	err = database.AddColumnToTable(RepoName, "name", "TEXT default '' not null")
 	if err != nil {
 		return Repo{}, err
 	}
@@ -53,6 +61,7 @@ func (r *Repo) GetItems() (items []Item, err error) {
 func (r *Repo) InsertItem(item Item) (id int64, err error) {
 	insert := fmt.Sprintf(
 		insertItem,
+		item.Name,
 		item.Description,
 		item.Status,
 		item.AssignedTo,
@@ -70,7 +79,7 @@ func (r *Repo) InsertItem(item Item) (id int64, err error) {
 }
 
 func (r *Repo) UpdateItem(item Item) (err error) {
-	update := fmt.Sprintf(updateItem, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
+	update := fmt.Sprintf(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
 	_, err = r.database.Exec(update)
 	if err != nil {
 		return err
@@ -78,8 +87,8 @@ func (r *Repo) UpdateItem(item Item) (err error) {
 	return nil
 }
 
-func (r *Repo) UpdateItemStatus(id int64, status int64) (err error) {
-	update := fmt.Sprintf(updateItemStatus, status, id)
+func (r *Repo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status int64) (err error) {
+	update := fmt.Sprintf(updateItemStatus, status, completeDate.String(), id)
 	_, err = r.database.Exec(update)
 	if err != nil {
 		return err
@@ -127,12 +136,12 @@ const (
     [create_date] TEXT,
 	[is_deleted] INTEGER
 );`
-	getItems           = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted] FROM items"
-	getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag] FROM items WHERE is_deleted=0"
-	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag] FROM items WHERE id = %d"
-	insertItem         = `INSERT INTO items ([description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES ("%s", %d, "%s", "%s", "%s", "%s", "%s")`
-	updateItemStatus   = `UPDATE items SET [status] = %d WHERE id = %d`
-	updateItem         = `UPDATE items SET [description] = "%s", [assigned_to] = "%s", [due_date] = "%s", [tag] = "%s" WHERE id = %d`
+	getItems           = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [name], [complete_date] FROM items"
+	getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE is_deleted=0"
+	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE id = %d"
+	insertItem         = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES ("%s", "%s", %d, "%s", "%s", "%s", "%s", "%s")`
+	updateItemStatus   = `UPDATE items SET [status] = %d, [complete_date] = "%s" WHERE id = %d`
+	updateItem         = `UPDATE items SET [name] = "%s", [description] = "%s", [assigned_to] = "%s", [due_date] = "%s", [tag] = "%s" WHERE id = %d`
 	deleteItem         = `UPDATE items SET [is_deleted] = 1 WHERE id = %d`
 	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = %d`
 )
@@ -148,6 +157,8 @@ func ScanItemFromRow(row *sql.Row, item *Item) error {
 		&item.CreateDate,
 		&item.IsDeleted,
 		&item.Tag,
+		&item.Name,
+		&item.CompleteDate,
 	)
 }
 
@@ -162,5 +173,7 @@ func ScanItemFromRows(rows *sql.Rows, item *Item) error {
 		&item.CreateDate,
 		&item.IsDeleted,
 		&item.Tag,
+		&item.Name,
+		&item.CompleteDate,
 	)
 }

@@ -18,22 +18,32 @@
 {{ end}}
 {{ block "task-form-content" . }}
     <div class="mb-5">
+        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Name
+            <input type="text"
+                   name="name"{{ if .Values.name}} value="{{ .Values.name }}"{{end}}
+                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+        </label>
+    </div>
+    <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Description
             <input type="text"
                    name="description"{{ if .Values.description }} value="{{ .Values.description }}"{{end}}
-                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/></label>
+                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+        </label>
     </div>
     <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Due date
             <input type="date"
                    name="due_date" {{ if .Values.due_date }} value="{{ .Values.due_date }}"{{end}}
-                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/></label>
+                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+        </label>
     </div>
     <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Assigned To
             <input type="text"
                    name="assigned_to"{{ if .Values.assigned_to }} value="{{ .Values.assigned_to }}"{{end}}
-                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/></label>
+                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+        </label>
     </div>
     <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Tag

@@ -2,22 +2,6 @@
 
 ![demo](https://github.com/user-attachments/assets/b7878ba7-3ec4-45ea-8d48-1a2cc8728cc6)
 
-## Scripts for initializing the DB
-
-CREATE TODO items
-```SQLite
-CREATE TABLE IF NOT EXISTS todo (
-    [id] INTEGER PRIMARY KEY,
-    [description] TEXT,
-    [status] INTEGER DEFAULT 0,
-    [assigned_to] TEXT,
-    [due_date] TEXT,
-    [created_by] TEXT,
-    [create_date] TEXT,
-    [is_deleted] INTEGER default 0
-);
-```
-
 ### Some requirements
 
 ```cmd
@@ -26,9 +10,9 @@ npm install htmx.org@2.0.1
 for hot reloading
 ```cmd
 --installation
-go install github.com/cosmtrek/air@latest
+go install github.com/air-verse/air@latest
 --running
-
+air
 ```
 
 ### Compilation issues on a Windows machine
@@ -43,5 +27,6 @@ Ensure ZIG is installed on the pc
 
 ### HTMX is wierd
 - Cant process <body></body> as an oob swap
-- oob swaps before main swap
+- oob swaps need to be before the main swap if there are 2 things being swopped
+- Cant get nested oob swaps to work :(
 - oob swaps with rows are [wierd](https://htmx.org/attributes/hx-swap-oob/)

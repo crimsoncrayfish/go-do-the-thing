@@ -28,31 +28,32 @@ type idResponse struct {
 	Id int64 `json:"id" json:"id"`
 }
 
-func (item *Item) isValid() (bool, map[string]string) {
+func (t *Item) isValid() (bool, map[string]string) {
 	errs := make(map[string]string)
 	isValid := true
 
 	now := time.Now()
-	if item.DueDate.Before(now) {
+	if t.DueDate.Before(now) {
 		isValid = false
 		errs["due_date"] = "Due date is before now"
 	}
 	return isValid, errs
 }
 
-func (item *Item) formDataFromItemNoValidation() shared.FormData {
+func (t *Item) formDataFromItemNoValidation() shared.FormData {
 	formData := shared.NewFormData()
-	formData.Values["description"] = item.Description
-	formData.Values["assigned_to"] = item.AssignedTo
-	formData.Values["due_date"] = item.DueDate.StringF(database.DateFormat)
-	formData.Values["tag"] = item.Tag
+	formData.Values["name"] = t.Name
+	formData.Values["description"] = t.Description
+	formData.Values["assigned_to"] = t.AssignedTo
+	formData.Values["due_date"] = t.DueDate.StringF(database.DateFormat)
+	formData.Values["tag"] = t.Tag
 
 	return formData
 }
 
-func (item *Item) formDataFromItem() (shared.FormData, bool) {
-	formData := item.formDataFromItemNoValidation()
-	isValid, errs := item.isValid()
+func (t *Item) formDataFromItem() (shared.FormData, bool) {
+	formData := t.formDataFromItemNoValidation()
+	isValid, errs := t.isValid()
 	if !isValid {
 		formData.Errors = errs
 	}
@@ -98,7 +99,8 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	errorForm := shared.NewFormData()
-	description, errorForm := getRequiredPropertyFromRequest(r, "description", errorForm)
+	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
+	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
 	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
 	tag, errorForm := getRequiredPropertyFromRequest(r, "tag", errorForm)
 	dateRaw, errorForm := getRequiredPropertyFromRequest(r, "due_date", errorForm)
@@ -109,16 +111,17 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	now := time.Now()
 	item := Item{
+		Name:        name,
 		Description: description,
 		AssignedTo:  assignedTo,
-		DueDate:     &database.SqLiteTime{Time: date},
+		DueDate:     &database.SqLiteTime{Time: &date},
 		CreatedBy:   "CurrentUser", //todo logins
-		CreateDate:  &database.SqLiteTime{Time: time.Now()},
+		CreateDate:  &database.SqLiteTime{Time: &now},
 		IsDeleted:   false,
 		Tag:         tag,
 	}
-
 	//Check if form is valid and respond with any error
 	formData, isValid := item.formDataFromItem()
 	if !isValid {
@@ -185,7 +188,8 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	errorForm := shared.NewFormData()
-	description, errorForm := getRequiredPropertyFromRequest(r, "description", errorForm)
+	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
+	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
 	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
 	tag, errorForm := getRequiredPropertyFromRequest(r, "tag", errorForm)
 	dateRaw, errorForm := getRequiredPropertyFromRequest(r, "due_date", errorForm)
@@ -196,13 +200,15 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	now := time.Now()
 	item := Item{
 		Id:          id,
+		Name:        name,
 		Description: description,
 		AssignedTo:  assignedTo,
-		DueDate:     &database.SqLiteTime{Time: date},
-		CreatedBy:   "CurrentUser", //todo logins
-		CreateDate:  &database.SqLiteTime{Time: time.Now()},
+		DueDate:     &database.SqLiteTime{Time: &date},
+		CreatedBy:   "CurrentUser",
+		CreateDate:  &database.SqLiteTime{Time: &now},
 		IsDeleted:   false,
 		Tag:         tag,
 	}
@@ -233,12 +239,18 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
 func getRequiredPropertyFromRequest(r *http.Request, propName string, formData shared.FormData) (string, shared.FormData) {
 	value := r.FormValue(propName)
 	if len(value) == 0 {
 		formData.Errors[propName] = propName + " is required"
 		return value, formData
 	}
+	return value, formData
+}
+
+func getOptionalPropertyFromRequest(r *http.Request, propName string, formData shared.FormData) (string, shared.FormData) {
+	value := r.FormValue(propName)
 	return value, formData
 }
 
@@ -319,7 +331,12 @@ func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.repo.UpdateItemStatus(id, newStatus)
+	completeDate := database.SqLiteTime{}
+	if newStatus == int64(Completed) {
+		now := time.Now()
+		completeDate = database.SqLiteTime{&now}
+	}
+	err = h.repo.UpdateItemStatus(id, completeDate, newStatus)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -337,14 +354,10 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		shared.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
-	var newStatus ItemStatus
-	if task.Status == Scheduled {
-		newStatus = Completed
-	} else {
-		newStatus = Scheduled
-	}
 
-	if err = h.repo.UpdateItemStatus(id, int64(newStatus)); err != nil {
+	task.toggleStatus()
+
+	if err = h.repo.UpdateItemStatus(id, *task.CompleteDate, int64(task.Status)); err != nil {
 		shared.HttpErrorUI(h.templates, "Failed to update todo item", err, w)
 		return
 	}
@@ -400,7 +413,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].DueDate.Time.Before(tasks[j].DueDate.Time)
+		return tasks[i].DueDate.Time.Before(*tasks[j].DueDate.Time)
 	})
 
 	formData := shared.NewFormData()

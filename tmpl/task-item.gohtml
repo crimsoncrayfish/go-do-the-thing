@@ -58,10 +58,18 @@
             <div class="relative bg-white shadow dark:bg-gray-700">
                 <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-gray-600">
                     <div class="sm:flex w-full sm:justify-between items-center">
-                        <div class="flex items-center">
-                            {{ template "task-status-icon" .Task}}
-                            <div class="mx-4 text-xl ">{{.Task.Description}}</div>
+                        <div>
+                            <div class="flex items-center">
+                                {{ template "task-status-icon" .Task}}
+                                <div class="mx-4 text-xl ">{{if .Task.Name}}{{.Task.Name}}{{else}}{{.Task.Description}}{{end}}</div>
+                            </div>
+                            {{ if .Task.CompleteDate.Time }}
+                                <div class="text-sm">
+                                    Completed on: {{.Task.CompleteDate}}
+                                </div>
+                            {{ end}}
                         </div>
+
                         <div class="pt-2 sm:pt-0 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                  stroke-width="1.5" stroke="currentColor" class="size-6 text-orange-400">
@@ -75,6 +83,9 @@
                 </div>
             </div>
             <div class="p-4 bg-transparent border-b dark:border-gray-600 divide-black dark:divide-gray-600">
+                {{if .Task.Name}}
+                    <div>{{.Task.Description}}</div>
+                {{end}}
                 <div class="sm:flex w-full sm:justify-between items-center">
                     <p>Assigned To: {{.Task.AssignedTo}}</p>
                     <p class="pt-2 sm:p-0">Due on: {{.Task.DueDate.Time.Format "2006-01-02" }}</p>
