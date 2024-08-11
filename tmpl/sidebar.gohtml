@@ -18,16 +18,9 @@
                     <a hx-get="/home" hx-target="body"
                        class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
                         {{ if .ActiveScreens.IsHome }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                 stroke="currentColor" class="size-6">
-                                <path d="M4 20L10 3 M9 20L15 3" stroke-linejoin="round" stroke-linecap="round"/>
-                            </svg>
-
+                            {{ template "bracket-svg"}}
                         {{ else }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                 stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
-                            </svg>
+                            {{ template "slash-svg"}}
                         {{ end }}
                         <span class="ms-3">Take me back home</span>
                     </a>
@@ -36,25 +29,27 @@
                     <a hx-get="/todo/items" hx-target="body"
                        class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
                         {{ if .ActiveScreens.IsTodoList }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                 stroke="currentColor" class="size-6">
-                                <path d="M4 20L10 3 M9 20L15 3" stroke-linejoin="round" stroke-linecap="round"/>
-                            </svg>
+                            {{ template "bracket-svg"}}
                         {{ else }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                 stroke="currentColor" class="size-6">
-                                <path d="M6.5 20L12.5 3" stroke-linejoin="round" stroke-linecap="round"/>
-                            </svg>
+                            {{ template "slash-svg"}}
                         {{ end }}
                         <span class="ms-3">Whats on the agenda?</span>
                     </a>
                 </li>
                 <li>
+                    <a hx-get="/projects" hx-target="body"
+                       class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
+                        {{ if .ActiveScreens.IsProjects }}
+                            {{ template "bracket-svg"}}
+                        {{ else }}
+                            {{ template "slash-svg"}}
+                        {{ end }}
+                        <span class="ms-3">My side projects...</span>
+                    </a>
+                </li>
+                <li>
                     <a class="flex items-center p-2 text-gray-900 dark:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 20.247 6-16.5"/>
-                        </svg>
+                        {{ template "slash-svg"}}
                         <span class="ms-3">Lets form a habbit!</span>
                     </a>
                 </li>
@@ -146,3 +141,17 @@
     </script>
 {{ end }}
 </html>
+
+{{ block "bracket-svg" . }}
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+         stroke="currentColor" class="size-6">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/>
+    </svg>
+{{end}}
+{{ block "slash-svg" .}}
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+         stroke="currentColor" class="size-6">
+        <path d="M6.5 20L12.5 3" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+{{end}}
