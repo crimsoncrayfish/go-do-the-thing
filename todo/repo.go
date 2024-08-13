@@ -125,6 +125,16 @@ func (r *Repo) GetItem(id int64) (Item, error) {
 	return temp, nil
 }
 
+func (r *Repo) GetItemsCount() (int, error) {
+	row := r.database.QueryRow(countItems)
+	var temp int
+	err := row.Scan(&temp)
+	if err != nil {
+		return 0, err
+	}
+	return temp, nil
+}
+
 const (
 	createTable = `CREATE TABLE IF NOT EXISTS items (
 	[id] INTEGER PRIMARY KEY,
@@ -134,10 +144,11 @@ const (
     [due_date] TEXT,
     [created_by] TEXT,
     [create_date] TEXT,
-	[is_deleted] INTEGER
+	[is_deleted] INTEGER DEFAULT 0
 );`
 	getItems           = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [name], [complete_date] FROM items"
 	getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE is_deleted=0"
+	countItems         = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
 	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE id = %d"
 	insertItem         = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES ("%s", "%s", %d, "%s", "%s", "%s", "%s", "%s")`
 	updateItemStatus   = `UPDATE items SET [status] = %d, [complete_date] = "%s" WHERE id = %d`

@@ -147,11 +147,22 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
+	to := NoItemRowData{
+		HideNoData: true,
+	}
+	if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
+		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
+		return
+	}
 	err = h.templates.RenderOk(w, "task-form-content", shared.NewFormData())
 	if err != nil {
 		shared.HttpErrorUI(h.templates, "Failed to render form", err, w)
 		return
 	}
+}
+
+type NoItemRowData struct {
+	HideNoData bool
 }
 
 func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
@@ -453,6 +464,19 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	err = h.repo.DeleteItem(id)
 	if err != nil {
 		shared.HttpErrorUI(h.templates, "failed to delete todo item", err, w)
+		return
+	}
+	//get count of items
+	hasData, err := h.repo.GetItemsCount()
+	if err != nil {
+		shared.HttpErrorUI(h.templates, "failed to update ui", err, w)
+		return
+	}
+	to := NoItemRowData{
+		HideNoData: hasData > 0,
+	}
+	if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
+		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
 }
