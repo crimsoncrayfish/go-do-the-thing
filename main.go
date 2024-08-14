@@ -4,11 +4,11 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"go-do-the-thing/app/home"
+	"go-do-the-thing/app/todo"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
-	"go-do-the-thing/home"
 	"go-do-the-thing/middleware"
-	"go-do-the-thing/todo"
 	"net/http"
 	"os"
 )

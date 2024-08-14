@@ -2,8 +2,8 @@ package home
 
 import (
 	"fmt"
+	"go-do-the-thing/app/shared/models"
 	"go-do-the-thing/helpers"
-	"go-do-the-thing/navigation"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ type Handler struct {
 func New(templates helpers.Templates) *Handler {
 	return &Handler{
 		model: Screens{
-			navigation.NavBarObject{
+			models.NavBarObject{
 				IsHome: true,
 			},
 		},

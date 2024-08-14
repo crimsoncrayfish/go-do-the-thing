@@ -1,4 +1,4 @@
-package shared
+package models
 
 type FormData struct {
 	Values map[string]string

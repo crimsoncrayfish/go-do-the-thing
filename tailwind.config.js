@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
-  content: ["./tmpl/**/*.gohtml"],
+  content: ["./**/*.gohtml"],
   theme: {
     extend : {
       transitionProperty: {

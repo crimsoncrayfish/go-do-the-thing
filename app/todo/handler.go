@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go-do-the-thing/app/shared"
+	models2 "go-do-the-thing/app/shared/models"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
-	"go-do-the-thing/navigation"
-	"go-do-the-thing/shared"
 	"net/http"
 	"sort"
 	"strconv"
@@ -17,11 +17,11 @@ import (
 type Handler struct {
 	repo          Repo
 	templates     helpers.Templates
-	activeScreens navigation.NavBarObject
+	activeScreens models2.NavBarObject
 }
 
 func New(r Repo, templates helpers.Templates) *Handler {
-	return &Handler{repo: r, templates: templates, activeScreens: navigation.NavBarObject{IsTodoList: true}}
+	return &Handler{repo: r, templates: templates, activeScreens: models2.NavBarObject{IsTodoList: true}}
 }
 
 type idResponse struct {
@@ -40,8 +40,8 @@ func (t *Item) isValid() (bool, map[string]string) {
 	return isValid, errs
 }
 
-func (t *Item) formDataFromItemNoValidation() shared.FormData {
-	formData := shared.NewFormData()
+func (t *Item) formDataFromItemNoValidation() models2.FormData {
+	formData := models2.NewFormData()
 	formData.Values["name"] = t.Name
 	formData.Values["description"] = t.Description
 	formData.Values["assigned_to"] = t.AssignedTo
@@ -51,7 +51,7 @@ func (t *Item) formDataFromItemNoValidation() shared.FormData {
 	return formData
 }
 
-func (t *Item) formDataFromItem() (shared.FormData, bool) {
+func (t *Item) formDataFromItem() (models2.FormData, bool) {
 	formData := t.formDataFromItemNoValidation()
 	isValid, errs := t.isValid()
 	if !isValid {
@@ -98,7 +98,7 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
-	errorForm := shared.NewFormData()
+	errorForm := models2.NewFormData()
 	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
 	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
 	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
@@ -154,7 +154,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
-	err = h.templates.RenderOk(w, "task-form-content", shared.NewFormData())
+	err = h.templates.RenderOk(w, "task-form-content", models2.NewFormData())
 	if err != nil {
 		shared.HttpErrorUI(h.templates, "Failed to render form", err, w)
 		return
@@ -198,7 +198,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	errorForm := shared.NewFormData()
+	errorForm := models2.NewFormData()
 	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
 	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
 	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
@@ -251,7 +251,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getRequiredPropertyFromRequest(r *http.Request, propName string, formData shared.FormData) (string, shared.FormData) {
+func getRequiredPropertyFromRequest(r *http.Request, propName string, formData models2.FormData) (string, models2.FormData) {
 	value := r.FormValue(propName)
 	if len(value) == 0 {
 		formData.Errors[propName] = propName + " is required"
@@ -260,7 +260,7 @@ func getRequiredPropertyFromRequest(r *http.Request, propName string, formData s
 	return value, formData
 }
 
-func getOptionalPropertyFromRequest(r *http.Request, propName string, formData shared.FormData) (string, shared.FormData) {
+func getOptionalPropertyFromRequest(r *http.Request, propName string, formData models2.FormData) (string, models2.FormData) {
 	value := r.FormValue(propName)
 	return value, formData
 }
@@ -300,8 +300,8 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 
 type ItemPageModel struct {
 	Task          Item
-	ActiveScreens navigation.NavBarObject
-	FormData      shared.FormData
+	ActiveScreens models2.NavBarObject
+	FormData      models2.FormData
 }
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
@@ -412,8 +412,8 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 
 type ListModel struct {
 	Tasks         []Item
-	ActiveScreens navigation.NavBarObject
-	shared.FormData
+	ActiveScreens models2.NavBarObject
+	models2.FormData
 }
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
@@ -427,7 +427,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 		return tasks[i].DueDate.Time.Before(*tasks[j].DueDate.Time)
 	})
 
-	formData := shared.NewFormData()
+	formData := models2.NewFormData()
 	formData.Values["due_date"] = time.Now().Add(time.Hour * 24).Format("2006-01-02")
 	responseObject := ListModel{tasks, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-list", responseObject)

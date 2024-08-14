@@ -1,20 +1,20 @@
 package shared
 
 import (
+	"go-do-the-thing/app/shared/models"
 	"go-do-the-thing/helpers"
-	"go-do-the-thing/navigation"
 	"log"
 	"net/http"
 )
 
 type ErrorPage struct {
-	ActiveScreens navigation.NavBarObject
+	ActiveScreens models.NavBarObject
 	Message       string
 	ErrorMessage  string
 }
 
 func newErrorPage(message string, err error) ErrorPage {
-	activeScreens := navigation.NewNavbarObject()
+	activeScreens := models.NewNavbarObject()
 	activeScreens.IsError = true
 	return ErrorPage{activeScreens, message,
 		err.Error()}

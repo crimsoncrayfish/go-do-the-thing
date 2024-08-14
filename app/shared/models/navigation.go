@@ -1,4 +1,4 @@
-package navigation
+package models
 
 type NavBarObject struct {
 	IsHome     bool

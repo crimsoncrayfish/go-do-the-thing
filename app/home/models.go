@@ -2,13 +2,13 @@ package home
 
 import (
 	"fmt"
+	"go-do-the-thing/app/shared/models"
 	"go-do-the-thing/helpers"
-	"go-do-the-thing/navigation"
 	"net/http"
 )
 
 type Screens struct {
-	ActiveScreens navigation.NavBarObject
+	ActiveScreens models.NavBarObject
 }
 
 func SetupHome(router *http.ServeMux, templates helpers.Templates) {
