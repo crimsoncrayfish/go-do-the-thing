@@ -28,7 +28,7 @@ type idResponse struct {
 	Id int64 `json:"id" json:"id"`
 }
 
-func (t *Item) isValid() (bool, map[string]string) {
+func (t *Task) isValid() (bool, map[string]string) {
 	errs := make(map[string]string)
 	isValid := true
 
@@ -40,7 +40,7 @@ func (t *Item) isValid() (bool, map[string]string) {
 	return isValid, errs
 }
 
-func (t *Item) formDataFromItemNoValidation() models2.FormData {
+func (t *Task) formDataFromItemNoValidation() models2.FormData {
 	formData := models2.NewFormData()
 	formData.Values["name"] = t.Name
 	formData.Values["description"] = t.Description
@@ -51,7 +51,7 @@ func (t *Item) formDataFromItemNoValidation() models2.FormData {
 	return formData
 }
 
-func (t *Item) formDataFromItem() (models2.FormData, bool) {
+func (t *Task) formDataFromItem() (models2.FormData, bool) {
 	formData := t.formDataFromItemNoValidation()
 	isValid, errs := t.isValid()
 	if !isValid {
@@ -65,7 +65,7 @@ func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
-	var item Item
+	var item Task
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&item)
 	if err != nil {
@@ -112,7 +112,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	item := Item{
+	item := Task{
 		Name:        name,
 		Description: description,
 		AssignedTo:  assignedTo,
@@ -170,7 +170,7 @@ func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
-	var item Item
+	var item Task
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -212,7 +212,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	item := Item{
+	item := Task{
 		Id:          id,
 		Name:        name,
 		Description: description,
@@ -281,7 +281,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	items := make([]Item, 1)
+	items := make([]Task, 1)
 	items[0] = item
 	jsonBytes, err := json.Marshal(items)
 	if err != nil {
@@ -299,7 +299,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 type ItemPageModel struct {
-	Task          Item
+	Task          Task
 	ActiveScreens models2.NavBarObject
 	FormData      models2.FormData
 }
@@ -411,7 +411,7 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 }
 
 type ListModel struct {
-	Tasks         []Item
+	Tasks         []Task
 	ActiveScreens models2.NavBarObject
 	models2.FormData
 }

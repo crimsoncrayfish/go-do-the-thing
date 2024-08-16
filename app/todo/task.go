@@ -2,24 +2,26 @@ package todo
 
 import (
 	"fmt"
+	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"net/http"
 	"time"
 )
 
-type Item struct {
-	Id           int64                `json:"id,omitempty"`
-	Name         string               `json:"name"`
-	Description  string               `json:"description,omitempty"`
-	Status       ItemStatus           `json:"status"`
-	CompleteDate *database.SqLiteTime `json:"complete_date"`
-	AssignedTo   string               `json:"assigned_to"`
-	DueDate      *database.SqLiteTime `json:"due_date"`
-	CreatedBy    string               `json:"created_by"`
-	CreateDate   *database.SqLiteTime `json:"create_date"`
-	IsDeleted    bool                 `json:"is_deleted"`
-	Tag          string               `json:"tag,omitempty"`
+type Task struct {
+	Id             int64                `json:"id,omitempty"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description,omitempty"`
+	Status         ItemStatus           `json:"status"`
+	CompleteDate   *database.SqLiteTime `json:"complete_date"`
+	AssignedTo     string               `json:"assigned_to"`
+	DueDate        *database.SqLiteTime `json:"due_date"`
+	CreatedBy      string               `json:"created_by"`
+	CreateDate     *database.SqLiteTime `json:"create_date"`
+	IsDeleted      bool                 `json:"is_deleted"`
+	Tag            string               `json:"tag,omitempty"`
+	AssignedToUser users.User           `json:"assigned_to_user,omitempty"`
 }
 
 type ItemStatus int
@@ -29,7 +31,7 @@ const (
 	Completed
 )
 
-func (t *Item) toggleStatus() {
+func (t *Task) toggleStatus() {
 	if t.Status == Scheduled {
 		t.Status = Completed
 		now := time.Now()
@@ -46,7 +48,7 @@ func SetupTodo(
 	templates helpers.Templates,
 ) error {
 	fmt.Println("Setting up todo repo")
-	todoRepo, err := Init(dbConnection)
+	todoRepo, err := InitRepo(dbConnection)
 	if err != nil {
 		fmt.Println("failed to initialize todo repo")
 		return err
