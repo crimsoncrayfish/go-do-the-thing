@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-do-the-thing/app/home"
 	"go-do-the-thing/app/todo"
+	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/middleware"
@@ -38,6 +39,11 @@ func main() {
 	dbConnection, err := database.Init("todo")
 	if err != nil {
 		fmt.Println(err.Error())
+		panic(err)
+	}
+	err = users.SetupUsers(dbConnection, router, *renderer)
+	if err != nil {
+		println("Failed to initialize users")
 		panic(err)
 	}
 
