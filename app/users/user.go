@@ -50,7 +50,7 @@ func SetupUsers(
 
 	handler := NewHandler(templates, usersRepo)
 
-	router.HandleFunc("/login", handler.LoginUI)
+	router.HandleFunc("/login", handler.Login)
 
 	return nil
 }
