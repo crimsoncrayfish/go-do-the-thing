@@ -321,7 +321,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	model := ItemPageModel{task, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-item", model)
 	if err != nil {
-		fmt.Println("Failed to execute tmpl for the item page")
+		fmt.Println("Failed to execute template for the item page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -379,7 +379,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = h.templates.RenderOk(w, "task-row", task); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to execute tmpl for the home page", err, w)
+		shared.HttpErrorUI(h.templates, "Failed to execute template for the home page", err, w)
 		return
 	}
 }
@@ -432,7 +432,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 	responseObject := ListModel{tasks, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-list", responseObject)
 	if err != nil {
-		fmt.Println("Failed to execute tmpl for the item list page")
+		fmt.Println("Failed to execute template for the item list page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

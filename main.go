@@ -53,14 +53,8 @@ func main() {
 		panic(err)
 	}
 	home.SetupHome(router, *renderer)
-	router.Handle("/static/", http.FileServer(http.FS(static)))
-	router.HandleFunc("/favicon.ico", faviconHandler)
-	router.HandleFunc("/hello", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := fmt.Fprintf(writer, "Hello World")
-		if err != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-	})
+	setupRandom(router)
+
 	stack := middleware.CreateStack(middleware.Logging, middleware.Authentication)
 	server := http.Server{
 		Addr:    ":8080",
@@ -72,4 +66,15 @@ func main() {
 		fmt.Println("Something went wrong")
 		panic(err)
 	}
+}
+
+func setupRandom(router *http.ServeMux) {
+	router.Handle("/static/", http.FileServer(http.FS(static)))
+	router.HandleFunc("/favicon.ico", faviconHandler)
+	router.HandleFunc("/hello", func(writer http.ResponseWriter, request *http.Request) {
+		_, err := fmt.Fprintf(writer, "Hello World")
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+	})
 }
