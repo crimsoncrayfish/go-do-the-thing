@@ -61,7 +61,7 @@ func (t *Task) formDataFromItem() (models2.FormData, bool) {
 }
 
 func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
-	acceptHeaderSwitch(w, r, h.createItemAPI, h.createItemUI)
+	helpers.AcceptHeaderSwitch(w, r, h.createItemAPI, h.createItemUI)
 }
 
 func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
@@ -166,7 +166,7 @@ type NoItemRowData struct {
 }
 
 func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
-	acceptHeaderSwitch(w, r, h.updateItemAPI, h.updateItemUI)
+	helpers.AcceptHeaderSwitch(w, r, h.updateItemAPI, h.updateItemUI)
 }
 
 func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
@@ -266,7 +266,7 @@ func getOptionalPropertyFromRequest(r *http.Request, propName string, formData m
 }
 
 func (h *Handler) GetItem(w http.ResponseWriter, r *http.Request) {
-	acceptHeaderSwitch(w, r, h.getItemAPI, h.getItemUI)
+	helpers.AcceptHeaderSwitch(w, r, h.getItemAPI, h.getItemUI)
 }
 
 func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
@@ -328,7 +328,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateItemStatus(w http.ResponseWriter, r *http.Request) {
-	acceptHeaderSwitch(w, r, h.updateItemStatusAPI, h.updateItemStatusUI)
+	helpers.AcceptHeaderSwitch(w, r, h.updateItemStatusAPI, h.updateItemStatusUI)
 }
 
 func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
@@ -385,7 +385,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListItems(w http.ResponseWriter, r *http.Request) {
-	acceptHeaderSwitch(w, r, h.listItemsAPI, h.listItemsUI)
+	helpers.AcceptHeaderSwitch(w, r, h.listItemsAPI, h.listItemsUI)
 }
 
 func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
@@ -439,7 +439,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
-	acceptHeaderSwitch(w, r, h.deleteItemAPI, h.deleteItemUI)
+	helpers.AcceptHeaderSwitch(w, r, h.deleteItemAPI, h.deleteItemUI)
 }
 
 func (h *Handler) deleteItemAPI(w http.ResponseWriter, r *http.Request) {
@@ -483,17 +483,4 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) TestError(w http.ResponseWriter, _ *http.Request) {
 	shared.HttpErrorUI(h.templates, "Testing the error page", errors.New("Testing the error page"), w)
-}
-
-func acceptHeaderSwitch(w http.ResponseWriter, r *http.Request, jsonFunc func(w http.ResponseWriter, r *http.Request), uiFunc func(w http.ResponseWriter, r *http.Request)) {
-	contentType := r.Header.Get("accept")
-	if contentType == "application/json" {
-		w.Header().Set("Content-Type", "application/json")
-		jsonFunc(w, r)
-	} else if contentType == "text/html" {
-		w.Header().Set("Content-Type", "text/html")
-		uiFunc(w, r)
-	} else {
-		shared.HttpError("No Content-type specified", errors.New("No content-type specified in request"), w)
-	}
 }
