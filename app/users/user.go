@@ -17,6 +17,7 @@ type User struct {
 	SessionStartTime database.SqLiteTime `json:"session_start_time"`
 	PasswordHash     string              `json:"password_hash,omitempty"`
 	IsDeleted        bool                `json:"is_deleted,omitempty"`
+	IsAdmin          bool                `json:"is_admin,omitempty"`
 }
 
 func (u User) setPassword(password string) error {
@@ -46,7 +47,10 @@ func SetupUsers(
 	if err != nil {
 		return err
 	}
+
 	handler := NewHandler(templates, usersRepo)
-	router.HandleFunc("/login", handler.Login)
+
+	router.HandleFunc("/login", handler.LoginUI)
+
 	return nil
 }
