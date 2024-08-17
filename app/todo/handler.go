@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go-do-the-thing/app/shared"
-	models2 "go-do-the-thing/app/shared/models"
+	"go-do-the-thing/app/shared/models"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"net/http"
@@ -17,11 +16,11 @@ import (
 type Handler struct {
 	repo          Repo
 	templates     helpers.Templates
-	activeScreens models2.NavBarObject
+	activeScreens models.NavBarObject
 }
 
 func New(r Repo, templates helpers.Templates) *Handler {
-	return &Handler{repo: r, templates: templates, activeScreens: models2.NavBarObject{IsTodoList: true}}
+	return &Handler{repo: r, templates: templates, activeScreens: models.NavBarObject{IsTodoList: true}}
 }
 
 type idResponse struct {
@@ -40,8 +39,8 @@ func (t *Task) isValid() (bool, map[string]string) {
 	return isValid, errs
 }
 
-func (t *Task) formDataFromItemNoValidation() models2.FormData {
-	formData := models2.NewFormData()
+func (t *Task) formDataFromItemNoValidation() models.FormData {
+	formData := models.NewFormData()
 	formData.Values["name"] = t.Name
 	formData.Values["description"] = t.Description
 	formData.Values["assigned_to"] = t.AssignedTo
@@ -51,7 +50,7 @@ func (t *Task) formDataFromItemNoValidation() models2.FormData {
 	return formData
 }
 
-func (t *Task) formDataFromItem() (models2.FormData, bool) {
+func (t *Task) formDataFromItem() (models.FormData, bool) {
 	formData := t.formDataFromItemNoValidation()
 	isValid, errs := t.isValid()
 	if !isValid {
@@ -98,7 +97,7 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
-	errorForm := models2.NewFormData()
+	errorForm := models.NewFormData()
 	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
 	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
 	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
@@ -107,7 +106,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil || len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
-			shared.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			helpers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
 		}
 		return
 	}
@@ -126,7 +125,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	formData, isValid := item.formDataFromItem()
 	if !isValid {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", formData); err != nil {
-			shared.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			helpers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
 		}
 		return
 	}
@@ -134,29 +133,29 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	//update data
 	id, err := h.repo.InsertItem(item)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to insert todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to insert todo item", err, w)
 		return
 	}
 	task, err := h.repo.GetItem(id)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to get todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
 	//Respond with templates
 	if err = h.templates.RenderOk(w, "task-row-oob", task); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
 	to := NoItemRowData{
 		HideNoData: true,
 	}
 	if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
-	err = h.templates.RenderOk(w, "task-form-content", models2.NewFormData())
+	err = h.templates.RenderOk(w, "task-form-content", models.NewFormData())
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to render form", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to render form", err, w)
 		return
 	}
 }
@@ -178,16 +177,16 @@ func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 	if err = decoder.Decode(&item); err != nil {
-		shared.HttpError("failed to decode item", err, w)
+		helpers.HttpError("failed to decode item", err, w)
 		return
 	}
 	if id != item.Id {
-		shared.HttpError("id mismatch", errors.New("The id in the path does not match the id in the request object"), w)
+		helpers.HttpError("id mismatch", errors.New("The id in the path does not match the id in the request object"), w)
 		return
 	}
 
 	if err = h.repo.UpdateItem(item); err != nil {
-		shared.HttpError("failed to update todo item", err, w)
+		helpers.HttpError("failed to update todo item", err, w)
 		return
 	}
 }
@@ -198,7 +197,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	errorForm := models2.NewFormData()
+	errorForm := models.NewFormData()
 	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
 	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
 	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
@@ -207,7 +206,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil || len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
-			shared.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			helpers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
 		}
 		return
 	}
@@ -230,28 +229,28 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 
 	//update data
 	if err = h.repo.UpdateItem(item); err != nil {
-		shared.HttpErrorUI(h.templates, "failed to insert update item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to insert update item", err, w)
 		return
 	}
 	task, err := h.repo.GetItem(id)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to get todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
 	//Respond with templates
 	model := ItemPageModel{task, h.activeScreens, formData}
 	if err = h.templates.RenderOk(w, "task-item-content-oob", model); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
 	err = h.templates.RenderOk(w, "task-form-content", formData)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to render form", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to render form", err, w)
 		return
 	}
 }
 
-func getRequiredPropertyFromRequest(r *http.Request, propName string, formData models2.FormData) (string, models2.FormData) {
+func getRequiredPropertyFromRequest(r *http.Request, propName string, formData models.FormData) (string, models.FormData) {
 	value := r.FormValue(propName)
 	if len(value) == 0 {
 		formData.Errors[propName] = propName + " is required"
@@ -260,7 +259,7 @@ func getRequiredPropertyFromRequest(r *http.Request, propName string, formData m
 	return value, formData
 }
 
-func getOptionalPropertyFromRequest(r *http.Request, propName string, formData models2.FormData) (string, models2.FormData) {
+func getOptionalPropertyFromRequest(r *http.Request, propName string, formData models.FormData) (string, models.FormData) {
 	value := r.FormValue(propName)
 	return value, formData
 }
@@ -300,14 +299,14 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 
 type ItemPageModel struct {
 	Task          Task
-	ActiveScreens models2.NavBarObject
-	FormData      models2.FormData
+	ActiveScreens models.NavBarObject
+	FormData      models.FormData
 }
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
 		return
 	}
 	task, err := h.repo.GetItem(id)
@@ -357,29 +356,29 @@ func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
 		return
 	}
 	task, err := h.repo.GetItem(id)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to get todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
 
 	task.toggleStatus()
 
 	if err = h.repo.UpdateItemStatus(id, *task.CompleteDate, int64(task.Status)); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to update todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to update todo item", err, w)
 		return
 	}
 	task, err = h.repo.GetItem(id)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to get todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
 
 	if err = h.templates.RenderOk(w, "task-row", task); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to execute template for the home page", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to execute template for the home page", err, w)
 		return
 	}
 }
@@ -412,8 +411,8 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 
 type ListModel struct {
 	Tasks         []Task
-	ActiveScreens models2.NavBarObject
-	models2.FormData
+	ActiveScreens models.NavBarObject
+	FormData      models.FormData
 }
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
@@ -427,7 +426,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 		return tasks[i].DueDate.Time.Before(*tasks[j].DueDate.Time)
 	})
 
-	formData := models2.NewFormData()
+	formData := models.NewFormData()
 	formData.Values["due_date"] = time.Now().Add(time.Hour * 24).Format("2006-01-02")
 	responseObject := ListModel{tasks, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-list", responseObject)
@@ -458,29 +457,29 @@ func (h *Handler) deleteItemAPI(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
 		return
 	}
 	err = h.repo.DeleteItem(id)
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to delete todo item", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to delete todo item", err, w)
 		return
 	}
 	//get count of items
 	hasData, err := h.repo.GetItemsCount()
 	if err != nil {
-		shared.HttpErrorUI(h.templates, "failed to update ui", err, w)
+		helpers.HttpErrorUI(h.templates, "failed to update ui", err, w)
 		return
 	}
 	to := NoItemRowData{
 		HideNoData: hasData > 0,
 	}
 	if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		shared.HttpErrorUI(h.templates, "Failed to render item row", err, w)
+		helpers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
 }
 
 func (h *Handler) TestError(w http.ResponseWriter, _ *http.Request) {
-	shared.HttpErrorUI(h.templates, "Testing the error page", errors.New("Testing the error page"), w)
+	helpers.HttpErrorUI(h.templates, "Testing the error page", errors.New("Testing the error page"), w)
 }
