@@ -1,3 +1,27 @@
-{{block "login" .}}
-<div>LOGIN!</div>
+<!DOCTYPE html>
+<html lang="en">
+{{block "signup-form" .}} 
+  <div id="login-form">
+    <h1>Login</h1>
+    <form hx-post="/login" hx-target="#login-form" hx-swap="outerHTML">
+      <label>
+        Email
+        <input type="text" id="username" name="username" placeholder="Username">
+      </label><br>
+      <label>
+        <input type="password" id="password" name="password" placeholder="Password">
+      </label><br>
+      <button type="submit">Lets Go!</button>
+
+    </form>
+    <button hx-get="register" hx-target="#login-form" hx-swap="outerHTML">Let me in!!!</button>
+  </div>
+{{end}}
+</html>
+
+{{block "bad-creds" .}} 
+<div id="try-again">
+  <p>Invalid login credentials</p>
+  <button hx-get="/login" hx-target="#login-form" hx-swap="outerHTML">Try again</button>
+</div>
 {{end}}

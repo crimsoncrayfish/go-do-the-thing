@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+{{block "signup-form" .}} 
+  <div id="signup-form">
+    <h1>Sign up</h1>
+    <form hx-post="/signup" hx-target="#signup-form" hx-swap="outerHTML">
+      <label>
+        <input type="email" id="email" name="email" placeholder="Email Address">
+      </label><br>
+      <label>
+        <input type="text" id="name" name="name" placeholder="Name">
+      </label><br>
+      <label>
+        <input type="text" id="last-name" name="last-name" placeholder="Last Name">
+      </label><br>
+      <label>
+        <input type="password" id="password" name="password" placeholder="Password">
+      </label><br>
+      <button type="submit">I want</button>
+    </form>
+      <button hx-get="login" hx-target="#signup-form" hx-swap="outerHTML">Login</button>
+  </div>
+{{end}}
+</html>

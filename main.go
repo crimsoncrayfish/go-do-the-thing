@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"embed"
 	"errors"
 	"fmt"
@@ -9,7 +10,10 @@ import (
 	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/middleware"
+	"log"
+	"net"
 	"net/http"
 	"os"
 )
@@ -55,14 +59,33 @@ func main() {
 	home.SetupHome(router, *renderer)
 	setupRandom(router)
 
-	stack := middleware.CreateStack(middleware.Logging, middleware.Authentication)
+	auth, err := security.NewJwtHandler(workingDir + "/keys/")
+	if err != nil {
+		panic(err)
+	}
+	stack := middleware.CreateStack(middleware.Logging, auth.Authentication)
+
+	// This is for https
+	cert, err := tls.LoadX509KeyPair("certificate.crt", "privatekey.key")
+	if err != nil {
+		panic(err)
+	}
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    ":8079",
 		Handler: stack(router),
+
+		TLSConfig: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		},
 	}
 
 	fmt.Println("Start server")
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+
+	_, tlsPort, err := net.SplitHostPort(":8079")
+
+	go redirectToHTTPS(tlsPort)
+	if err := server.ListenAndServeTLS("", ""); err != nil &&
+		!errors.Is(err, http.ErrServerClosed) {
 		fmt.Println("Something went wrong")
 		panic(err)
 	}
@@ -77,4 +100,19 @@ func setupRandom(router *http.ServeMux) {
 			writer.WriteHeader(http.StatusInternalServerError)
 		}
 	})
+}
+
+func redirectToHTTPS(tlsPort string) {
+	httpSrv := http.Server{
+		Addr: ":8081",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			host, _, _ := net.SplitHostPort(r.Host)
+			u := r.URL
+			u.Host = net.JoinHostPort(host, tlsPort)
+			u.Scheme = "https"
+			log.Println(u.String())
+			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+		}),
+	}
+	log.Println(httpSrv.ListenAndServe())
 }
