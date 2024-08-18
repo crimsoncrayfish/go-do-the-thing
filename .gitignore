@@ -3,3 +3,8 @@
 .idea/
 /tmp
 /pkg
+*.crt
+*.key
+*.exe
+/keys
+go.work.sum

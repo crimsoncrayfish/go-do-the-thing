@@ -15,15 +15,7 @@ func NewHandler(templates helpers.Templates, repo Repo) Handler {
 	return Handler{templates, repo}
 }
 
-func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
-	helpers.AcceptHeaderSwitch(w, r, h.loginUI, h.loginApi)
-}
-
-func (h Handler) loginApi(w http.ResponseWriter, _ *http.Request) {
-	helpers.HttpErrorUI(h.templates, "Handler not implemented", errors.New("handler not implemented"), w)
-}
-
-func (h Handler) loginUI(w http.ResponseWriter, _ *http.Request) {
+func (h Handler) GetLogin(w http.ResponseWriter, _ *http.Request) {
 	err := h.templates.RenderOk(w, "login", nil)
 	if err != nil {
 		helpers.HttpErrorUI(h.templates, "Failed to render form", err, w)
@@ -31,12 +23,34 @@ func (h Handler) loginUI(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
+func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
+	helpers.AcceptHeaderSwitch(w, r, h.loginUI, h.loginApi)
+}
+
+func (h Handler) loginApi(w http.ResponseWriter, _ *http.Request) {
+	helpers.HttpError("Handler not implemented", errors.New("handler not implemented"), w)
+}
+
+func (h Handler) loginUI(w http.ResponseWriter, _ *http.Request) {
+	helpers.HttpErrorUI(
+		h.templates,
+		"Handler not implemented",
+		errors.New("handler not implemented"),
+		w,
+	)
+}
+
+func (h Handler) Signup(w http.ResponseWriter, r *http.Request) {
 	helpers.AcceptHeaderSwitch(w, r, h.registerUI, h.registerApi)
 }
 
 func (h Handler) registerApi(w http.ResponseWriter, _ *http.Request) {
-	helpers.HttpErrorUI(h.templates, "Handler not implemented", errors.New("handler not implemented"), w)
+	helpers.HttpErrorUI(
+		h.templates,
+		"Handler not implemented",
+		errors.New("handler not implemented"),
+		w,
+	)
 }
 
 func (h Handler) registerUI(w http.ResponseWriter, _ *http.Request) {

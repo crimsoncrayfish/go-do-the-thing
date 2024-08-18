@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
 
@@ -20,23 +19,6 @@ type User struct {
 	IsAdmin          bool                `json:"is_admin,omitempty"`
 }
 
-func (u User) setPassword(password string) error {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	u.PasswordHash = string(bytes)
-	return nil
-}
-
-func (u User) checkPassword(password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
-	if err != nil {
-		return false
-	}
-	return true
-}
-
 func SetupUsers(
 	dbConnection database.DatabaseConnection,
 	router *http.ServeMux,
@@ -47,10 +29,12 @@ func SetupUsers(
 	if err != nil {
 		return err
 	}
-
 	handler := NewHandler(templates, usersRepo)
 
-	router.HandleFunc("/login", handler.Login)
+	router.HandleFunc("GET /login", handler.GetLogin)
+	router.HandleFunc("POST /login", handler.Login)
+	//	router.HandleFunc("POST /logout", handler)
+	router.HandleFunc("POST /signup", handler.Signup)
 
 	return nil
 }
