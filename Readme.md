@@ -30,3 +30,5 @@ Ensure ZIG is installed on the pc
 - oob swaps need to be before the main swap if there are 2 things being swopped
 - Cant get nested oob swaps to work :(
 - oob swaps with rows are [wierd](https://htmx.org/attributes/hx-swap-oob/)
+
+
