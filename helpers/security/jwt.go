@@ -1,10 +1,12 @@
 package security
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"go-do-the-thing/helpers"
 	"net/http"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,6 +14,39 @@ import (
 
 type JwtHandler struct {
 	*SecretKeyProvider
+}
+
+const AuthUserId = "security.middleware.userId"
+
+// API code to intercept all requests
+func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			helpers.HttpError("No token provided. Should probably redirect to login screen", errors.New("no token provided"), w)
+			return
+		}
+		tokenParts := strings.Split(token, " ")
+		if tokenParts[0] != "Bearer" {
+			helpers.HttpError("Malformed bearer token", errors.New("malformed bearer token"), w)
+			return
+		}
+		claims, err := s.ValidateToken(tokenParts[1])
+		if err != nil {
+			helpers.HttpError("Invalid token", err, w)
+			return
+		}
+		userId := claims["user_id"]
+		if userId == "" {
+			helpers.HttpError("Invalid token, user_id malformed", err, w)
+			return
+		}
+		ctx := context.WithValue(r.Context(), AuthUserId, userId)
+		request := r.WithContext(ctx)
+
+		next.ServeHTTP(w, request)
+	})
 }
 
 func NewJwtHandler(keysLocation string) (JwtHandler, error) {
@@ -24,58 +59,17 @@ func NewJwtHandler(keysLocation string) (JwtHandler, error) {
 	}, nil
 }
 
-// API code to intercept all requests
-func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("token")
-		if token == "" {
-			fmt.Println("No token provided. Should probably redirect to login screen")
-		}
-		isValid := s.validateToken(token)
-		if !isValid {
-			fmt.Printf("Failed authentication step with token %s", token)
-		} else {
-			fmt.Printf("Successfully authenticated with token: %s", token)
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (s *JwtHandler) newToken(claim jwt.Claims) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claim)
+func (s *JwtHandler) newToken(userId string) (string, error) {
+	expiry := time.Now().Add(time.Duration(time.Hour * 24))
+	claims := jwt.MapClaims{}
+	claims["user_id"] = userId
+	claims["expiry"] = expiry
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	return token.SignedString(s.getKey())
 }
 
-func (s *JwtHandler) validateToken(signedToken string) bool {
+func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(signedToken, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
-		}
-
-		return s.getKey().PublicKey, nil
-	})
-	if err != nil {
-		switch {
-		case errors.Is(err, jwt.ErrTokenMalformed):
-			fmt.Println("Not a token")
-		case errors.Is(err, jwt.ErrTokenSignatureInvalid):
-			fmt.Println("Invalid Signature")
-		case errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrTokenNotValidYet):
-			fmt.Println("Timing issues")
-		case token == nil:
-			fmt.Println("what... a nil token")
-		default:
-			fmt.Println("What even happened")
-		}
-		return false
-	}
-
-	return token.Valid
-}
-
-func (s *JwtHandler) validateTokenWithClaims(signedToken string, claims jwt.Claims) bool {
-	token, err := jwt.ParseWithClaims(signedToken, claims, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
 		}
@@ -100,21 +94,11 @@ func (s *JwtHandler) validateTokenWithClaims(signedToken string, claims jwt.Clai
 			// todo figure out wtf this even is
 			fmt.Println("What even happened")
 		}
-		return false
+		return nil, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
 	}
 
-	return token.Valid
-}
-
-func CreateClaim(
-	userId int,
-	expiryTime time.Time,
-) jwt.RegisteredClaims {
-	return jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(expiryTime),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ID:        strconv.Itoa(userId),
-		Issuer:    "go-do-the-thing",
-		Audience:  jwt.ClaimStrings{"this"},
-	}
+	return nil, errors.New("Token not valid")
 }

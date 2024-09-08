@@ -54,14 +54,13 @@ func readKeys(keysLocation string) ([]*rsa.PrivateKey, error) {
 }
 
 func readKey(keyLocation string) (*rsa.PrivateKey, error) {
-	privateKeyName := "key.pem"
+	privateKeyName := "private.key"
 	privateKeyFile, err := os.ReadFile(keyLocation + privateKeyName)
 	fmt.Println("Reading file at " + keyLocation + privateKeyName)
 	if err != nil {
 		fmt.Printf("Could not read private key at location %s\n", keyLocation+privateKeyName)
 		return nil, err
 	}
-	fmt.Println(len(privateKeyFile))
 	privatePem, _ := pem.Decode(privateKeyFile)
 	if privatePem == nil {
 		fmt.Printf(
@@ -77,11 +76,11 @@ func readKey(keyLocation string) (*rsa.PrivateKey, error) {
 	}
 	privateKey, ok := privateKeyAny.(*rsa.PrivateKey)
 	if !ok {
-		fmt.Printf("The private key at location '%s' is not an RSA private key\n")
+		fmt.Printf("The private key at location '%s' is not an RSA private key\n", keyLocation+privateKeyName)
 		return nil, errors.New("Incorrect key type")
 	}
 
-	publicKeyName := "cert.pem"
+	publicKeyName := "public.key"
 	publicKeyFile, err := os.ReadFile(keyLocation + publicKeyName)
 	if err != nil {
 		fmt.Printf("Could not read public key at location %s\n", keyLocation+privateKeyName)
@@ -95,12 +94,12 @@ func readKey(keyLocation string) (*rsa.PrivateKey, error) {
 		)
 		return nil, errors.New("failed to decode public key file")
 	}
-	certificate, err := x509.ParseCertificate(publicKeyPem.Bytes)
+	certificate, err := x509.ParsePKIXPublicKey(publicKeyPem.Bytes)
 	if err != nil {
 		fmt.Println("Could not parse public key. Content potentially malformed")
 		return nil, err
 	}
-	publicKey, ok := certificate.PublicKey.(*rsa.PublicKey)
+	publicKey, ok := certificate.(*rsa.PublicKey)
 	if !ok {
 		return nil, errors.New("public key was not rsa public key")
 	}

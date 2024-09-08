@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"embed"
 	"errors"
 	"fmt"
@@ -45,46 +44,36 @@ func main() {
 		fmt.Println(err.Error())
 		panic(err)
 	}
-	err = users.SetupUsers(dbConnection, router, *renderer)
-	if err != nil {
-		println("Failed to initialize users")
-		panic(err)
-	}
-
-	err = todo.SetupTodo(dbConnection, router, *renderer)
-	if err != nil {
-		println("Failed to initialize todo")
-		panic(err)
-	}
-	home.SetupHome(router, *renderer)
-	setupRandom(router)
 
 	auth, err := security.NewJwtHandler(workingDir + "/keys/")
 	if err != nil {
 		panic(err)
 	}
-	stack := middleware.CreateStack(middleware.Logging, auth.Authentication)
-
-	// This is for https
-	cert, err := tls.LoadX509KeyPair("certificate.crt", "privatekey.key")
+	middleware := middleware.CreateStack(middleware.Logging, auth.Authentication)
+	err = users.SetupUsers(dbConnection, router, *renderer, middleware)
 	if err != nil {
+		println("Failed to initialize users")
 		panic(err)
 	}
+
+	err = todo.SetupTodo(dbConnection, router, *renderer, middleware)
+	if err != nil {
+		println("Failed to initialize todo")
+		panic(err)
+	}
+	home.SetupHome(router, *renderer, middleware)
+
+	setupRandom(router)
+
+	//This is for https
 	server := http.Server{
 		Addr:    ":8079",
-		Handler: stack(router),
-
-		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		},
+		Handler: router,
 	}
 
 	fmt.Println("Start server")
 
-	_, tlsPort, err := net.SplitHostPort(":8079")
-
-	go redirectToHTTPS(tlsPort)
-	if err := server.ListenAndServeTLS("", ""); err != nil &&
+	if err := server.ListenAndServeTLS("public.key", "private.key"); err != nil &&
 		!errors.Is(err, http.ErrServerClosed) {
 		fmt.Println("Something went wrong")
 		panic(err)

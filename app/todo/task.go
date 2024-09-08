@@ -5,6 +5,7 @@ import (
 	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/middleware"
 	"net/http"
 	"time"
 )
@@ -46,6 +47,7 @@ func SetupTodo(
 	dbConnection database.DatabaseConnection,
 	router *http.ServeMux,
 	templates helpers.Templates,
+	mw_stack middleware.Middleware,
 ) error {
 	fmt.Println("Setting up todo repo")
 	todoRepo, err := InitRepo(dbConnection)
@@ -56,13 +58,13 @@ func SetupTodo(
 
 	todoHandler := New(todoRepo, templates)
 	fmt.Println("Setting up routes")
-	router.HandleFunc("GET /todo/item/{id}", todoHandler.GetItem)
-	router.HandleFunc("GET /todo/items", todoHandler.ListItems)
-	router.HandleFunc("POST /todo/item/status/{id}", todoHandler.UpdateItemStatus)
-	router.HandleFunc("POST /todo/item", todoHandler.CreateItem)
-	router.HandleFunc("POST /todo/item/{id}", todoHandler.UpdateItem)
-	router.HandleFunc("DELETE /todo/item/{id}", todoHandler.DeleteItem)
-	router.HandleFunc("GET /error", todoHandler.TestError)
+	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.GetItem)))
+	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.ListItems)))
+	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.UpdateItemStatus)))
+	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.CreateItem)))
+	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.UpdateItem)))
+	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.DeleteItem)))
+	router.Handle("GET /error", mw_stack(http.HandlerFunc(todoHandler.TestError)))
 	//	router.HandleFunc("POST /todo/restore/{id}", todoHandler.RestoreItemUI)
 	return nil
 }

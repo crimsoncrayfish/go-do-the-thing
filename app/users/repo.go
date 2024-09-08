@@ -41,6 +41,7 @@ const (
 	updateUserIsAdmin     = `UPDATE users SET [is_admin] = %d WHERE id = %d`
 	deleteUser            = `UPDATE users SET [is_deleted] = 1 WHERE id = %d`
 	restoreUsers          = `UPDATE users SET [is_deleted] = 0 WHERE id = %d`
+	logoutUser            = "UPDATE users SET [session_id] = NULL, [session_start_time] = NULL WHERE id = %d"
 )
 
 func ScanItemFromRow(row *sql.Row, user *User) error {
@@ -159,4 +160,10 @@ func (r *Repo) GetUsers() ([]User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *Repo) Logout(userId string) error {
+	query := fmt.Sprintf(logoutUser, userId)
+	_, err := r.db.Exec(query)
+	return err
 }
