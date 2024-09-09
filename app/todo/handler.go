@@ -98,11 +98,11 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	errorForm := models.NewFormData()
-	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
-	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
-	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
-	tag, errorForm := getRequiredPropertyFromRequest(r, "tag", errorForm)
-	dateRaw, errorForm := getRequiredPropertyFromRequest(r, "due_date", errorForm)
+	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "name", errorForm)
+	description, errorForm := helpers.GetOptionalPropertyFromRequest(r, "description", errorForm)
+	assignedTo, errorForm := helpers.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm)
+	tag, errorForm := helpers.GetRequiredPropertyFromRequest(r, "tag", errorForm)
+	dateRaw, errorForm := helpers.GetRequiredPropertyFromRequest(r, "due_date", errorForm)
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil || len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
@@ -198,11 +198,11 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	errorForm := models.NewFormData()
-	name, errorForm := getRequiredPropertyFromRequest(r, "name", errorForm)
-	description, errorForm := getOptionalPropertyFromRequest(r, "description", errorForm)
-	assignedTo, errorForm := getRequiredPropertyFromRequest(r, "assigned_to", errorForm)
-	tag, errorForm := getRequiredPropertyFromRequest(r, "tag", errorForm)
-	dateRaw, errorForm := getRequiredPropertyFromRequest(r, "due_date", errorForm)
+	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "name", errorForm)
+	description, errorForm := helpers.GetOptionalPropertyFromRequest(r, "description", errorForm)
+	assignedTo, errorForm := helpers.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm)
+	tag, errorForm := helpers.GetRequiredPropertyFromRequest(r, "tag", errorForm)
+	dateRaw, errorForm := helpers.GetRequiredPropertyFromRequest(r, "due_date", errorForm)
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil || len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
@@ -248,20 +248,6 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		helpers.HttpErrorUI(h.templates, "Failed to render form", err, w)
 		return
 	}
-}
-
-func getRequiredPropertyFromRequest(r *http.Request, propName string, formData models.FormData) (string, models.FormData) {
-	value := r.FormValue(propName)
-	if len(value) == 0 {
-		formData.Errors[propName] = propName + " is required"
-		return value, formData
-	}
-	return value, formData
-}
-
-func getOptionalPropertyFromRequest(r *http.Request, propName string, formData models.FormData) (string, models.FormData) {
-	value := r.FormValue(propName)
-	return value, formData
 }
 
 func (h *Handler) GetItem(w http.ResponseWriter, r *http.Request) {
