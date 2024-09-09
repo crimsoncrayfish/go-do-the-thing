@@ -42,6 +42,14 @@ func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
 			helpers.HttpError("Invalid token, user_id malformed", err, w)
 			return
 		}
+		exp := claims["expiry"]
+		if exp == "" {
+			helpers.HttpError("Invalid token, expiry malformed", err, w)
+			return
+		}
+
+		// TODO: if the expiry time is passed then redirect to logout?
+
 		ctx := context.WithValue(r.Context(), AuthUserId, userId)
 		request := r.WithContext(ctx)
 
@@ -59,7 +67,7 @@ func NewJwtHandler(keysLocation string) (JwtHandler, error) {
 	}, nil
 }
 
-func (s *JwtHandler) newToken(userId string) (string, error) {
+func (s *JwtHandler) NewToken(userId string) (string, error) {
 	expiry := time.Now().Add(time.Duration(time.Hour * 24))
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userId

@@ -22,20 +22,20 @@ func InitRepo(connection database.DatabaseConnection) (Repo, error) {
 const (
 	createTable = `CREATE TABLE IF NOT EXISTS users (
 	[id] INTEGER PRIMARY KEY,
-   	[name] TEXT,
-	[surname] TEXT,
-    [email] TEXT,
+   	[name] TEXT UNIQUE,
+   	[nicname] TEXT,
     [session_id] TEXT,
 	[session_start_time] TEXT,
     [password_hash] TEXT,
 	[is_deleted] INTEGER DEFAULT 0,
 	[is_admin] INTEGER DEFAULT 0
 );`
-	getAllUsersNotDeleted = "SELECT [id], [name], [surname], [email], [is_admin] FROM users WHERE is_deleted=0"
+	getAllUsersNotDeleted = "SELECT [id], [name], [nicname], [is_admin] FROM users WHERE is_deleted=0"
 	countUsers            = "SELECT COUNT(*) FROM users WHERE is_deleted=0"
-	getUser               = "SELECT [id], [name], [surname], [email], [session_id], [session_start_time], [is_admin], [is_deleted] FROM users WHERE id = %d"
-	insertUser            = `INSERT INTO users ([name], [surname], [email], [password_hash]) VALUES ("%s", "%s", "%s", "%s")`
-	updateUserDetails     = `UPDATE users SET [name] = "%s", [surname] = "%s", [email] = "%s" WHERE id = %d`
+	getUser               = "SELECT [id], [name], [nicname], [session_id], [session_start_time], [is_admin], [is_deleted] FROM users WHERE id = %d"
+	getUserByEmail        = "SELECT [id], [name], [nicname], [session_id], [session_start_time], [is_admin], [is_deleted] FROM users WHERE name = %s"
+	insertUser            = `INSERT INTO users ([name], [nicname], [password_hash]) VALUES ("%s", "%s", "%s", "%s")`
+	updateUserDetails     = `UPDATE users SET [nicname] = "%s" WHERE id = %d`
 	updateUserSession     = `UPDATE users SET [session_id] = "%s", [sessio_start_time] = "%s" WHERE id = %d`
 	updateUserPassword    = `UPDATE users SET [password_hash] = "%s" WHERE id = %d`
 	updateUserIsAdmin     = `UPDATE users SET [is_admin] = %d WHERE id = %d`
@@ -48,8 +48,7 @@ func ScanItemFromRow(row *sql.Row, user *User) error {
 	return row.Scan(
 		&user.Id,
 		&user.Name,
-		&user.Surname,
-		&user.Email,
+		&user.Nicname,
 		&user.PasswordHash,
 		&user.SessionId,
 		&user.SessionStartTime,
@@ -61,8 +60,7 @@ func ScanItemFromRows(rows *sql.Rows, user *User) error {
 	return rows.Scan(
 		&user.Id,
 		&user.Name,
-		&user.Surname,
-		&user.Email,
+		&user.Nicname,
 		&user.PasswordHash,
 		&user.SessionId,
 		&user.SessionStartTime,
@@ -71,7 +69,7 @@ func ScanItemFromRows(rows *sql.Rows, user *User) error {
 }
 
 func (r *Repo) Create(user User) (int64, error) {
-	query := fmt.Sprintf(insertUser, user.Name, user.Surname, user.Email, user.PasswordHash)
+	query := fmt.Sprintf(insertUser, user.Name, user.Nicname, user.PasswordHash)
 	result, err := r.db.Exec(query)
 	if err != nil {
 		return 0, err
@@ -84,7 +82,7 @@ func (r *Repo) Create(user User) (int64, error) {
 }
 
 func (r *Repo) UpdateDetails(user User) error {
-	query := fmt.Sprintf(updateUserDetails, user.Name, user.Surname, user.Email, user.Id)
+	query := fmt.Sprintf(updateUserDetails, user.Nicname, user.Id)
 	_, err := r.db.Exec(query)
 	if err != nil {
 		return err
@@ -126,6 +124,17 @@ func (r *Repo) Delete(user User) error {
 		return err
 	}
 	return nil
+}
+
+func (r *Repo) GetUserByName(name string) (User, error) {
+	get := fmt.Sprintf(getUserByEmail, name)
+	row := r.db.QueryRow(get)
+	temp := User{}
+	err := ScanItemFromRow(row, &temp)
+	if err != nil {
+		return User{}, err
+	}
+	return temp, nil
 }
 
 func (r *Repo) GetUserById(id int) (User, error) {

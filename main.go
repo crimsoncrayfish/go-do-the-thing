@@ -50,7 +50,7 @@ func main() {
 		panic(err)
 	}
 	middleware := middleware.CreateStack(middleware.Logging, auth.Authentication)
-	err = users.SetupUsers(dbConnection, router, *renderer, middleware)
+	err = users.SetupUsers(dbConnection, router, *renderer, middleware, auth)
 	if err != nil {
 		println("Failed to initialize users")
 		panic(err)
