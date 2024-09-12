@@ -3,7 +3,6 @@ package helpers
 import (
 	"errors"
 	"go-do-the-thing/app/shared/models"
-	"log"
 	"net/http"
 )
 
@@ -38,6 +37,5 @@ func HttpErrorUI(templates Templates, message string, err error, w http.Response
 	err = templates.RenderWithCode(w, http.StatusInternalServerError, "error", errorPage)
 }
 func HttpError(message string, err error, w http.ResponseWriter) {
-	log.Println(message, err)
 	http.Error(w, message, http.StatusInternalServerError)
 }

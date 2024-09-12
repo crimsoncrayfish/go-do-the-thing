@@ -1,10 +1,10 @@
 package todo
 
 import (
-	"fmt"
 	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
 	"net/http"
 	"time"
@@ -49,15 +49,16 @@ func SetupTodo(
 	templates helpers.Templates,
 	mw_stack middleware.Middleware,
 ) error {
-	fmt.Println("Setting up todo repo")
+	logger := slog.NewLogger("Tasks")
+
+	logger.Info("Setting up todo repo")
 	todoRepo, err := InitRepo(dbConnection)
 	if err != nil {
-		fmt.Println("failed to initialize todo repo")
+		logger.Error(err, "failed to initialize todo repo")
 		return err
 	}
 
-	todoHandler := New(todoRepo, templates)
-	fmt.Println("Setting up routes")
+	todoHandler := New(todoRepo, templates, logger)
 	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.GetItem)))
 	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.ListItems)))
 	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.UpdateItemStatus)))

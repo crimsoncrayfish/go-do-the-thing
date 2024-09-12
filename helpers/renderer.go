@@ -1,8 +1,8 @@
 package helpers
 
 import (
+	"go-do-the-thing/helpers/slog"
 	"html/template"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -23,16 +23,17 @@ func (t *Templates) RenderWithCode(w http.ResponseWriter, code int, name string,
 }
 
 func NewRenderer(workingDir string) *Templates {
-	return &Templates{template.Must(parseGlobRecurse(workingDir))}
+	logger := slog.NewLogger("Renderer")
+	return &Templates{template.Must(parseGlobRecurse(workingDir, logger))}
 }
 
-func parseGlobRecurse(directory string) (*template.Template, error) {
+func parseGlobRecurse(directory string, logger *slog.Logger) (*template.Template, error) {
 	templates := template.New("")
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if strings.Contains(path, ".gohtml") {
 			_, err = templates.ParseFiles(path)
 			if err != nil {
-				log.Println(err)
+				logger.Error(err, "failed to collect template files")
 			}
 		}
 		return err

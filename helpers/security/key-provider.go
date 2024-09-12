@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
+	"go-do-the-thing/helpers/slog"
 	"os"
 
 	"github.com/google/uuid"
@@ -14,13 +14,16 @@ import (
 type SecretKeyProvider struct {
 	keyList map[string]*rsa.PrivateKey
 	kidList []string
+	logger  *slog.Logger
 }
 
 func newKeyProvider(keysLocation string) (*SecretKeyProvider, error) {
+	logger := slog.NewLogger("KeyProvider")
+
 	keys := make(map[string]*rsa.PrivateKey)
 	kids := make([]string, 10)
 
-	keysList, err := readKeys(keysLocation)
+	keysList, err := readKeys(keysLocation, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +36,7 @@ func newKeyProvider(keysLocation string) (*SecretKeyProvider, error) {
 	return &SecretKeyProvider{
 		keyList: keys,
 		kidList: kids,
+		logger:  logger,
 	}, nil
 }
 
@@ -41,10 +45,10 @@ func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
 	return skp.keyList[skp.kidList[0]]
 }
 
-func readKeys(keysLocation string) ([]*rsa.PrivateKey, error) {
+func readKeys(keysLocation string, logger *slog.Logger) ([]*rsa.PrivateKey, error) {
 	keys := make([]*rsa.PrivateKey, 10)
 	// TODO add code to read from mulitple locations for multiple rotating keys
-	key, err := readKey(keysLocation)
+	key, err := readKey(keysLocation, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -53,55 +57,64 @@ func readKeys(keysLocation string) ([]*rsa.PrivateKey, error) {
 	return keys, nil
 }
 
-func readKey(keyLocation string) (*rsa.PrivateKey, error) {
+func readKey(keyLocation string, logger *slog.Logger) (*rsa.PrivateKey, error) {
 	privateKeyName := "private.key"
 	privateKeyFile, err := os.ReadFile(keyLocation + privateKeyName)
-	fmt.Println("Reading file at " + keyLocation + privateKeyName)
+	logger.Info("Reading file at " + keyLocation + privateKeyName)
 	if err != nil {
-		fmt.Printf("Could not read private key at location %s\n", keyLocation+privateKeyName)
+		logger.Error(err, "Could not read private key at location %s", keyLocation+privateKeyName)
 		return nil, err
 	}
 	privatePem, _ := pem.Decode(privateKeyFile)
 	if privatePem == nil {
-		fmt.Printf(
-			"Failed to decode private key file content for file at %s\n",
+		err := errors.New("failed to decode private key file")
+
+		logger.Error(err,
+			"Failed to decode private key file content for file at %s",
 			keyLocation+privateKeyName,
 		)
-		return nil, errors.New("failed to decode private key file")
+		return nil, err
 	}
 	privateKeyAny, err := x509.ParsePKCS8PrivateKey(privatePem.Bytes)
 	if err != nil {
-		fmt.Println("Could not parse private key file. Content potentially malformed")
+		logger.Error(err, "Could not parse private key file. Content potentially malformed")
 		return nil, err
 	}
 	privateKey, ok := privateKeyAny.(*rsa.PrivateKey)
 	if !ok {
-		fmt.Printf("The private key at location '%s' is not an RSA private key\n", keyLocation+privateKeyName)
-		return nil, errors.New("Incorrect key type")
+		err := errors.New("Incorrect key type")
+
+		logger.Error(err, "The private key at location '%s' is not an RSA private key", keyLocation+privateKeyName)
+		return nil, err
 	}
 
 	publicKeyName := "public.key"
 	publicKeyFile, err := os.ReadFile(keyLocation + publicKeyName)
 	if err != nil {
-		fmt.Printf("Could not read public key at location %s\n", keyLocation+privateKeyName)
+		logger.Error(err, "Could not read public key at location %s", keyLocation+privateKeyName)
 		return nil, err
 	}
 	publicKeyPem, _ := pem.Decode(publicKeyFile)
 	if publicKeyPem == nil {
-		fmt.Printf(
-			"Failed to decode public key file content for file at %s\n",
+		err := errors.New("failed to decode public key file")
+
+		logger.Error(err,
+			"Failed to decode public key file content for file at %s",
 			keyLocation+publicKeyName,
 		)
-		return nil, errors.New("failed to decode public key file")
+		return nil, err
 	}
 	certificate, err := x509.ParsePKIXPublicKey(publicKeyPem.Bytes)
 	if err != nil {
-		fmt.Println("Could not parse public key. Content potentially malformed")
+		logger.Error(err, "Could not parse public key. Content potentially malformed")
 		return nil, err
 	}
 	publicKey, ok := certificate.(*rsa.PublicKey)
 	if !ok {
-		return nil, errors.New("public key was not rsa public key")
+		err := errors.New("public key was not rsa public key")
+
+		logger.Error(err, "Public key was not an RSA public key")
+		return nil, err
 	}
 
 	privateKey.PublicKey = *publicKey

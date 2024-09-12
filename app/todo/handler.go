@@ -3,10 +3,10 @@ package todo
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go-do-the-thing/app/shared/models"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/slog"
 	"net/http"
 	"sort"
 	"strconv"
@@ -17,10 +17,11 @@ type Handler struct {
 	repo          Repo
 	templates     helpers.Templates
 	activeScreens models.NavBarObject
+	logger        slog.Logger
 }
 
-func New(r Repo, templates helpers.Templates) *Handler {
-	return &Handler{repo: r, templates: templates, activeScreens: models.NavBarObject{IsTodoList: true}}
+func New(r Repo, templates helpers.Templates, logger *slog.Logger) *Handler {
+	return &Handler{repo: r, templates: templates, activeScreens: models.NavBarObject{IsTodoList: true}, logger: *logger}
 }
 
 type idResponse struct {
@@ -68,13 +69,13 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&item)
 	if err != nil {
-		println("failed to decode todo item")
+		h.logger.Error(err, "failed to decode todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	id, err := h.repo.InsertItem(item)
 	if err != nil {
-		println("failed to insert item")
+		h.logger.Error(err, "failed to insert item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -83,14 +84,14 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonBytes, err := json.Marshal(idResponse)
 	if err != nil {
-		println("failed to marshal id response")
+		h.logger.Error(err, "failed to marshal id response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonBytes)
 	if err != nil {
-		println("failed to write response")
+		h.logger.Error(err, "failed to write response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -262,7 +263,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	item, err := h.repo.GetItem(id)
 	if err != nil {
-		println("failed to get todo item")
+		h.logger.Error(err, "failed to get todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -270,14 +271,14 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 	items[0] = item
 	jsonBytes, err := json.Marshal(items)
 	if err != nil {
-		println("failed to marshal todo item")
+		h.logger.Error(err, "failed to marshal todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonBytes)
 	if err != nil {
-		println("failed to write response")
+		h.logger.Error(err, "failed to write response")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -297,7 +298,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err := h.repo.GetItem(id)
 	if err != nil {
-		fmt.Println("failed to get todo tasks")
+		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -306,7 +307,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	model := ItemPageModel{task, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-item", model)
 	if err != nil {
-		fmt.Println("Failed to execute template for the item page")
+		h.logger.Error(err, "Failed to execute template for the item page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -376,20 +377,20 @@ func (h *Handler) ListItems(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 	items, err := h.repo.GetItems()
 	if err != nil {
-		println("failed to get todo items")
+		h.logger.Error(err, "failed to get todo items")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	jsonBytes, err := json.Marshal(items)
 	if err != nil {
-		println("failed to marshal todo items")
+		h.logger.Error(err, "failed to marshal todo items")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonBytes)
 	if err != nil {
-		println("failed to write response")
+		h.logger.Error(err, "failed to write response")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -404,7 +405,7 @@ type ListModel struct {
 func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 	tasks, err := h.repo.GetItems()
 	if err != nil {
-		fmt.Println("failed to get todo tasks")
+		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -417,7 +418,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 	responseObject := ListModel{tasks, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-list", responseObject)
 	if err != nil {
-		fmt.Println("Failed to execute template for the item list page")
+		h.logger.Error(err, "Failed to execute template for the item list page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

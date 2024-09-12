@@ -1,10 +1,10 @@
 package users
 
 import (
-	"fmt"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
+	"go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
 	"net/http"
 )
@@ -27,18 +27,20 @@ func SetupUsers(
 	router *http.ServeMux,
 	templates helpers.Templates,
 	mw middleware.Middleware,
+	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
 ) error {
-	fmt.Println("Setting up users")
+	logger := slog.NewLogger("Users")
+	logger.Info("Setting up users")
 	usersRepo, err := InitRepo(dbConnection)
 	if err != nil {
 		return err
 	}
-	handler := New(templates, usersRepo, security)
+	handler := New(templates, usersRepo, security, logger)
 
-	router.HandleFunc("GET /login", handler.GetLoginUI)
-	router.HandleFunc("POST /login", handler.LoginUI)
-	router.HandleFunc("POST /signup", handler.Signup)
+	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
+	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.LoginUI)))
+	router.Handle("POST /signup", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
 
 	return nil
