@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/app/shared/models"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
+	"go-do-the-thing/helpers/slog"
 	"net/http"
 )
 
@@ -15,9 +16,10 @@ type Handler struct {
 	security  security.JwtHandler
 	model     home.Screens
 	repo      Repo
+	logger    *slog.Logger
 }
 
-func New(templates helpers.Templates, repo Repo, security security.JwtHandler) *Handler {
+func New(templates helpers.Templates, repo Repo, security security.JwtHandler, logger *slog.Logger) *Handler {
 	return &Handler{
 		model: home.Screens{
 			models.NavBarObject{
@@ -27,6 +29,7 @@ func New(templates helpers.Templates, repo Repo, security security.JwtHandler) *
 		templates: templates,
 		repo:      repo,
 		security:  security,
+		logger:    logger,
 	}
 }
 
@@ -41,7 +44,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		// TODO: keep track of IPs that have invalid logins and ban them after a set count
-		fmt.Println("Not a valid user")
+		h.logger.Info("Not a valid user")
 		helpers.HttpErrorUI(h.templates, "Invalid login details", errors.New("invalid login credentials"), w)
 		return
 	}
@@ -50,14 +53,14 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		// TODO: keep track of IPs that have invalid logins and ban them after a set count
 
-		fmt.Println("Invalid password")
+		h.logger.Info("Invalid password")
 		helpers.HttpErrorUI(h.templates, "Invalid login details", errors.New("invalid login credentials"), w)
 		return
 	}
 	tokenString, err := h.security.NewToken(user.Name)
 	if err != nil {
 		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
-		fmt.Println("failed to generate token")
+		h.logger.Info("failed to generate token")
 		helpers.HttpErrorUI(h.templates, "Failed to generate new token", errors.New("failed to generate token"), w)
 		return
 	}
@@ -67,7 +70,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) GetLoginUI(w http.ResponseWriter, _ *http.Request) {
 	if err := h.templates.RenderOk(w, "login", nil); err != nil {
-		fmt.Println("Failed to execute template for the home page")
+		h.logger.Info("Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

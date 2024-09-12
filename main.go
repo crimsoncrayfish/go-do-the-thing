@@ -3,16 +3,14 @@ package main
 import (
 	"embed"
 	"errors"
-	"fmt"
 	"go-do-the-thing/app/home"
 	"go-do-the-thing/app/todo"
 	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
+	slog "go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
-	"log"
-	"net"
 	"net/http"
 	"os"
 )
@@ -28,42 +26,47 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	logger := slog.NewLogger("Main")
 	router := http.NewServeMux()
 	workingDir, err := os.Getwd()
 	if err != nil {
-		println(err.Error())
+		logger.Error(err, "could not get working dir")
 		panic(err)
 	}
-	fmt.Printf("Running project in dir %s\n", workingDir)
+	logger.Info("Running project in dir %s", workingDir)
 	faviconLocation = workingDir + "/static/img/todo.ico"
 	renderer := helpers.NewRenderer(workingDir)
-	fmt.Println("Setting up TODO items")
+	logger.Info("Setting up TODO items")
 
 	dbConnection, err := database.Init("todo")
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err, "could not initialize the db")
 		panic(err)
 	}
 
 	auth, err := security.NewJwtHandler(workingDir + "/keys/")
 	if err != nil {
+		logger.Error(err, "could not setup jwt handler")
 		panic(err)
 	}
-	middleware := middleware.CreateStack(middleware.Logging, auth.Authentication)
-	err = users.SetupUsers(dbConnection, router, *renderer, middleware, auth)
+	loggingMW := middleware.NewLoggingMiddleWare()
+	rateLimeter := middleware.NewRateLimiter()
+	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, auth.Authentication)
+	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
+	err = users.SetupUsers(dbConnection, router, *renderer, middleware_full, middleware_no_auth, auth)
 	if err != nil {
-		println("Failed to initialize users")
+		logger.Error(err, "Failed to initialize users")
 		panic(err)
 	}
 
-	err = todo.SetupTodo(dbConnection, router, *renderer, middleware)
+	err = todo.SetupTodo(dbConnection, router, *renderer, middleware_full)
 	if err != nil {
-		println("Failed to initialize todo")
+		logger.Error(err, "Failed to initialize todo")
 		panic(err)
 	}
-	home.SetupHome(router, *renderer, middleware)
+	home.SetupHome(router, *renderer, middleware_full)
 
-	setupRandom(router)
+	setupStaticContent(router)
 
 	//This is for https
 	server := http.Server{
@@ -71,37 +74,16 @@ func main() {
 		Handler: router,
 	}
 
-	fmt.Println("Start server")
+	logger.Info("Start server")
 
 	if err := server.ListenAndServeTLS("public.key", "private.key"); err != nil &&
 		!errors.Is(err, http.ErrServerClosed) {
-		fmt.Println("Something went wrong")
+		logger.Info("Something went wrong")
 		panic(err)
 	}
 }
 
-func setupRandom(router *http.ServeMux) {
+func setupStaticContent(router *http.ServeMux) {
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
-	router.HandleFunc("/hello", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := fmt.Fprintf(writer, "Hello World")
-		if err != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-	})
-}
-
-func redirectToHTTPS(tlsPort string) {
-	httpSrv := http.Server{
-		Addr: ":8081",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			host, _, _ := net.SplitHostPort(r.Host)
-			u := r.URL
-			u.Host = net.JoinHostPort(host, tlsPort)
-			u.Scheme = "https"
-			log.Println(u.String())
-			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
-		}),
-	}
-	log.Println(httpSrv.ListenAndServe())
 }

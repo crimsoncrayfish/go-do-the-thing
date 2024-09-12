@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -14,6 +15,18 @@ import (
 
 type JwtHandler struct {
 	*SecretKeyProvider
+	logger *slog.Logger
+}
+
+func NewJwtHandler(keysLocation string) (JwtHandler, error) {
+	keyProvider, err := newKeyProvider(keysLocation)
+	if err != nil {
+		return JwtHandler{}, err
+	}
+	return JwtHandler{
+		SecretKeyProvider: keyProvider,
+		logger:            slog.NewLogger("JWT Handler"),
+	}, nil
 }
 
 const AuthUserId = "security.middleware.userId"
@@ -57,16 +70,6 @@ func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
 	})
 }
 
-func NewJwtHandler(keysLocation string) (JwtHandler, error) {
-	keyProvider, err := newKeyProvider(keysLocation)
-	if err != nil {
-		return JwtHandler{}, err
-	}
-	return JwtHandler{
-		SecretKeyProvider: keyProvider,
-	}, nil
-}
-
 func (s *JwtHandler) NewToken(userId string) (string, error) {
 	expiry := time.Now().Add(time.Duration(time.Hour * 24))
 	claims := jwt.MapClaims{}
@@ -89,18 +92,18 @@ func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
 
 		case errors.Is(err, jwt.ErrTokenMalformed):
 			// todo figure out wtf this even is
-			fmt.Println("Not a token")
+			s.logger.Error(err, "Not a token")
 		case errors.Is(err, jwt.ErrTokenSignatureInvalid):
 			// todo figure out wtf this even is
-			fmt.Println("Invalid Signature")
+			s.logger.Error(err, "Invalid Signature")
 		case errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrTokenNotValidYet):
 			// todo figure out wtf this even is
-			fmt.Println("Timing issues")
+			s.logger.Error(err, "Timing issues")
 		case token == nil:
-			fmt.Println("what even happened. Nil token")
+			s.logger.Error(err, "what even happened. Nil token")
 		default:
 			// todo figure out wtf this even is
-			fmt.Println("What even happened")
+			s.logger.Error(err, "What even happened")
 		}
 		return nil, err
 	}
