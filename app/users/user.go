@@ -11,8 +11,8 @@ import (
 
 type User struct {
 	Id               int                 `json:"id,omitempty"`
-	Name             string              `json:"name,omitempty"`
-	Nicname          string              `json:"nicname,omitmepty"`
+	Email            string              `json:"email,omitempty"`
+	FullName         string              `json:"full_name,omitmepty"`
 	SessionId        string              `json:"session_id,omitempty"`
 	SessionStartTime database.SqLiteTime `json:"session_start_time"`
 	SessionValidTill database.SqLiteTime `json:"session_valid_till"`
@@ -20,6 +20,7 @@ type User struct {
 	PasswordHash     string              `json:"password_hash,omitempty"`
 	IsDeleted        bool                `json:"is_deleted,omitempty"`
 	IsAdmin          bool                `json:"is_admin,omitempty"`
+	CreateDate       database.SqLiteTime `json:"create_date"`
 }
 
 func SetupUsers(
@@ -32,16 +33,19 @@ func SetupUsers(
 ) error {
 	logger := slog.NewLogger("Users")
 	logger.Info("Setting up users")
-	usersRepo, err := InitRepo(dbConnection)
+	usersRepo, err := InitRepo(dbConnection, logger)
 	if err != nil {
+		logger.Error(err, "Failed to initialize repo")
 		return err
 	}
 	handler := New(templates, usersRepo, security, logger)
 
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
+	router.Handle("GET /register", mw_no_auth(http.HandlerFunc(handler.GetRegisterUI)))
 	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.LoginUI)))
 	router.Handle("POST /signup", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
 
+	router.HandleFunc("GET /users", handler.GetAll)
 	return nil
 }

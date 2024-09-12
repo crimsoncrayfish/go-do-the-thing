@@ -1,7 +1,6 @@
 package todo
 
 import (
-	"go-do-the-thing/app/users"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/slog"
@@ -11,18 +10,18 @@ import (
 )
 
 type Task struct {
-	Id             int64                `json:"id,omitempty"`
-	Name           string               `json:"name"`
-	Description    string               `json:"description,omitempty"`
-	Status         ItemStatus           `json:"status"`
-	CompleteDate   *database.SqLiteTime `json:"complete_date"`
-	AssignedTo     string               `json:"assigned_to"`
-	DueDate        *database.SqLiteTime `json:"due_date"`
-	CreatedBy      string               `json:"created_by"`
-	CreateDate     *database.SqLiteTime `json:"create_date"`
-	IsDeleted      bool                 `json:"is_deleted"`
-	Tag            string               `json:"tag,omitempty"`
-	AssignedToUser users.User           `json:"assigned_to_user,omitempty"`
+	Id           int64                `json:"id,omitempty"`
+	Name         string               `json:"name"`
+	Description  string               `json:"description,omitempty"`
+	Status       ItemStatus           `json:"status"`
+	CompleteDate *database.SqLiteTime `json:"complete_date"`
+	AssignedTo   string               `json:"assigned_to"`
+	DueDate      *database.SqLiteTime `json:"due_date"`
+	CreatedBy    string               `json:"created_by"`
+	CreateDate   *database.SqLiteTime `json:"create_date"`
+	IsDeleted    bool                 `json:"is_deleted"`
+	Tag          string               `json:"tag,omitempty"`
+	AssignedUser int64                `json:"assigned_to_user,omitempty"`
 }
 
 type ItemStatus int
