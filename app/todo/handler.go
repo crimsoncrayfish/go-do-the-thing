@@ -99,11 +99,11 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	errorForm := models.NewFormData()
-	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "name", errorForm)
-	description, errorForm := helpers.GetOptionalPropertyFromRequest(r, "description", errorForm)
-	assignedTo, errorForm := helpers.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm)
-	tag, errorForm := helpers.GetRequiredPropertyFromRequest(r, "tag", errorForm)
-	dateRaw, errorForm := helpers.GetRequiredPropertyFromRequest(r, "due_date", errorForm)
+	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "name", errorForm, true)
+	description, errorForm := helpers.GetOptionalPropertyFromRequest(r, "description", errorForm, true)
+	assignedTo, errorForm := helpers.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm, true)
+	tag, errorForm := helpers.GetRequiredPropertyFromRequest(r, "tag", errorForm, true)
+	dateRaw, errorForm := helpers.GetRequiredPropertyFromRequest(r, "due_date", errorForm, true)
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil || len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
@@ -199,11 +199,11 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	errorForm := models.NewFormData()
-	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "name", errorForm)
-	description, errorForm := helpers.GetOptionalPropertyFromRequest(r, "description", errorForm)
-	assignedTo, errorForm := helpers.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm)
-	tag, errorForm := helpers.GetRequiredPropertyFromRequest(r, "tag", errorForm)
-	dateRaw, errorForm := helpers.GetRequiredPropertyFromRequest(r, "due_date", errorForm)
+	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "name", errorForm, true)
+	description, errorForm := helpers.GetOptionalPropertyFromRequest(r, "description", errorForm, true)
+	assignedTo, errorForm := helpers.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm, true)
+	tag, errorForm := helpers.GetRequiredPropertyFromRequest(r, "tag", errorForm, true)
+	dateRaw, errorForm := helpers.GetRequiredPropertyFromRequest(r, "due_date", errorForm, true)
 	date, err := time.Parse("2006-01-02", dateRaw)
 	if err != nil || len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {

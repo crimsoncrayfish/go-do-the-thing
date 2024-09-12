@@ -1,6 +1,7 @@
 package slog
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -19,7 +20,7 @@ const errLogFormat = "%s - %s - %s - '%s' - '%s'\n"
 
 func (l *Logger) Error(err error, msg string, a ...any) {
 	message := fmt.Sprintf(msg, a...)
-	fmt.Printf(errLogFormat, l.Name, "ERROR", time.Now().Format("2006-01-02 15:04:05"), message, err)
+	fmt.Printf(errLogFormat, l.Name, "ERROR", time.Now().Format("2006-01-02 15:04:05"), message, err.Error())
 }
 
 // Type - date - message
@@ -31,11 +32,21 @@ func (l *Logger) Info(msg string, a ...any) {
 }
 
 // Type - date - message
-const debugLogFormat = "%s - %s - %s - %s\n"
+const debugLogFormat = "%s - %s - %s \n%s\n"
 
 func (l *Logger) Debug(msg string, a ...any) {
 	message := fmt.Sprintf(msg, a...)
 	fmt.Printf(debugLogFormat, l.Name, "DEBUG", time.Now().Format("2006-01-02 15:04:05"), message)
+}
+
+func (l *Logger) DebugStruct(msg string, a any) {
+	stringStruct, err := json.MarshalIndent(a, "", "\t")
+	if err != nil {
+		l.Debug(msg)
+		return
+	}
+
+	fmt.Printf(debugLogFormat, l.Name, "DEBUG", time.Now().Format("2006-01-02 15:04:05"), string(stringStruct))
 }
 
 // Type - date - code - message - errorMsg
