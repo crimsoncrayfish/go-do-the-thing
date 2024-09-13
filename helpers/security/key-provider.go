@@ -41,13 +41,13 @@ func newKeyProvider(keysLocation string) (*SecretKeyProvider, error) {
 }
 
 func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
-	// todo improve this so it doesnt just use the first kid
+	// TODO: improve this so it doesnt just use the first kid
 	return skp.keyList[skp.kidList[0]]
 }
 
 func readKeys(keysLocation string, logger *slog.Logger) ([]*rsa.PrivateKey, error) {
 	keys := make([]*rsa.PrivateKey, 10)
-	// TODO add code to read from mulitple locations for multiple rotating keys
+	// TODO: add code to read from mulitple locations for multiple rotating keys
 	key, err := readKey(keysLocation, logger)
 	if err != nil {
 		return nil, err

@@ -11,9 +11,9 @@ type SqLiteTime struct {
 	*time.Time
 }
 
-func SqLiteNow() SqLiteTime {
+func SqLiteNow() *SqLiteTime {
 	now := time.Now()
-	return SqLiteTime{&now}
+	return &SqLiteTime{&now}
 }
 func (t *SqLiteTime) Scan(v interface{}) error {
 	if v.(string) == "" {
