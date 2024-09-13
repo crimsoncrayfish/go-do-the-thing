@@ -3,14 +3,17 @@ package users
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go-do-the-thing/app/home"
 	"go-do-the-thing/app/shared/models"
+	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/helpers/slog"
 	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -59,7 +62,7 @@ func (h Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	errorForm := models.NewFormData()
-	name, errorForm := helpers.GetRequiredPropertyFromRequest(r, "email", errorForm, true)
+	email, errorForm := helpers.GetRequiredPropertyFromRequest(r, "email", errorForm, true)
 	password, errorForm := helpers.GetRequiredPropertyFromRequest(r, "password", errorForm, false)
 	if len(errorForm.Errors) > 0 {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "login-form-content", errorForm); err != nil {
@@ -68,36 +71,61 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.repo.GetUserByEmail(name)
+	user, err := h.repo.GetUserByEmail(email)
 
 	if err != nil {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		// TODO: keep track of IPs that have invalid logins and ban them after a set count
-
-		h.invalidLogin(w, errorForm, "Not a valid user: %s", name)
+		// TODO: check err type
+		h.serverError(err, w, errorForm, "Failed to read user from DB with email %s", email)
 		return
 	}
-	if !security.CheckPassword(password, user.PasswordHash) {
+
+	passwordHash, err := h.repo.GetUserPassword(user.Id)
+	if err != nil {
+		h.serverError(err, w, errorForm, "Failed to read password for user %d", user.Id)
+		return
+	}
+
+	if !security.CheckPassword(password, passwordHash) {
 		// NOTE: Not a valid password but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		// TODO: keep track of IPs that have invalid logins and ban them after a set count
 		h.invalidLogin(w, errorForm, "Invalid password")
 		return
 	}
-	tokenString, err := h.security.NewToken(user.Email)
-	if err != nil {
-		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
-		h.invalidLogin(w, errorForm, "failed to generate token")
+	user.SessionId = uuid.New().String()
+
+	user.SessionStartTime = database.SqLiteNow()
+	if err := h.repo.UpdateSession(user); err != nil {
+		h.serverError(err, w, errorForm, "Failed to set session id for user %d", user.Id)
 		return
 	}
-	fmt.Fprint(w, tokenString)
+	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Time.Add(time.Duration(time.Hour*4)))
+	if err != nil {
+		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
+		h.serverError(err, w, errorForm, "failed to generate token")
+		return
+	}
+	// fmt.Fprint(w, tokenString)
+	// TODO: add session id to jwt
+	cookie := http.Cookie{Name: "token", Value: tokenString}
+	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (h Handler) serverError(err error, w http.ResponseWriter, formData models.FormData, message string, params ...any) {
+	h.logger.Error(err, message, params...)
+	formData.Errors["Failed Login"] = "Something went wrong on the server. Please try again."
+	if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "login-form-content", formData); err != nil {
+		helpers.HttpErrorUI(h.templates, "Invalid login details", errors.New("invalid login credentials"), w)
+	}
 }
 
 func (h Handler) invalidLogin(w http.ResponseWriter, formData models.FormData, message string, params ...any) {
 	h.logger.Info(message, params...)
-	formData.Errors["Failed Login"] = "Login credentials are invalid"
+	formData.Errors["Failed Login"] = "Login credentials are invalid."
 	if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "login-form-content", formData); err != nil {
 		helpers.HttpErrorUI(h.templates, "Invalid login details", errors.New("invalid login credentials"), w)
 	}

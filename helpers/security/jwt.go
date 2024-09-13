@@ -2,12 +2,12 @@ package security
 
 import (
 	"context"
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/slog"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -34,34 +34,39 @@ const AuthUserId = "security.middleware.userId"
 // API code to intercept all requests
 func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
+		var token string
+		for _, c := range r.Cookies() {
+			if c.Name == "token" {
+				token = c.Value
+			}
+		}
 		if token == "" {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			helpers.HttpError("No token provided. Should probably redirect to login screen", errors.New("no token provided"), w)
+			helpers.HttpError("Missing token", errors.New("no token in cookiejar"), w)
 			return
 		}
-		tokenParts := strings.Split(token, " ")
-		if tokenParts[0] != "Bearer" {
-			helpers.HttpError("Malformed bearer token", errors.New("malformed bearer token"), w)
-			return
-		}
-		claims, err := s.ValidateToken(tokenParts[1])
+
+		claims, err := s.ValidateToken(token)
 		if err != nil {
 			helpers.HttpError("Invalid token", err, w)
 			return
 		}
 		userId := claims["user_id"]
 		if userId == "" {
-			helpers.HttpError("Invalid token, user_id malformed", err, w)
+			helpers.HttpError("Invalid token, user_id missing", err, w)
 			return
 		}
 		exp := claims["expiry"]
 		if exp == "" {
-			helpers.HttpError("Invalid token, expiry malformed", err, w)
+			helpers.HttpError("Invalid token, expiry time missing", err, w)
 			return
 		}
-
-		// TODO: if the expiry time is passed then redirect to logout?
+		session := claims["session_id"]
+		if session == "" {
+			helpers.HttpError("Invalid token, session missing", err, w)
+			return
+		}
+		// TODO: validate all token claims
+		// TODO: refresh token???
 
 		ctx := context.WithValue(r.Context(), AuthUserId, userId)
 		request := r.WithContext(ctx)
@@ -70,22 +75,25 @@ func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
 	})
 }
 
-func (s *JwtHandler) NewToken(userId string) (string, error) {
-	expiry := time.Now().Add(time.Duration(time.Hour * 24))
+// TODO: Set token as cookie here
+func (s *JwtHandler) NewToken(userId, session string, expiry time.Time) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userId
 	claims["expiry"] = expiry
+	claims["session_id"] = session
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	return token.SignedString(s.getKey())
 }
 
 func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(signedToken, func(t *jwt.Token) (interface{}, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(signedToken, &claims, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			s.logger.Error(errors.New("unexpected signing method"), "Unexpected signing method: %v", t.Header["alg"])
 			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
 		}
 
-		return s.SecretKeyProvider.getKey().PublicKey, nil
+		return s.SecretKeyProvider.getKey().Public(), nil
 	})
 	if err != nil || token == nil {
 		switch {
@@ -107,9 +115,6 @@ func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
 		}
 		return nil, err
 	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
-	}
 
-	return nil, errors.New("Token not valid")
+	return claims, nil
 }
