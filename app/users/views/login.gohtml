@@ -2,7 +2,6 @@
 {{ block "login" .}}
 <html lang="en">
 {{ template "header" . }}
-
 <body id="main-body" class="dark:bg-gray-900 antialiased">
 {{template "login-form" . }}
 </body>
@@ -70,7 +69,7 @@
             <label for="remember" class="text-gray-500 dark:text-gray-300">Remember me</label>
         </div>
     </div>
-    <a href="#" class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</a>
+    <a href="#" class="text-sm font-medium text-grey-600 hover:underline dark:text-gray-300">Forgot password?</a>
 </div>
     {{ if .Errors}}
         {{ range $key, $value := .Errors }}
