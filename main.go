@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/app/home"
 	"go-do-the-thing/app/todo"
 	"go-do-the-thing/app/users"
+	usersRepo "go-do-the-thing/app/users/repo"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
@@ -44,16 +45,25 @@ func main() {
 		panic(err)
 	}
 
-	auth, err := security.NewJwtHandler(workingDir + "/keys/")
+	jwtHandler, err := security.NewJwtHandler(workingDir + "/keys/")
 	if err != nil {
 		logger.Error(err, "could not setup jwt handler")
 		panic(err)
 	}
+
+	userRepo, err := usersRepo.InitRepo(dbConnection)
+	if err != nil {
+		logger.Error(err, "could not initialise the users repository")
+		panic(err)
+	}
+
+	authMiddleware := middleware.NewAuthenticationMiddleware(jwtHandler, userRepo)
 	loggingMW := middleware.NewLoggingMiddleWare()
 	rateLimeter := middleware.NewRateLimiter()
-	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, auth.Authentication)
+	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
-	err = users.SetupUsers(dbConnection, router, *renderer, middleware_full, middleware_no_auth, auth)
+
+	err = users.SetupUserHandler(userRepo, router, *renderer, middleware_full, middleware_no_auth, jwtHandler)
 	if err != nil {
 		logger.Error(err, "Failed to initialize users")
 		panic(err)

@@ -3,6 +3,7 @@ package helpers
 import (
 	"errors"
 	"go-do-the-thing/app/shared/models"
+	"go-do-the-thing/helpers/slog"
 	"net/http"
 )
 
@@ -20,9 +21,9 @@ func AcceptHeaderSwitch(w http.ResponseWriter, r *http.Request, jsonFunc func(w 
 }
 
 type ErrorPage struct {
-	ActiveScreens models.NavBarObject
-	Message       string
-	ErrorMessage  string
+	NavBar       models.NavBarObject
+	Message      string
+	ErrorMessage string
 }
 
 func newErrorPage(message string, err error) ErrorPage {
@@ -41,5 +42,13 @@ func HttpError(message string, err error, w http.ResponseWriter) {
 }
 
 func Redirect(location string, w http.ResponseWriter) {
+	// TODO: Add ability to let user know why redirect happened (message on screen?)
 	w.Header().Set("HX-Location", location)
+}
+
+func RedirectOnErr(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, location, message string, params ...any) {
+	// TODO: Add ability to let user know why redirect happened (message on screen?)
+	logger.Error(err, message, params...)
+	w.Header().Set("HX-Location", location)
+	http.Redirect(w, r, location, http.StatusSeeOther)
 }

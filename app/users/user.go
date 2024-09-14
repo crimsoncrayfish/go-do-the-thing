@@ -1,7 +1,7 @@
 package users
 
 import (
-	"go-do-the-thing/database"
+	usersRepo "go-do-the-thing/app/users/repo"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/helpers/slog"
@@ -9,22 +9,8 @@ import (
 	"net/http"
 )
 
-type User struct {
-	Id               int                  `json:"id,omitempty"`
-	Email            string               `json:"email,omitempty"`
-	FullName         string               `json:"full_name,omitmepty"`
-	SessionId        string               `json:"session_id,omitempty"`
-	SessionStartTime *database.SqLiteTime `json:"session_start_time"`
-	SessionValidTill *database.SqLiteTime `json:"session_valid_till"`
-	LastActiveDate   *database.SqLiteTime `json:"last_active_date"`
-	PasswordHash     string               `json:"password_hash,omitempty"`
-	IsDeleted        bool                 `json:"is_deleted,omitempty"`
-	IsAdmin          bool                 `json:"is_admin,omitempty"`
-	CreateDate       *database.SqLiteTime `json:"create_date"`
-}
-
-func SetupUsers(
-	dbConnection database.DatabaseConnection,
+func SetupUserHandler(
+	userRepo usersRepo.Repo,
 	router *http.ServeMux,
 	templates helpers.Templates,
 	mw middleware.Middleware,
@@ -33,12 +19,7 @@ func SetupUsers(
 ) error {
 	logger := slog.NewLogger("Users")
 	logger.Info("Setting up users")
-	usersRepo, err := InitRepo(dbConnection, logger)
-	if err != nil {
-		logger.Error(err, "Failed to initialize repo")
-		return err
-	}
-	handler := New(templates, usersRepo, security, logger)
+	handler := New(templates, userRepo, security, logger)
 
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
 	router.Handle("GET /register", mw_no_auth(http.HandlerFunc(handler.GetRegisterUI)))

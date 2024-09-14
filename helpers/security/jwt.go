@@ -1,12 +1,10 @@
 package security
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/slog"
-	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,57 +26,10 @@ func NewJwtHandler(keysLocation string) (JwtHandler, error) {
 	}, nil
 }
 
-const AuthUserId = "security.middleware.userId"
-
-// API code to intercept all requests
-func (s *JwtHandler) Authentication(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var token string
-		for _, c := range r.Cookies() {
-			if c.Name == "token" {
-				token = c.Value
-			}
-		}
-		if token == "" {
-			helpers.HttpError("Missing token", errors.New("no token in cookiejar"), w)
-			return
-		}
-
-		claims, err := s.ValidateToken(token)
-		if err != nil {
-			helpers.HttpError("Invalid token", err, w)
-			return
-		}
-		userId := claims["user_id"]
-		if userId == "" {
-			helpers.HttpError("Invalid token, user_id missing", err, w)
-			return
-		}
-		exp := claims["expiry"]
-		if exp == "" {
-			helpers.HttpError("Invalid token, expiry time missing", err, w)
-			return
-		}
-		session := claims["session_id"]
-		if session == "" {
-			helpers.HttpError("Invalid token, session missing", err, w)
-			return
-		}
-		// TODO: validate all token claims
-		// TODO: refresh token???
-
-		ctx := context.WithValue(r.Context(), AuthUserId, userId)
-		request := r.WithContext(ctx)
-
-		next.ServeHTTP(w, request)
-	})
-}
-
-// TODO: Set token as cookie here
 func (s *JwtHandler) NewToken(userId, session string, expiry time.Time) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userId
-	claims["expiry"] = expiry
+	claims["expiry"] = expiry.Format(helpers.DateTimeFormat)
 	claims["session_id"] = session
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	return token.SignedString(s.getKey())
