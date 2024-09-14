@@ -112,7 +112,8 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	// TODO: add session id to jwt
 	cookie := http.Cookie{Name: "token", Value: tokenString}
 	http.SetCookie(w, &cookie)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	// TODO: what to do?
+	helpers.Redirect("/", w)
 }
 
 func (h Handler) serverError(err error, w http.ResponseWriter, formData models.FormData, message string, params ...any) {
@@ -219,5 +220,5 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = h.repo.Create(user)
 	h.logger.Info("Successfully created user")
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	helpers.Redirect("/login", w)
 }

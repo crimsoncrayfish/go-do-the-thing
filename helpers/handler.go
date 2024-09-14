@@ -39,3 +39,7 @@ func HttpErrorUI(templates Templates, message string, err error, w http.Response
 func HttpError(message string, err error, w http.ResponseWriter) {
 	http.Error(w, message, http.StatusInternalServerError)
 }
+
+func Redirect(location string, w http.ResponseWriter) {
+	w.Header().Set("HX-Location", location)
+}
