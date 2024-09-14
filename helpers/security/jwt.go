@@ -2,7 +2,6 @@ package security
 
 import (
 	"context"
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"go-do-the-thing/helpers"
