@@ -110,7 +110,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	}
 	// fmt.Fprint(w, tokenString)
 	// TODO: add session id to jwt
-	cookie := http.Cookie{Name: "token", Value: tokenString}
+	cookie := http.Cookie{Name: "token", Value: tokenString, SameSite: http.SameSiteDefaultMode}
 	http.SetCookie(w, &cookie)
 	// TODO: what to do?
 	helpers.Redirect("/", w)
