@@ -1,22 +1,21 @@
-package users
+package usersRepo
 
 import (
 	"database/sql"
 	"fmt"
+	userModel "go-do-the-thing/app/users/model"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
-	"go-do-the-thing/helpers/slog"
 )
 
 type Repo struct {
 	db database.DatabaseConnection
 }
 
-func InitRepo(connection database.DatabaseConnection, logger *slog.Logger) (Repo, error) {
+func InitRepo(connection database.DatabaseConnection) (Repo, error) {
 	//do db migration
 	_, err := connection.Exec(createTable)
 	if err != nil {
-		logger.Error(err, "Failed to execute CreateIfNotExists")
 		return Repo{}, err
 	}
 	return Repo{connection}, nil
@@ -49,7 +48,7 @@ const (
 	logoutUser            = `UPDATE users SET [session_id] = "", [session_start_time] = "" WHERE id = %d`
 )
 
-func ScanItemFromRow(row *sql.Row, user *User) error {
+func ScanItemFromRow(row *sql.Row, user *userModel.User) error {
 	return row.Scan(
 		&user.Id,
 		&user.Email,
@@ -62,7 +61,7 @@ func ScanItemFromRow(row *sql.Row, user *User) error {
 	)
 }
 
-func ScanItemFromRows(rows *sql.Rows, user *User) error {
+func ScanItemFromRows(rows *sql.Rows, user *userModel.User) error {
 	return rows.Scan(
 		&user.Id,
 		&user.Email,
@@ -75,7 +74,7 @@ func ScanItemFromRows(rows *sql.Rows, user *User) error {
 	)
 }
 
-func (r *Repo) Create(user User) (int64, error) {
+func (r *Repo) Create(user userModel.User) (int64, error) {
 	query := fmt.Sprintf(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().String())
 	result, err := r.db.Exec(query)
 	if err != nil {
@@ -88,7 +87,7 @@ func (r *Repo) Create(user User) (int64, error) {
 	return insertedId, nil
 }
 
-func (r *Repo) UpdateDetails(user User) error {
+func (r *Repo) UpdateDetails(user userModel.User) error {
 	query := fmt.Sprintf(updateUserDetails, user.FullName, user.Id)
 	_, err := r.db.Exec(query)
 	if err != nil {
@@ -97,7 +96,7 @@ func (r *Repo) UpdateDetails(user User) error {
 	return nil
 }
 
-func (r *Repo) UpdatePassword(user User) error {
+func (r *Repo) UpdatePassword(user userModel.User) error {
 	query := fmt.Sprintf(updateUserPassword, user.PasswordHash, user.Id)
 	_, err := r.db.Exec(query)
 	if err != nil {
@@ -106,7 +105,7 @@ func (r *Repo) UpdatePassword(user User) error {
 	return nil
 }
 
-func (r *Repo) UpdateSession(user User) error {
+func (r *Repo) UpdateSession(user userModel.User) error {
 	query := fmt.Sprintf(updateUserSession, user.SessionId, user.SessionStartTime, user.Id)
 	_, err := r.db.Exec(query)
 	if err != nil {
@@ -115,7 +114,7 @@ func (r *Repo) UpdateSession(user User) error {
 	return nil
 }
 
-func (r *Repo) UpdateIsAdmin(user User) error {
+func (r *Repo) UpdateIsAdmin(user userModel.User) error {
 	query := fmt.Sprintf(updateUserIsAdmin, helpers.Btoi(user.IsAdmin), user.Id)
 	_, err := r.db.Exec(query)
 	if err != nil {
@@ -124,7 +123,7 @@ func (r *Repo) UpdateIsAdmin(user User) error {
 	return nil
 }
 
-func (r *Repo) Delete(user User) error {
+func (r *Repo) Delete(user userModel.User) error {
 	query := fmt.Sprintf(deleteUser, user.Id)
 	_, err := r.db.Exec(query)
 	if err != nil {
@@ -133,15 +132,15 @@ func (r *Repo) Delete(user User) error {
 	return nil
 }
 
-func (r *Repo) GetUserByEmail(name string) (User, error) {
+func (r *Repo) GetUserByEmail(name string) (userModel.User, error) {
 	get := fmt.Sprintf(getUserByEmail, name)
 	row := r.db.QueryRow(get)
-	temp := User{}
+	temp := userModel.User{}
 	err := ScanItemFromRow(row, &temp)
 	if err != nil {
 		// TODO: A couple places rely on this error to determine if a user exitst.
 		// What if the scan fails for another reason
-		return User{}, err
+		return userModel.User{}, err
 	}
 	return temp, nil
 }
@@ -159,26 +158,26 @@ func (r *Repo) GetUserPassword(id int) (string, error) {
 	return password, nil
 }
 
-func (r *Repo) GetUserById(id int) (User, error) {
+func (r *Repo) GetUserById(id int) (userModel.User, error) {
 	get := fmt.Sprintf(getUser, id)
 	row := r.db.QueryRow(get)
-	temp := User{}
+	temp := userModel.User{}
 	err := ScanItemFromRow(row, &temp)
 	if err != nil {
-		return User{}, err
+		return userModel.User{}, err
 	}
 	return temp, nil
 }
 
-func (r *Repo) GetUsers() ([]User, error) {
+func (r *Repo) GetUsers() ([]userModel.User, error) {
 	rows, err := r.db.Query(getAllUsersNotDeleted)
 	if err != nil {
 		return nil, err
 	}
 
-	users := make([]User, 0)
+	users := make([]userModel.User, 0)
 	for rows.Next() {
-		user := User{}
+		user := userModel.User{}
 
 		err := ScanItemFromRows(rows, &user)
 		if err != nil {

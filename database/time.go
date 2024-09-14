@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"errors"
+	"go-do-the-thing/helpers"
 	"strings"
 	"time"
 )
@@ -19,7 +20,7 @@ func (t *SqLiteTime) Scan(v interface{}) error {
 	if v.(string) == "" {
 		return nil
 	}
-	vt, err := time.Parse(DateTimeFormat, v.(string))
+	vt, err := time.Parse(helpers.DateTimeFormat, v.(string))
 	if err != nil {
 		return err
 	}
@@ -42,16 +43,13 @@ func (t *SqLiteTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.Time)
 }
 
-const DateTimeFormat = "2006-01-02 15:04:05"
-const DateFormat = "2006-01-02"
-
 func (t *SqLiteTime) UnmarshalJSON(data []byte) error {
 	s := strings.Trim(string(data), "\"")
 	if s == "null" || s == "" {
 		*t = SqLiteTime{nil}
 		return nil
 	}
-	temp, err := time.Parse(DateTimeFormat, s)
+	temp, err := time.Parse(helpers.DateTimeFormat, s)
 	if err != nil {
 		return err
 	}
@@ -63,7 +61,7 @@ func (t *SqLiteTime) String() string {
 	if t.Time == nil {
 		return ""
 	}
-	return t.Time.Format(DateTimeFormat)
+	return t.Time.Format(helpers.DateTimeFormat)
 }
 func (t *SqLiteTime) StringF(format string) string {
 	if t.Time == nil {

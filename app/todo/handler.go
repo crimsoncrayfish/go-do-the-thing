@@ -21,7 +21,12 @@ type Handler struct {
 }
 
 func New(r Repo, templates helpers.Templates, logger *slog.Logger) *Handler {
-	return &Handler{repo: r, templates: templates, activeScreens: models.NavBarObject{IsTodoList: true}, logger: *logger}
+	return &Handler{
+		repo:          r,
+		templates:     templates,
+		activeScreens: models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}},
+		logger:        *logger,
+	}
 }
 
 type idResponse struct {
@@ -45,7 +50,7 @@ func (t *Task) formDataFromItemNoValidation() models.FormData {
 	formData.Values["name"] = t.Name
 	formData.Values["description"] = t.Description
 	formData.Values["assigned_to"] = t.AssignedTo
-	formData.Values["due_date"] = t.DueDate.StringF(database.DateFormat)
+	formData.Values["due_date"] = t.DueDate.StringF(helpers.DateFormat)
 	formData.Values["tag"] = t.Tag
 
 	return formData
@@ -285,9 +290,9 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 type ItemPageModel struct {
-	Task          Task
-	ActiveScreens models.NavBarObject
-	FormData      models.FormData
+	Task     Task
+	NavBar   models.NavBarObject
+	FormData models.FormData
 }
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
@@ -397,12 +402,12 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 }
 
 type ListModel struct {
-	Tasks         []Task
-	ActiveScreens models.NavBarObject
-	FormData      models.FormData
+	Tasks    []Task
+	NavBar   models.NavBarObject
+	FormData models.FormData
 }
 
-func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	tasks, err := h.repo.GetItems()
 	if err != nil {
 		h.logger.Error(err, "failed to get todo tasks")
@@ -415,8 +420,18 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, _ *http.Request) {
 
 	formData := models.NewFormData()
 	formData.Values["due_date"] = time.Now().Add(time.Hour * 24).Format("2006-01-02")
-	responseObject := ListModel{tasks, h.activeScreens, formData}
-	err = h.templates.RenderOk(w, "task-list", responseObject)
+
+	data := ListModel{tasks, h.activeScreens, formData}
+	email, name, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		h.logger.Error(err, "could not get user details from http context")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data.NavBar = data.NavBar.SetUser(name, email)
+
+	err = h.templates.RenderOk(w, "task-list", data)
 	if err != nil {
 		h.logger.Error(err, "Failed to execute template for the item list page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

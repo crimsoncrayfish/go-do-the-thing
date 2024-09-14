@@ -9,7 +9,7 @@ import (
 )
 
 type Screens struct {
-	ActiveScreens models.NavBarObject
+	NavBar models.NavBarObject
 }
 
 func SetupHome(router *http.ServeMux, templates helpers.Templates, mw_stack middleware.Middleware) {

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"go-do-the-thing/app/home"
 	"go-do-the-thing/app/shared/models"
+	userModel "go-do-the-thing/app/users/model"
+	usersRepo "go-do-the-thing/app/users/repo"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
@@ -20,15 +22,15 @@ type Handler struct {
 	templates helpers.Templates
 	security  security.JwtHandler
 	model     home.Screens
-	repo      Repo
+	repo      usersRepo.Repo
 	logger    *slog.Logger
 }
 
-func New(templates helpers.Templates, repo Repo, security security.JwtHandler, logger *slog.Logger) *Handler {
+func New(templates helpers.Templates, repo usersRepo.Repo, security security.JwtHandler, logger *slog.Logger) *Handler {
 	return &Handler{
 		model: home.Screens{
-			ActiveScreens: models.NavBarObject{
-				IsHome: true,
+			NavBar: models.NavBarObject{
+				ActiveScreens: models.ActiveScreens{IsHome: true},
 			},
 		},
 		templates: templates,
@@ -141,7 +143,7 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
-	userId, ok := r.Context().Value(security.AuthUserId).(string)
+	userId, ok := r.Context().Value(helpers.AuthUserId).(string)
 	if !ok {
 		helpers.HttpErrorUI(h.templates, "Failed to get a userId from context", errors.New("cannot get userid from context"), w)
 		return
@@ -189,7 +191,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user, _ := h.repo.GetUserByEmail(email) // TODO: what to do with this err message
-	if (User{}) != user {
+	if (userModel.User{}) != user {
 		h.logger.Info("Registration failure. Email %s already in use", email)
 		errorForm.Errors["Email"] = "Email already in use"
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "signup-form-content", errorForm); err != nil {
@@ -211,7 +213,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	user = User{
+	user = userModel.User{
 		Email:        email,
 		FullName:     name,
 		PasswordHash: passwordHash,
