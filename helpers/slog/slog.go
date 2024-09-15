@@ -15,12 +15,16 @@ func NewLogger(name string) *Logger {
 
 }
 
+const colorRed = "\033[0;31m"
+const colorYellow = "\033[0;33m"
+const colorNone = "\033[0m"
+
 // Type - date - message - errorMsg
-const errLogFormat = "%s - %s - %s - '%s' - '%s'\n"
+const errLogFormat = "%s%s - %s - %s - '%s' - '%s'%s\n"
 
 func (l *Logger) Error(err error, msg string, a ...any) {
 	message := fmt.Sprintf(msg, a...)
-	fmt.Printf(errLogFormat, "ERROR", l.Name, time.Now().Format("2006-01-02 15:04:05"), message, err.Error())
+	fmt.Printf(errLogFormat, colorRed, "ERROR", l.Name, time.Now().Format("2006-01-02 15:04:05"), message, err.Error(), colorNone)
 }
 
 // Type - date - message
@@ -31,12 +35,12 @@ func (l *Logger) Info(msg string, a ...any) {
 	fmt.Printf(infoLogFormat, "INFO", time.Now().Format("2006-01-02 15:04:05"), l.Name, message)
 }
 
-// Type - date - message
-const debugLogFormat = "%s - %s - %s \n%s\n"
+// COLOR Type - date - message RESETCOLOR
+const debugLogFormat = "%s %s - %s - %s \n%s %s\n"
 
 func (l *Logger) Debug(msg string, a ...any) {
 	message := fmt.Sprintf(msg, a...)
-	fmt.Printf(debugLogFormat, "DEBUG", time.Now().Format("2006-01-02 15:04:05"), l.Name, message)
+	fmt.Printf(debugLogFormat, colorYellow, "DEBUG", time.Now().Format("2006-01-02 15:04:05"), l.Name, message, colorNone)
 }
 
 func (l *Logger) DebugStruct(msg string, a any) {
@@ -46,7 +50,7 @@ func (l *Logger) DebugStruct(msg string, a any) {
 		return
 	}
 
-	fmt.Printf(debugLogFormat, "DEBUG", time.Now().Format("2006-01-02 15:04:05"), l.Name, string(stringStruct))
+	fmt.Printf(debugLogFormat, colorRed, "DEBUG", time.Now().Format("2006-01-02 15:04:05"), l.Name, string(stringStruct), colorNone)
 }
 
 // Type - date - code - message - errorMsg

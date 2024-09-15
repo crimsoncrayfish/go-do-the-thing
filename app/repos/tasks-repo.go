@@ -1,39 +1,40 @@
-package todo
+package repos
 
 import (
 	"database/sql"
 	"fmt"
+	"go-do-the-thing/app/models"
 	"go-do-the-thing/database"
 )
 
-type Repo struct {
+type TasksRepo struct {
 	database database.DatabaseConnection
 }
 
-const RepoName = "items"
+const TasksRepoName = "items"
 
-func InitRepo(database database.DatabaseConnection) (Repo, error) {
-	_, err := database.Exec(createTable)
+func InitTasksRepo(database database.DatabaseConnection) (*TasksRepo, error) {
+	_, err := database.Exec(createTasksTable)
 	if err != nil {
-		return Repo{}, err
+		return &TasksRepo{}, err
 	}
-	err = database.AddColumnToTable(RepoName, "tag", "TEXT default '' not null")
+	err = database.AddColumnToTable(TasksRepoName, "tag", "TEXT default '' not null")
 	if err != nil {
-		return Repo{}, err
+		return &TasksRepo{}, err
 	}
-	err = database.AddColumnToTable(RepoName, "complete_date", "TEXT default '' not null")
+	err = database.AddColumnToTable(TasksRepoName, "complete_date", "TEXT default '' not null")
 	if err != nil {
-		return Repo{}, err
+		return &TasksRepo{}, err
 	}
-	err = database.AddColumnToTable(RepoName, "name", "TEXT default '' not null")
+	err = database.AddColumnToTable(TasksRepoName, "name", "TEXT default '' not null")
 	if err != nil {
-		return Repo{}, err
+		return &TasksRepo{}, err
 	}
-	return Repo{database}, nil
+	return &TasksRepo{database}, nil
 }
 
 const (
-	createTable = `CREATE TABLE IF NOT EXISTS items (
+	createTasksTable = `CREATE TABLE IF NOT EXISTS items (
 	[id] INTEGER PRIMARY KEY,
    	[description] TEXT,
 	[status] INTEGER DEFAULT 0,
@@ -54,7 +55,7 @@ const (
 	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = %d`
 )
 
-func ScanItemFromRow(row *sql.Row, item *Task) error {
+func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 	return row.Scan(
 		&item.Id,
 		&item.Description,
@@ -70,7 +71,7 @@ func ScanItemFromRow(row *sql.Row, item *Task) error {
 	)
 }
 
-func ScanItemFromRows(rows *sql.Rows, item *Task) error {
+func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 	return rows.Scan(
 		&item.Id,
 		&item.Description,
@@ -86,7 +87,7 @@ func ScanItemFromRows(rows *sql.Rows, item *Task) error {
 	)
 }
 
-func (r *Repo) GetItems() (items []Task, err error) {
+func (r *TasksRepo) GetItems() (items []models.Task, err error) {
 	rows, err := r.database.Query(getItemsNotDeleted)
 	if err != nil {
 		return nil, err
@@ -95,11 +96,11 @@ func (r *Repo) GetItems() (items []Task, err error) {
 		err = rows.Close()
 	}(rows)
 
-	items = make([]Task, 0)
+	items = make([]models.Task, 0)
 	for rows.Next() {
-		item := Task{}
+		item := models.Task{}
 
-		err = ScanItemFromRows(rows, &item)
+		err = scanTaskFromRows(rows, &item)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +113,7 @@ func (r *Repo) GetItems() (items []Task, err error) {
 	return items, nil
 }
 
-func (r *Repo) InsertItem(item Task) (id int64, err error) {
+func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 	insert := fmt.Sprintf(
 		insertItem,
 		item.Name,
@@ -132,7 +133,7 @@ func (r *Repo) InsertItem(item Task) (id int64, err error) {
 	return result.LastInsertId()
 }
 
-func (r *Repo) UpdateItem(item Task) (err error) {
+func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	update := fmt.Sprintf(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
 	_, err = r.database.Exec(update)
 	if err != nil {
@@ -141,7 +142,7 @@ func (r *Repo) UpdateItem(item Task) (err error) {
 	return nil
 }
 
-func (r *Repo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status int64) (err error) {
+func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status int64) (err error) {
 	update := fmt.Sprintf(updateItemStatus, status, completeDate.String(), id)
 	_, err = r.database.Exec(update)
 	if err != nil {
@@ -150,7 +151,7 @@ func (r *Repo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, stat
 	return nil
 }
 
-func (r *Repo) DeleteItem(id int64) (err error) {
+func (r *TasksRepo) DeleteItem(id int64) (err error) {
 	del := fmt.Sprintf(deleteItem, id)
 	_, err = r.database.Exec(del)
 	if err != nil {
@@ -159,7 +160,7 @@ func (r *Repo) DeleteItem(id int64) (err error) {
 	return nil
 }
 
-func (r *Repo) RestoreItem(id int64) (err error) {
+func (r *TasksRepo) RestoreItem(id int64) (err error) {
 	res := fmt.Sprintf(restoreItem, id)
 	_, err = r.database.Exec(res)
 	if err != nil {
@@ -168,18 +169,18 @@ func (r *Repo) RestoreItem(id int64) (err error) {
 	return nil
 }
 
-func (r *Repo) GetItem(id int64) (Task, error) {
+func (r *TasksRepo) GetItem(id int64) (models.Task, error) {
 	get := fmt.Sprintf(getItem, id)
 	row := r.database.QueryRow(get)
-	temp := Task{}
-	err := ScanItemFromRow(row, &temp)
+	temp := models.Task{}
+	err := scanTaskFromRow(row, &temp)
 	if err != nil {
-		return Task{}, err
+		return models.Task{}, err
 	}
 	return temp, nil
 }
 
-func (r *Repo) GetItemsCount() (int, error) {
+func (r *TasksRepo) GetItemsCount() (int, error) {
 	row := r.database.QueryRow(countItems)
 	var temp int
 	err := row.Scan(&temp)

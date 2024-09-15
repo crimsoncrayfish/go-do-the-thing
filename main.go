@@ -3,10 +3,10 @@ package main
 import (
 	"embed"
 	"errors"
-	"go-do-the-thing/app/home"
-	"go-do-the-thing/app/todo"
-	"go-do-the-thing/app/users"
-	usersRepo "go-do-the-thing/app/users/repo"
+	"go-do-the-thing/app/handlers/home"
+	"go-do-the-thing/app/handlers/todo"
+	"go-do-the-thing/app/handlers/users"
+	"go-do-the-thing/app/repos"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
@@ -51,30 +51,29 @@ func main() {
 		panic(err)
 	}
 
-	userRepo, err := usersRepo.InitRepo(dbConnection)
+	reposContainer, err := repos.NewContainer(dbConnection)
 	if err != nil {
-		logger.Error(err, "could not initialise the users repository")
+		logger.Error(err, "could not initialise repositories")
 		panic(err)
 	}
-
-	authMiddleware := middleware.NewAuthenticationMiddleware(jwtHandler, userRepo)
+	authMiddleware := middleware.NewAuthenticationMiddleware(jwtHandler, *reposContainer.GetUsersRepo())
 	loggingMW := middleware.NewLoggingMiddleWare()
 	rateLimeter := middleware.NewRateLimiter()
 	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
-	err = users.SetupUserHandler(userRepo, router, *renderer, middleware_full, middleware_no_auth, jwtHandler)
+	err = users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, *renderer, middleware_full, middleware_no_auth, jwtHandler)
 	if err != nil {
 		logger.Error(err, "Failed to initialize users")
 		panic(err)
 	}
 
-	err = todo.SetupTodo(dbConnection, router, *renderer, middleware_full)
+	err = todo.SetupTodoHandler(*reposContainer.GetTasksRepo(), router, *renderer, middleware_full)
 	if err != nil {
 		logger.Error(err, "Failed to initialize todo")
 		panic(err)
 	}
-	home.SetupHome(router, *renderer, middleware_full)
+	home.SetupHomeHandler(router, *renderer, middleware_full)
 
 	setupStaticContent(router)
 

@@ -1,9 +1,9 @@
-package helpers
+package handlers
 
 import (
 	"errors"
-	"go-do-the-thing/app/shared/models"
-	"go-do-the-thing/helpers/slog"
+	"go-do-the-thing/app/models"
+	"go-do-the-thing/helpers"
 	"net/http"
 )
 
@@ -33,7 +33,7 @@ func newErrorPage(message string, err error) ErrorPage {
 		err.Error()}
 }
 
-func HttpErrorUI(templates Templates, message string, err error, w http.ResponseWriter) {
+func HttpErrorUI(templates helpers.Templates, message string, err error, w http.ResponseWriter) {
 	errorPage := newErrorPage(message, err)
 	err = templates.RenderWithCode(w, http.StatusInternalServerError, "error", errorPage)
 }
@@ -44,11 +44,4 @@ func HttpError(message string, err error, w http.ResponseWriter) {
 func Redirect(location string, w http.ResponseWriter) {
 	// TODO: Add ability to let user know why redirect happened (message on screen?)
 	w.Header().Set("HX-Location", location)
-}
-
-func RedirectOnErr(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, location, message string, params ...any) {
-	// TODO: Add ability to let user know why redirect happened (message on screen?)
-	logger.Error(err, message, params...)
-	w.Header().Set("HX-Location", location)
-	http.Redirect(w, r, location, http.StatusSeeOther)
 }

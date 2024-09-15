@@ -1,9 +1,10 @@
 package home
 
 import (
-	"go-do-the-thing/app/shared/models"
+	"go-do-the-thing/app/models"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/slog"
+	"go-do-the-thing/middleware"
 	"net/http"
 )
 
@@ -13,8 +14,10 @@ type Handler struct {
 	logger    *slog.Logger
 }
 
-func New(templates helpers.Templates, logger *slog.Logger) *Handler {
-	return &Handler{
+func SetupHomeHandler(router *http.ServeMux, templates helpers.Templates, mw_stack middleware.Middleware) {
+	logger := slog.NewLogger("Home")
+	logger.Info("Setting up the Home screen")
+	handler := &Handler{
 		model: Screens{
 			models.NavBarObject{
 				ActiveScreens: models.ActiveScreens{IsHome: true},
@@ -23,6 +26,12 @@ func New(templates helpers.Templates, logger *slog.Logger) *Handler {
 		templates: templates,
 		logger:    logger,
 	}
+	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
+	router.Handle("GET /home", mw_stack(http.HandlerFunc(handler.Home)))
+}
+
+type Screens struct {
+	NavBar models.NavBarObject
 }
 
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {

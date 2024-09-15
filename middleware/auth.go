@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
-	usersRepo "go-do-the-thing/app/users/repo"
+	"go-do-the-thing/app/repos"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/helpers/slog"
@@ -13,11 +13,11 @@ import (
 
 type AuthenticationMiddleware struct {
 	JwtHandler security.JwtHandler
-	UsersRepo  usersRepo.Repo
+	UsersRepo  repos.UsersRepo
 	Logger     slog.Logger
 }
 
-func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo usersRepo.Repo) AuthenticationMiddleware {
+func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo repos.UsersRepo) AuthenticationMiddleware {
 	return AuthenticationMiddleware{
 		Logger:     *slog.NewLogger("Auth"),
 		UsersRepo:  usersRepo,
@@ -35,53 +35,53 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 			}
 		}
 		if token == "" {
-			helpers.RedirectOnErr(w, r, a.Logger, errors.New("cookiejar is empty"), "/login", "Missing token")
+			redirectOnErr(w, r, a.Logger, errors.New("cookiejar is empty"), "/login", "Missing token")
 			return
 		}
 
 		claims, err := a.JwtHandler.ValidateToken(token)
 		if err != nil {
-			helpers.RedirectOnErr(w, r, a.Logger, err, "/login", "Invalid token")
+			redirectOnErr(w, r, a.Logger, err, "/login", "Invalid token")
 			return
 		}
 
 		//Validate token expiry time
 		exp := claims["expiry"]
 		if exp == "" {
-			helpers.RedirectOnErr(w, r, a.Logger, errors.New("no expiry on token"), "/login", "Invalid token, expiry time missing")
+			redirectOnErr(w, r, a.Logger, errors.New("no expiry on token"), "/login", "Invalid token, expiry time missing")
 			return
 		}
 		userId := claims["user_id"]
 		if userId == "" {
-			helpers.RedirectOnErr(w, r, a.Logger, errors.New("no user in token"), "/login", "Invalid token, user_id missing")
+			redirectOnErr(w, r, a.Logger, errors.New("no user in token"), "/login", "Invalid token, user_id missing")
 			return
 		}
 		session := claims["session_id"]
 		if session == "" {
-			helpers.RedirectOnErr(w, r, a.Logger, errors.New("no session id in token"), "/login", "Invalid token, session missing")
+			redirectOnErr(w, r, a.Logger, errors.New("no session id in token"), "/login", "Invalid token, session missing")
 			return
 		}
 
 		expDate, err := time.Parse(helpers.DateTimeFormat, exp.(string))
 		if err != nil {
-			helpers.RedirectOnErr(w, r, a.Logger, err, "/login", "Token expiry malformed %s", exp)
+			redirectOnErr(w, r, a.Logger, err, "/login", "Token expiry malformed %s", exp)
 			//TODO : redo this to pass in params for message
 			return
 		}
 		if expDate.Before(time.Now()) {
 			// TODO: reset session for user
-			helpers.RedirectOnErr(w, r, a.Logger, errors.New("token expired"), "/login", "Token expired for user_id %d. Exp date: %s", userId, exp)
+			redirectOnErr(w, r, a.Logger, errors.New("token expired"), "/login", "Token expired for user_id %d. Exp date: %s", userId, exp)
 			return
 		}
 
 		user, err := a.UsersRepo.GetUserByEmail(userId.(string))
 		if err != nil {
-			helpers.RedirectOnErr(w, r, a.Logger, err, "/login", "failed to get user from db")
+			redirectOnErr(w, r, a.Logger, err, "/login", "failed to get user from db")
 			return
 		}
 
 		if user.SessionId != session.(string) {
-			helpers.RedirectOnErr(w, r, a.Logger, errors.New("session id does not match user session id"), "/login", "session id mismatch")
+			redirectOnErr(w, r, a.Logger, errors.New("session id does not match user session id"), "/login", "session id mismatch")
 			return
 		}
 
@@ -100,4 +100,10 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 
 		next.ServeHTTP(w, request)
 	})
+}
+func redirectOnErr(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, location, message string, params ...any) {
+	// TODO: Add ability to let user know why redirect happened (message on screen?)
+	logger.Error(err, message, params...)
+	w.Header().Set("HX-Location", location)
+	http.Redirect(w, r, location, http.StatusSeeOther)
 }
