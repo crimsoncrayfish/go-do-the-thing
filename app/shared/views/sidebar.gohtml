@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ block "sidebar" . }}
-
-    <div
-            id="sidebar"
-            class="fixed top-0 left-0 z-40 w-[100%] sm:w-96 h-[100%] p-4 transition-transform -translate-x-full bg-white dark:bg-gray-800">
+    <div id="sidebar-container" class="fixed top-0 left-0 z-40 w-[100%] h-[100%] transition-transform -translate-x-full bg-gray-900 bg-opacity-50" >    
+        <div
+id="sidebar"
+            class="fixed top-0 left-0 z-40 w-[100%] sm:w-96 h-[100%] bg-white dark:bg-gray-800 p-4">
         <h5 class="text-base font-semibold text-gray-500 uppercase dark:text-gray-400">
             Menu
         </h5>
-        <button onclick="toggleClassForId('-translate-x-full','sidebar')"
+        <button onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
                 class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 end-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
             Close
         </button>
@@ -48,14 +48,14 @@
                     </a>
                 </li>
                 <li>
-                    <a class="flex items-center p-2 text-gray-900 dark:text-white">
+                    <a class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
                         {{ template "slash-svg"}}
                         <span class="ms-3">Lets form a habbit!</span>
                     </a>
                 </li>
                 <li>
                     <a hx-get="/error"
-                       class="flex items-center p-2 text-gray-900 dark:text-white">
+                       class="flex items-center p-2 text-gray-900 dark:text-white cursor-pointer">
                         {{ if .NavBar.ActiveScreens.IsError}}
                             {{ template "bracket-svg"}}
                         {{ else }}
@@ -86,8 +86,10 @@
                 </label>
             </div>
         </div>
-
     </div>
+        <div class="bg-grey-900 bg-opacity-50 h-full w-full " onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"></div>
+    </div>
+
     <script>
         if (typeof lightSwitches === 'undefined') {
             if ('dark-mode' in localStorage) {

@@ -3,8 +3,9 @@ package middleware
 import (
 	"context"
 	"errors"
-	"go-do-the-thing/app/repos"
+	"go-do-the-thing/database/repos"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/constants"
 	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/helpers/slog"
 	"net/http"
@@ -62,7 +63,7 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 			return
 		}
 
-		expDate, err := time.Parse(helpers.DateTimeFormat, exp.(string))
+		expDate, err := time.Parse(constants.DateTimeFormat, exp.(string))
 		if err != nil {
 			redirectOnErr(w, r, a.Logger, err, "/login", "Token expiry malformed %s", exp)
 			//TODO : redo this to pass in params for message
@@ -92,10 +93,10 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 		}
 
 		values := helpers.HttpContext{Values: map[string]string{
-			helpers.AuthUserId:   user.Email,
-			helpers.AuthUserName: user.FullName,
+			constants.AuthUserId:   user.Email,
+			constants.AuthUserName: user.FullName,
 		}}
-		ctx := context.WithValue(r.Context(), helpers.AuthContext, values)
+		ctx := context.WithValue(r.Context(), constants.AuthContext, values)
 		request := r.WithContext(ctx)
 
 		next.ServeHTTP(w, request)

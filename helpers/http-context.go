@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"errors"
+	"go-do-the-thing/helpers/constants"
 	"net/http"
 )
 
@@ -14,12 +15,12 @@ func (u HttpContext) get(key string) string {
 }
 
 func GetUserFromContext(r *http.Request) (string, string, error) {
-	context, ok := r.Context().Value(AuthContext).(HttpContext)
+	context, ok := r.Context().Value(constants.AuthContext).(HttpContext)
 	if !ok {
 		return "", "", errors.New("could not read http context")
 	}
-	email := context.get(AuthUserId)
-	name := context.get(AuthUserName)
+	email := context.get(constants.AuthUserId)
+	name := context.get(constants.AuthUserName)
 	var err error
 	if email == "" || name == "" {
 		err = errors.New("could not find user details in http context")

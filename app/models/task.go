@@ -2,7 +2,7 @@ package models
 
 import (
 	"go-do-the-thing/database"
-	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/constants"
 	"time"
 )
 
@@ -56,7 +56,7 @@ func (t *Task) FormDataFromItemNoValidation() FormData {
 	formData.Values["name"] = t.Name
 	formData.Values["description"] = t.Description
 	formData.Values["assigned_to"] = t.AssignedTo
-	formData.Values["due_date"] = t.DueDate.StringF(helpers.DateFormat)
+	formData.Values["due_date"] = t.DueDate.StringF(constants.DateFormat)
 	formData.Values["tag"] = t.Tag
 
 	return formData

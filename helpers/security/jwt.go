@@ -3,7 +3,7 @@ package security
 import (
 	"errors"
 	"fmt"
-	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/constants"
 	"go-do-the-thing/helpers/slog"
 	"time"
 
@@ -29,7 +29,7 @@ func NewJwtHandler(keysLocation string) (JwtHandler, error) {
 func (s *JwtHandler) NewToken(userId, session string, expiry time.Time) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userId
-	claims["expiry"] = expiry.Format(helpers.DateTimeFormat)
+	claims["expiry"] = expiry.Format(constants.DateTimeFormat)
 	claims["session_id"] = session
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	return token.SignedString(s.getKey())

@@ -3,7 +3,7 @@ package database
 import (
 	"encoding/json"
 	"errors"
-	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/constants"
 	"strings"
 	"time"
 )
@@ -16,11 +16,12 @@ func SqLiteNow() *SqLiteTime {
 	now := time.Now()
 	return &SqLiteTime{&now}
 }
+
 func (t *SqLiteTime) Scan(v interface{}) error {
 	if v.(string) == "" {
 		return nil
 	}
-	vt, err := time.Parse(helpers.DateTimeFormat, v.(string))
+	vt, err := time.Parse(constants.DateTimeFormat, v.(string))
 	if err != nil {
 		return err
 	}
@@ -49,7 +50,7 @@ func (t *SqLiteTime) UnmarshalJSON(data []byte) error {
 		*t = SqLiteTime{nil}
 		return nil
 	}
-	temp, err := time.Parse(helpers.DateTimeFormat, s)
+	temp, err := time.Parse(constants.DateTimeFormat, s)
 	if err != nil {
 		return err
 	}
@@ -61,8 +62,9 @@ func (t *SqLiteTime) String() string {
 	if t.Time == nil {
 		return ""
 	}
-	return t.Time.Format(helpers.DateTimeFormat)
+	return t.Time.Format(constants.DateTimeFormat)
 }
+
 func (t *SqLiteTime) StringF(format string) string {
 	if t.Time == nil {
 		return ""

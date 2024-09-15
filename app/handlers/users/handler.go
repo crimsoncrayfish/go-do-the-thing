@@ -6,9 +6,10 @@ import (
 	"errors"
 	"go-do-the-thing/app/handlers"
 	"go-do-the-thing/app/models"
-	"go-do-the-thing/app/repos"
 	"go-do-the-thing/database"
+	"go-do-the-thing/database/repos"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/constants"
 	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
@@ -97,7 +98,6 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, nil)
 		return
 	}
-
 	user, err := h.repo.GetUserByEmail(email)
 
 	if err != nil {
@@ -132,6 +132,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	user.SessionId = uuid.New().String()
 
 	user.SessionStartTime = database.SqLiteNow()
+	h.logger.DebugStruct("What even %s", user)
 	if err := h.repo.UpdateSession(user); err != nil {
 		h.serverError(err, w, errorForm, "Failed to set session id for user %d", user.Id)
 		http.SetCookie(w, nil)
@@ -175,7 +176,7 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
-	userId, ok := r.Context().Value(helpers.AuthUserId).(string)
+	userId, ok := r.Context().Value(constants.AuthUserId).(string)
 	if !ok {
 		handlers.HttpErrorUI(h.templates, "Failed to get a userId from context", errors.New("cannot get userid from context"), w)
 		return

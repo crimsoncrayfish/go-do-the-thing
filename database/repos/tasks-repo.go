@@ -2,7 +2,6 @@ package repos
 
 import (
 	"database/sql"
-	"fmt"
 	"go-do-the-thing/app/models"
 	"go-do-the-thing/database"
 )
@@ -47,12 +46,12 @@ const (
 	//getItems           = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [name], [complete_date] FROM items"
 	getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE is_deleted=0"
 	countItems         = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
-	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE id = %d"
-	insertItem         = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES ("%s", "%s", %d, "%s", "%s", "%s", "%s", "%s")`
-	updateItemStatus   = `UPDATE items SET [status] = %d, [complete_date] = "%s" WHERE id = %d`
-	updateItem         = `UPDATE items SET [name] = "%s", [description] = "%s", [assigned_to] = "%s", [due_date] = "%s", [tag] = "%s" WHERE id = %d`
-	deleteItem         = `UPDATE items SET [is_deleted] = 1 WHERE id = %d`
-	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = %d`
+	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE id = ?"
+	insertItem         = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	updateItemStatus   = `UPDATE items SET [status] = ?, [complete_date] = ? WHERE id = ?`
+	updateItem         = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [tag] = ? WHERE id = ?`
+	deleteItem         = `UPDATE items SET [is_deleted] = 1 WHERE id = ?`
+	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
 )
 
 func scanTaskFromRow(row *sql.Row, item *models.Task) error {
@@ -114,7 +113,7 @@ func (r *TasksRepo) GetItems() (items []models.Task, err error) {
 }
 
 func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
-	insert := fmt.Sprintf(
+	result, err := r.database.Exec(
 		insertItem,
 		item.Name,
 		item.Description,
@@ -125,7 +124,6 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.CreateDate.String(),
 		item.Tag,
 	)
-	result, err := r.database.Exec(insert)
 	if err != nil {
 		return 0, err
 	}
@@ -134,8 +132,7 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 }
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
-	update := fmt.Sprintf(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
-	_, err = r.database.Exec(update)
+	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
 	if err != nil {
 		return err
 	}
@@ -143,8 +140,7 @@ func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 }
 
 func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status int64) (err error) {
-	update := fmt.Sprintf(updateItemStatus, status, completeDate.String(), id)
-	_, err = r.database.Exec(update)
+	_, err = r.database.Exec(updateItemStatus, status, completeDate.String(), id)
 	if err != nil {
 		return err
 	}
@@ -152,8 +148,7 @@ func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime,
 }
 
 func (r *TasksRepo) DeleteItem(id int64) (err error) {
-	del := fmt.Sprintf(deleteItem, id)
-	_, err = r.database.Exec(del)
+	_, err = r.database.Exec(deleteItem, id)
 	if err != nil {
 		return err
 	}
@@ -161,8 +156,7 @@ func (r *TasksRepo) DeleteItem(id int64) (err error) {
 }
 
 func (r *TasksRepo) RestoreItem(id int64) (err error) {
-	res := fmt.Sprintf(restoreItem, id)
-	_, err = r.database.Exec(res)
+	_, err = r.database.Exec(restoreItem, id)
 	if err != nil {
 		return err
 	}
@@ -170,8 +164,7 @@ func (r *TasksRepo) RestoreItem(id int64) (err error) {
 }
 
 func (r *TasksRepo) GetItem(id int64) (models.Task, error) {
-	get := fmt.Sprintf(getItem, id)
-	row := r.database.QueryRow(get)
+	row := r.database.QueryRow(getItem, id)
 	temp := models.Task{}
 	err := scanTaskFromRow(row, &temp)
 	if err != nil {

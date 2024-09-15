@@ -2,7 +2,6 @@ package repos
 
 import (
 	"database/sql"
-	"fmt"
 	"go-do-the-thing/app/models"
 	"go-do-the-thing/database"
 	"go-do-the-thing/helpers"
@@ -35,17 +34,17 @@ const (
 );`
 	getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
 	countUsers            = "SELECT COUNT(*) FROM users WHERE is_deleted=0"
-	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted] FROM users WHERE id = %d"
-	getUserByEmail        = `SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE email = "%s"`
-	insertUser            = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES ("%s", "%s", "%s", "%s")`
-	updateUserDetails     = `UPDATE users SET [full_name] = "%s" WHERE id = %d`
-	updateUserSession     = `UPDATE users SET [session_id] = "%s", [session_start_time] = "%s" WHERE id = %d`
-	updateUserPassword    = `UPDATE users SET [password_hash] = "%s" WHERE id = %d`
-	updateUserIsAdmin     = `UPDATE users SET [is_admin] = %d WHERE id = %d`
-	getUserPassword       = `SELECT [password_hash] FROM [users] WHERE id = %d`
-	deleteUser            = `UPDATE users SET [is_deleted] = 1 WHERE id = %d`
-	restoreUsers          = `UPDATE users SET [is_deleted] = 0 WHERE id = %d`
-	logoutUser            = `UPDATE users SET [session_id] = "", [session_start_time] = "" WHERE id = %d`
+	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted] FROM users WHERE id = ?"
+	getUserByEmail        = `SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE email = ?`
+	insertUser            = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES (?, ?, ?, ?)`
+	updateUserDetails     = `UPDATE users SET [full_name] = ? WHERE id = ?`
+	updateUserSession     = `UPDATE users SET [session_id] = ?, [session_start_time] = ? WHERE id = ?`
+	updateUserPassword    = `UPDATE users SET [password_hash] = ? WHERE id = ?`
+	updateUserIsAdmin     = `UPDATE users SET [is_admin] = ? WHERE id = ?`
+	getUserPassword       = `SELECT [password_hash] FROM [users] WHERE id = ?`
+	deleteUser            = `UPDATE users SET [is_deleted] = 1 WHERE id = ?`
+	restoreUsers          = `UPDATE users SET [is_deleted] = 0 WHERE id = ?`
+	logoutUser            = `UPDATE users SET [session_id] = "", [session_start_time] = "" WHERE id = ?`
 )
 
 func scanUserFromRow(row *sql.Row, user *models.User) error {
@@ -75,8 +74,7 @@ func scanUsersFromRows(rows *sql.Rows, user *models.User) error {
 }
 
 func (r *UsersRepo) Create(user models.User) (int64, error) {
-	query := fmt.Sprintf(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().String())
-	result, err := r.db.Exec(query)
+	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().String())
 	if err != nil {
 		return 0, err
 	}
@@ -88,8 +86,7 @@ func (r *UsersRepo) Create(user models.User) (int64, error) {
 }
 
 func (r *UsersRepo) UpdateDetails(user models.User) error {
-	query := fmt.Sprintf(updateUserDetails, user.FullName, user.Id)
-	_, err := r.db.Exec(query)
+	_, err := r.db.Exec(updateUserDetails, user.FullName, user.Id)
 	if err != nil {
 		return err
 	}
@@ -97,8 +94,7 @@ func (r *UsersRepo) UpdateDetails(user models.User) error {
 }
 
 func (r *UsersRepo) UpdatePassword(user models.User) error {
-	query := fmt.Sprintf(updateUserPassword, user.PasswordHash, user.Id)
-	_, err := r.db.Exec(query)
+	_, err := r.db.Exec(updateUserPassword, user.PasswordHash, user.Id)
 	if err != nil {
 		return err
 	}
@@ -106,8 +102,7 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 }
 
 func (r *UsersRepo) UpdateSession(user models.User) error {
-	query := fmt.Sprintf(updateUserSession, user.SessionId, user.SessionStartTime, user.Id)
-	_, err := r.db.Exec(query)
+	_, err := r.db.Exec(updateUserSession, user.SessionId, user.SessionStartTime.String(), user.Id)
 	if err != nil {
 		return err
 	}
@@ -115,8 +110,7 @@ func (r *UsersRepo) UpdateSession(user models.User) error {
 }
 
 func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
-	query := fmt.Sprintf(updateUserIsAdmin, helpers.Btoi(user.IsAdmin), user.Id)
-	_, err := r.db.Exec(query)
+	_, err := r.db.Exec(updateUserIsAdmin, helpers.Btoi(user.IsAdmin), user.Id)
 	if err != nil {
 		return err
 	}
@@ -124,8 +118,7 @@ func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
 }
 
 func (r *UsersRepo) Delete(user models.User) error {
-	query := fmt.Sprintf(deleteUser, user.Id)
-	_, err := r.db.Exec(query)
+	_, err := r.db.Exec(deleteUser, user.Id)
 	if err != nil {
 		return err
 	}
@@ -133,8 +126,7 @@ func (r *UsersRepo) Delete(user models.User) error {
 }
 
 func (r *UsersRepo) GetUserByEmail(name string) (models.User, error) {
-	get := fmt.Sprintf(getUserByEmail, name)
-	row := r.db.QueryRow(get)
+	row := r.db.QueryRow(getUserByEmail, name)
 
 	temp := models.User{}
 	err := scanUserFromRow(row, &temp)
@@ -147,8 +139,7 @@ func (r *UsersRepo) GetUserByEmail(name string) (models.User, error) {
 }
 
 func (r *UsersRepo) GetUserPassword(id int) (string, error) {
-	get := fmt.Sprintf(getUserPassword, id)
-	row := r.db.QueryRow(get)
+	row := r.db.QueryRow(getUserPassword, id)
 	var password string
 	err := row.Scan(&password)
 	if err != nil {
@@ -160,8 +151,7 @@ func (r *UsersRepo) GetUserPassword(id int) (string, error) {
 }
 
 func (r *UsersRepo) GetUserById(id int) (models.User, error) {
-	get := fmt.Sprintf(getUser, id)
-	row := r.db.QueryRow(get)
+	row := r.db.QueryRow(getUser, id)
 	temp := models.User{}
 	err := scanUserFromRow(row, &temp)
 	if err != nil {
@@ -194,7 +184,6 @@ func (r *UsersRepo) GetUsers() ([]models.User, error) {
 }
 
 func (r *UsersRepo) Logout(userId int64) error {
-	query := fmt.Sprintf(logoutUser, userId)
-	_, err := r.db.Exec(query)
+	_, err := r.db.Exec(logoutUser, userId)
 	return err
 }
