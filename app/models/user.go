@@ -3,7 +3,7 @@ package models
 import "go-do-the-thing/database"
 
 type User struct {
-	Id               int                  `json:"id,omitempty"`
+	Id               int64                `json:"id,omitempty"`
 	Email            string               `json:"email,omitempty"`
 	FullName         string               `json:"full_name,omitmepty"`
 	SessionId        string               `json:"session_id,omitempty"`

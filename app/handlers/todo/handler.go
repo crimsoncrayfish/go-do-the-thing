@@ -1,16 +1,20 @@
 package todo
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"go-do-the-thing/app/handlers"
 	"go-do-the-thing/app/models"
+	tasksModels "go-do-the-thing/app/models/tasks"
+	user_models "go-do-the-thing/app/models/tasks"
 	"go-do-the-thing/database"
 	"go-do-the-thing/database/repos"
 	"go-do-the-thing/helpers"
 	"go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
 	"net/http"
+	"net/mail"
 	"sort"
 	"strconv"
 	"time"
@@ -18,6 +22,7 @@ import (
 
 type Handler struct {
 	repo          repos.TasksRepo
+	usersRepo     repos.UsersRepo
 	templates     helpers.Templates
 	activeScreens models.NavBarObject
 	logger        slog.Logger
@@ -25,6 +30,7 @@ type Handler struct {
 
 func SetupTodoHandler(
 	tasksRepo repos.TasksRepo,
+	usersRepo repos.UsersRepo,
 	router *http.ServeMux,
 	templates helpers.Templates,
 	mw_stack middleware.Middleware,
@@ -33,6 +39,7 @@ func SetupTodoHandler(
 
 	todoHandler := &Handler{
 		repo:          tasksRepo,
+		usersRepo:     usersRepo,
 		templates:     templates,
 		activeScreens: models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}},
 		logger:        *logger,
@@ -58,7 +65,7 @@ func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
-	var item models.Task
+	var item tasksModels.Task
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&item)
 	if err != nil {
@@ -90,6 +97,21 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) handleUserNotFound(w http.ResponseWriter, err error, errorForm models.FormData) {
+	if errors.Is(err, sql.ErrNoRows) {
+		errorForm.Errors["assignedTo"] = "not a valid user"
+		h.logger.Warn("Should probably create some sort of team/family and then assert that you can only assign a task to a family member")
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			return
+		}
+		return
+	}
+
+	h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm)
+	return
+}
+
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	errorForm := models.NewFormData()
 	name, errorForm := models.GetRequiredPropertyFromRequest(r, "name", errorForm, true)
@@ -104,19 +126,41 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	_, err = mail.ParseAddress(assignedTo)
+	if err != nil {
+		errorForm.Errors["name"] = "not an email"
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+		}
+		return
+	}
+
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		h.logger.Error(err, "could not get user details from http context")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	now := time.Now()
-	item := models.Task{
+
+	assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
+	if err != nil {
+		h.handleUserNotFound(w, err, errorForm)
+		return
+	}
+
+	item := tasksModels.Task{
 		Name:        name,
 		Description: description,
-		AssignedTo:  assignedTo,
+		AssignedTo:  assignedToUser.Id,
 		DueDate:     &database.SqLiteTime{Time: &date},
-		CreatedBy:   "CurrentUser", //todo logins
-		CreateDate:  &database.SqLiteTime{Time: &now},
+		CreatedBy:   currentUserId,
+		DateCreated: &database.SqLiteTime{Time: &now},
 		IsDeleted:   false,
 		Tag:         tag,
 	}
 	//Check if form is valid and respond with any error
-	formData, isValid := item.FormDataFromItem()
+	formData, isValid := item.FormDataFromItem(assignedToUser.Email)
 	if !isValid {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", formData); err != nil {
 			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
@@ -163,7 +207,7 @@ func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
-	var item models.Task
+	var item tasksModels.Task
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -204,21 +248,41 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	_, err = mail.ParseAddress(assignedTo)
+	if err != nil {
+		errorForm.Errors["name"] = "not an email"
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+		}
+		return
+	}
 	now := time.Now()
-	item := models.Task{
+	assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
+	if err != nil {
+		h.handleUserNotFound(w, err, errorForm)
+		return
+	}
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		h.logger.Error(err, "could not get user details from http context")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+
+	}
+	item := tasksModels.Task{
 		Id:          id,
 		Name:        name,
 		Description: description,
-		AssignedTo:  assignedTo,
+		AssignedTo:  assignedToUser.Id,
 		DueDate:     &database.SqLiteTime{Time: &date},
-		CreatedBy:   "CurrentUser",
-		CreateDate:  &database.SqLiteTime{Time: &now},
+		CreatedBy:   currentUserId,
+		DateCreated: &database.SqLiteTime{Time: &now},
 		IsDeleted:   false,
 		Tag:         tag,
 	}
 
 	//Check if form is valid and respond with any error
-	formData := item.FormDataFromItemNoValidation()
+	formData := item.FormDataFromItemNoValidation(assignedToUser.Email)
 	formData.Submit = "Update"
 
 	//update data
@@ -232,7 +296,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Respond with templates
-	model := ItemPageModel{task, h.activeScreens, formData}
+	model := ItemPageModel{task.ToViewModel(assignedToUser), h.activeScreens, formData}
 	if err = h.templates.RenderOk(w, "task-item-content-oob", model); err != nil {
 		handlers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
@@ -260,7 +324,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	items := make([]models.Task, 1)
+	items := make([]tasksModels.Task, 1)
 	items[0] = item
 	jsonBytes, err := json.Marshal(items)
 	if err != nil {
@@ -278,7 +342,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 type ItemPageModel struct {
-	Task     models.Task
+	Task     tasksModels.TaskView
 	NavBar   models.NavBarObject
 	FormData models.FormData
 }
@@ -295,9 +359,15 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	formData := task.FormDataFromItemNoValidation()
+	formData := task.FormDataFromItemNoValidation("")
 	formData.Submit = "Update"
-	model := ItemPageModel{task, h.activeScreens, formData}
+
+	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
+	if err != nil {
+		h.handleUserNotFound(w, err, formData)
+		return
+	}
+	model := ItemPageModel{task.ToViewModel(assignedToUser), h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-item", model)
 	if err != nil {
 		h.logger.Error(err, "Failed to execute template for the item page")
@@ -322,7 +392,7 @@ func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	completeDate := database.SqLiteTime{}
-	if newStatus == int64(models.Completed) {
+	if newStatus == int64(tasksModels.TaskCompleted) {
 		now := time.Now()
 		completeDate = database.SqLiteTime{Time: &now}
 	}
@@ -390,27 +460,32 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 }
 
 type ListModel struct {
-	Tasks    []models.Task
+	Tasks    []user_models.TaskView
 	NavBar   models.NavBarObject
 	FormData models.FormData
 }
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
+
 	tasks, err := h.repo.GetItems()
 	if err != nil {
 		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	//sort items
 	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].DueDate.Time.Before(*tasks[j].DueDate.Time)
+		return tasks[i].DueDate.Before(*tasks[j].DueDate.Time)
 	})
 
 	formData := models.NewFormData()
 	formData.Values["due_date"] = time.Now().Add(time.Hour * 24).Format("2006-01-02")
-
-	data := ListModel{tasks, h.activeScreens, formData}
-	email, name, err := helpers.GetUserFromContext(r)
+	taskViews := make([]tasksModels.TaskView, len(tasks))
+	for i, task := range tasks {
+		taskViews[i] = task.ToViewModel(models.User{FullName: "test"})
+	}
+	data := ListModel{taskViews, h.activeScreens, formData}
+	_, email, name, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		h.logger.Error(err, "could not get user details from http context")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

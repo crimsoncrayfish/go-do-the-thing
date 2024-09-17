@@ -35,6 +35,14 @@ func (l *Logger) Info(msg string, a ...any) {
 	fmt.Printf(infoLogFormat, "INFO", time.Now().Format("2006-01-02 15:04:05"), l.Name, message)
 }
 
+// Type - date - message
+const warnLogFormat = "%s%s - %s - %s - %s\n%s"
+
+func (l *Logger) Warn(msg string, a ...any) {
+	message := fmt.Sprintf(msg, a...)
+	fmt.Printf(warnLogFormat, colorYellow, "INFO", time.Now().Format("2006-01-02 15:04:05"), l.Name, message, colorNone)
+}
+
 // COLOR Type - date - message RESETCOLOR
 const debugLogFormat = "%s %s - %s - %s \n%s %s\n"
 

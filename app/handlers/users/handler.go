@@ -132,7 +132,6 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	user.SessionId = uuid.New().String()
 
 	user.SessionStartTime = database.SqLiteNow()
-	h.logger.DebugStruct("What even %s", user)
 	if err := h.repo.UpdateSession(user); err != nil {
 		h.serverError(err, w, errorForm, "Failed to set session id for user %d", user.Id)
 		http.SetCookie(w, nil)

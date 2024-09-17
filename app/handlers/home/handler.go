@@ -36,7 +36,7 @@ type Screens struct {
 
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	data := h.model
-	email, name, err := helpers.GetUserFromContext(r)
+	_, email, name, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		h.logger.Error(err, "could not get user details from http context")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -53,7 +53,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 	data := h.model
-	email, name, err := helpers.GetUserFromContext(r)
+	_, email, name, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		h.logger.Error(err, "could not get user details from http context")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

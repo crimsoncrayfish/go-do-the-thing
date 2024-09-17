@@ -2,7 +2,7 @@ package repos
 
 import (
 	"database/sql"
-	"go-do-the-thing/app/models"
+	models "go-do-the-thing/app/models/tasks"
 	"go-do-the-thing/database"
 )
 
@@ -62,7 +62,7 @@ func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 		&item.AssignedTo,
 		&item.DueDate,
 		&item.CreatedBy,
-		&item.CreateDate,
+		&item.DateCreated,
 		&item.IsDeleted,
 		&item.Tag,
 		&item.Name,
@@ -78,7 +78,7 @@ func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 		&item.AssignedTo,
 		&item.DueDate,
 		&item.CreatedBy,
-		&item.CreateDate,
+		&item.DateCreated,
 		&item.IsDeleted,
 		&item.Tag,
 		&item.Name,
@@ -105,6 +105,7 @@ func (r *TasksRepo) GetItems() (items []models.Task, err error) {
 		}
 		items = append(items, item)
 	}
+
 	err = rows.Err()
 	if err != nil {
 		return nil, err
@@ -121,7 +122,7 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.AssignedTo,
 		item.DueDate.String(),
 		item.CreatedBy,
-		item.CreateDate.String(),
+		item.DateCreated.String(),
 		item.Tag,
 	)
 	if err != nil {

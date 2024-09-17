@@ -138,7 +138,7 @@ func (r *UsersRepo) GetUserByEmail(name string) (models.User, error) {
 	return temp, nil
 }
 
-func (r *UsersRepo) GetUserPassword(id int) (string, error) {
+func (r *UsersRepo) GetUserPassword(id int64) (string, error) {
 	row := r.db.QueryRow(getUserPassword, id)
 	var password string
 	err := row.Scan(&password)
@@ -150,7 +150,7 @@ func (r *UsersRepo) GetUserPassword(id int) (string, error) {
 	return password, nil
 }
 
-func (r *UsersRepo) GetUserById(id int) (models.User, error) {
+func (r *UsersRepo) GetUserById(id int64) (models.User, error) {
 	row := r.db.QueryRow(getUser, id)
 	temp := models.User{}
 	err := scanUserFromRow(row, &temp)
