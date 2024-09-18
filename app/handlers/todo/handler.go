@@ -487,10 +487,10 @@ type ListModel struct {
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	currentUserId, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	tasks, err := h.repo.GetItems()
+	tasks, err := h.repo.GetItemsForUser(currentUserId)
 	if err != nil {
 		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

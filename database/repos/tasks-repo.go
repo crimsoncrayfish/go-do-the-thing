@@ -40,16 +40,16 @@ const (
 	[tag] TEXT DEFAULT '' NOT NULL,
 	[is_deleted] INTEGER DEFAULT 0
 );`
-	getItemsNotDeleted = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [tag], [complete_date] FROM items WHERE is_deleted=0"
-	getItem            = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE id = ?"
+	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [tag], [complete_date] FROM items WHERE is_deleted=0"
+	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [tag], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
+	getItem                = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE id = ?"
 
-	getItemsByAssignedUser = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
-	countItems             = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
-	insertItem             = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [tag]) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	updateItemStatus       = `UPDATE items SET [status] = ?, [complete_date] = ?, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
-	updateItem             = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [tag] = ? WHERE id = ?`
-	deleteItem             = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
-	restoreItem            = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
+	countItems       = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
+	insertItem       = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [tag]) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	updateItemStatus = `UPDATE items SET [status] = ?, [complete_date] = ?, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+	updateItem       = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [tag] = ? WHERE id = ?`
+	deleteItem       = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+	restoreItem      = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
 )
 
 func scanTaskFromRow(row *sql.Row, item *models.Task) error {
@@ -85,6 +85,31 @@ func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 	)
 }
 
+func (r *TasksRepo) GetItemsForUser(userId int64) (items []models.Task, err error) {
+	rows, err := r.database.Query(getItemsNotDeleted, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+	}(rows)
+
+	items = make([]models.Task, 0)
+	for rows.Next() {
+		item := models.Task{}
+
+		err = scanTaskFromRows(rows, &item)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 func (r *TasksRepo) GetItems() (items []models.Task, err error) {
 	rows, err := r.database.Query(getItemsNotDeleted)
 	if err != nil {
