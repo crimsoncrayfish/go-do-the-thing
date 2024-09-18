@@ -25,7 +25,7 @@ type Handler struct {
 	security  security.JwtHandler
 	model     Screens
 	repo      repos.UsersRepo
-	logger    *slog.Logger
+	logger    slog.Logger
 }
 
 // TODO: What even is this

@@ -2,7 +2,6 @@ package models
 
 import (
 	"go-do-the-thing/database"
-	"go-do-the-thing/helpers/constants"
 	"time"
 )
 
@@ -10,15 +9,16 @@ type Task struct {
 	Id           int64                `json:"id,omitempty"`
 	Name         string               `json:"name"`
 	Description  string               `json:"description,omitempty"`
+	AssignedTo   int64                `json:"assigned_to"`
 	Status       ItemStatus           `json:"status"`
 	CompleteDate *database.SqLiteTime `json:"complete_date"`
-	AssignedTo   string               `json:"assigned_to"`
 	DueDate      *database.SqLiteTime `json:"due_date"`
-	CreatedBy    string               `json:"created_by"`
-	CreateDate   *database.SqLiteTime `json:"create_date"`
+	CreatedBy    int64                `json:"created_by"`
+	CreatedDate  *database.SqLiteTime `json:"created_date"`
+	ModifiedBy   int64                `json:"modified_by"`
+	ModifiedDate *database.SqLiteTime `json:"modified_date"`
 	IsDeleted    bool                 `json:"is_deleted"`
 	Tag          string               `json:"tag,omitempty"`
-	AssignedUser int64                `json:"assigned_to_user,omitempty"`
 }
 
 type ItemStatus int
@@ -28,7 +28,9 @@ const (
 	Completed
 )
 
-func (t *Task) ToggleStatus() {
+func (t *Task) ToggleStatus(modifiedBy int64) {
+	t.ModifiedBy = modifiedBy
+	t.ModifiedDate = database.SqLiteNow()
 	if t.Status == Scheduled {
 		t.Status = Completed
 		now := time.Now()
@@ -51,22 +53,26 @@ func (t *Task) IsValid() (bool, map[string]string) {
 	return isValid, errs
 }
 
-func (t *Task) FormDataFromItemNoValidation() FormData {
-	formData := NewFormData()
-	formData.Values["name"] = t.Name
-	formData.Values["description"] = t.Description
-	formData.Values["assigned_to"] = t.AssignedTo
-	formData.Values["due_date"] = t.DueDate.StringF(constants.DateFormat)
-	formData.Values["tag"] = t.Tag
-
-	return formData
+type TaskViewListItem struct {
+	Id            int64
+	Name          string
+	Description   string
+	AssignedTo    string
+	Status        ItemStatus
+	CompletedDate *database.SqLiteTime
+	DueDate       *database.SqLiteTime
+	Tag           string
 }
 
-func (t *Task) FormDataFromItem() (FormData, bool) {
-	formData := t.FormDataFromItemNoValidation()
-	isValid, errs := t.IsValid()
-	if !isValid {
-		formData.Errors = errs
+func ListItemFromTask(task Task, assignedTo User) TaskViewListItem {
+	return TaskViewListItem{
+		Id:            task.Id,
+		Name:          task.Name,
+		Description:   task.Description,
+		AssignedTo:    assignedTo.FullName,
+		Status:        task.Status,
+		CompletedDate: task.CompleteDate,
+		DueDate:       task.DueDate,
+		Tag:           task.Tag,
 	}
-	return formData, isValid
 }

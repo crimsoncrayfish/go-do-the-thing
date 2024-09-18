@@ -3,21 +3,22 @@ package home
 import (
 	"go-do-the-thing/app/models"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/assert"
 	"go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
 	"net/http"
 )
 
-type Handler struct {
+type HomeHandler struct {
 	model     Screens
 	templates helpers.Templates
-	logger    *slog.Logger
+	logger    slog.Logger
 }
 
 func SetupHomeHandler(router *http.ServeMux, templates helpers.Templates, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger("Home")
 	logger.Info("Setting up the Home screen")
-	handler := &Handler{
+	handler := &HomeHandler{
 		model: Screens{
 			models.NavBarObject{
 				ActiveScreens: models.ActiveScreens{IsHome: true},
@@ -34,16 +35,14 @@ type Screens struct {
 	NavBar models.NavBarObject
 }
 
-func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
-	data := h.model
-	email, name, err := helpers.GetUserFromContext(r)
-	if err != nil {
-		h.logger.Error(err, "could not get user details from http context")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	data.NavBar = data.NavBar.SetUser(name, email)
+	data := h.model
+
+	data.NavBar = data.NavBar.SetUser(currentUserName, currentUserEmail)
 	if err := h.templates.RenderOk(w, "index", data); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -51,16 +50,14 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
-	data := h.model
-	email, name, err := helpers.GetUserFromContext(r)
-	if err != nil {
-		h.logger.Error(err, "could not get user details from http context")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	data.NavBar = data.NavBar.SetUser(name, email)
+	data := h.model
+
+	data.NavBar = data.NavBar.SetUser(currentUserName, currentUserEmail)
 	if err := h.templates.RenderOk(w, "home", data); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -6,7 +6,7 @@ import (
 )
 
 type RateLimitMiddleWare struct {
-	logger *slog.Logger
+	logger slog.Logger
 }
 
 func NewRateLimiter() *RateLimitMiddleWare {

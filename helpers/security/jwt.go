@@ -12,7 +12,7 @@ import (
 
 type JwtHandler struct {
 	*SecretKeyProvider
-	logger *slog.Logger
+	logger slog.Logger
 }
 
 func NewJwtHandler(keysLocation string) (JwtHandler, error) {
