@@ -17,55 +17,57 @@ func InitTasksRepo(database database.DatabaseConnection) (*TasksRepo, error) {
 	if err != nil {
 		return &TasksRepo{}, err
 	}
-	err = database.AddColumnToTable(TasksRepoName, "tag", "TEXT default '' not null")
-	if err != nil {
-		return &TasksRepo{}, err
-	}
-	err = database.AddColumnToTable(TasksRepoName, "complete_date", "TEXT default '' not null")
-	if err != nil {
-		return &TasksRepo{}, err
-	}
-	err = database.AddColumnToTable(TasksRepoName, "name", "TEXT default '' not null")
-	if err != nil {
-		return &TasksRepo{}, err
-	}
+
 	return &TasksRepo{database}, nil
 }
 
 const (
 	createTasksTable = `CREATE TABLE IF NOT EXISTS items (
 	[id] INTEGER PRIMARY KEY,
+   	[name] TEXT DEFAULT '' NOT NULL,
    	[description] TEXT,
+	[assigned_to] INTEGER,
 	[status] INTEGER DEFAULT 0,
-	[assigned_to] TEXT,
+	[complete_date] TEXT DEFAULT '' NOT NULL,	
     [due_date] TEXT,
+
     [created_by] TEXT,
-    [create_date] TEXT,
+    [created_date] TEXT,
+
+    [modified_by] TEXT,
+    [modified_date] TEXT,
+	
+	[tag] TEXT DEFAULT '' NOT NULL,
 	[is_deleted] INTEGER DEFAULT 0
 );`
-	//getItems           = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [name], [complete_date] FROM items"
-	getItemsNotDeleted = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE is_deleted=0"
-	countItems         = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
-	getItem            = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE id = ?"
-	insertItem         = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [create_date], [tag]) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	updateItemStatus   = `UPDATE items SET [status] = ?, [complete_date] = ? WHERE id = ?`
-	updateItem         = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [tag] = ? WHERE id = ?`
-	deleteItem         = `UPDATE items SET [is_deleted] = 1 WHERE id = ?`
-	restoreItem        = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
+	getItemsNotDeleted = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [tag], [complete_date] FROM items WHERE is_deleted=0"
+	getItem            = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE id = ?"
+
+	getItemsByAssignedUser = "SELECT [Id], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [is_deleted], [tag], [name], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
+	countItems             = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
+	insertItem             = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [tag]) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	updateItemStatus       = `UPDATE items SET [status] = ?, [complete_date] = ?, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+	updateItem             = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [tag] = ? WHERE id = ?`
+	deleteItem             = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+	restoreItem            = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
 )
 
 func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 	return row.Scan(
 		&item.Id,
+		&item.Name,
 		&item.Description,
 		&item.Status,
 		&item.AssignedTo,
 		&item.DueDate,
 		&item.CreatedBy,
-		&item.CreateDate,
+		&item.CreatedDate,
+		&item.ModifiedBy,
+		&item.ModifiedDate,
+
 		&item.IsDeleted,
 		&item.Tag,
-		&item.Name,
+
 		&item.CompleteDate,
 	)
 }
@@ -73,15 +75,12 @@ func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 	return rows.Scan(
 		&item.Id,
+		&item.Name,
 		&item.Description,
 		&item.Status,
 		&item.AssignedTo,
 		&item.DueDate,
-		&item.CreatedBy,
-		&item.CreateDate,
-		&item.IsDeleted,
 		&item.Tag,
-		&item.Name,
 		&item.CompleteDate,
 	)
 }
@@ -121,7 +120,9 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.AssignedTo,
 		item.DueDate.String(),
 		item.CreatedBy,
-		item.CreateDate.String(),
+		database.SqLiteNow().String(),
+		item.ModifiedBy,
+		database.SqLiteNow().String(),
 		item.Tag,
 	)
 	if err != nil {
@@ -139,16 +140,16 @@ func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	return nil
 }
 
-func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status int64) (err error) {
-	_, err = r.database.Exec(updateItemStatus, status, completeDate.String(), id)
+func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status, modifiedBy int64) (err error) {
+	_, err = r.database.Exec(updateItemStatus, status, completeDate.String(), modifiedBy, database.SqLiteNow().String(), id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *TasksRepo) DeleteItem(id int64) (err error) {
-	_, err = r.database.Exec(deleteItem, id)
+func (r *TasksRepo) DeleteItem(id, modifiedBy int64, modifiedDate database.SqLiteTime) (err error) {
+	_, err = r.database.Exec(deleteItem, modifiedBy, modifiedDate.String(), id)
 	if err != nil {
 		return err
 	}

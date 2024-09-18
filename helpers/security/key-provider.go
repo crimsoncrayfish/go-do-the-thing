@@ -14,7 +14,7 @@ import (
 type SecretKeyProvider struct {
 	keyList map[string]*rsa.PrivateKey
 	kidList []string
-	logger  *slog.Logger
+	logger  slog.Logger
 }
 
 func newKeyProvider(keysLocation string) (*SecretKeyProvider, error) {
@@ -45,7 +45,7 @@ func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
 	return skp.keyList[skp.kidList[0]]
 }
 
-func readKeys(keysLocation string, logger *slog.Logger) ([]*rsa.PrivateKey, error) {
+func readKeys(keysLocation string, logger slog.Logger) ([]*rsa.PrivateKey, error) {
 	keys := make([]*rsa.PrivateKey, 10)
 	// TODO: add code to read from mulitple locations for multiple rotating keys
 	key, err := readKey(keysLocation, logger)
@@ -57,7 +57,7 @@ func readKeys(keysLocation string, logger *slog.Logger) ([]*rsa.PrivateKey, erro
 	return keys, nil
 }
 
-func readKey(keyLocation string, logger *slog.Logger) (*rsa.PrivateKey, error) {
+func readKey(keyLocation string, logger slog.Logger) (*rsa.PrivateKey, error) {
 	privateKeyName := "private.key"
 	privateKeyFile, err := os.ReadFile(keyLocation + privateKeyName)
 	logger.Info("Reading file at " + keyLocation + privateKeyName)

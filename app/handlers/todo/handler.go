@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"go-do-the-thing/app/handlers"
@@ -8,6 +9,8 @@ import (
 	"go-do-the-thing/database"
 	"go-do-the-thing/database/repos"
 	"go-do-the-thing/helpers"
+	"go-do-the-thing/helpers/assert"
+	"go-do-the-thing/helpers/constants"
 	"go-do-the-thing/helpers/slog"
 	"go-do-the-thing/middleware"
 	"net/http"
@@ -18,6 +21,7 @@ import (
 
 type Handler struct {
 	repo          repos.TasksRepo
+	usersRepo     repos.UsersRepo
 	templates     helpers.Templates
 	activeScreens models.NavBarObject
 	logger        slog.Logger
@@ -25,6 +29,7 @@ type Handler struct {
 
 func SetupTodoHandler(
 	tasksRepo repos.TasksRepo,
+	usersRepo repos.UsersRepo,
 	router *http.ServeMux,
 	templates helpers.Templates,
 	mw_stack middleware.Middleware,
@@ -33,18 +38,19 @@ func SetupTodoHandler(
 
 	todoHandler := &Handler{
 		repo:          tasksRepo,
+		usersRepo:     usersRepo,
 		templates:     templates,
 		activeScreens: models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}},
-		logger:        *logger,
+		logger:        logger,
 	}
 
-	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.GetItem)))
-	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.ListItems)))
-	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.UpdateItemStatus)))
-	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.CreateItem)))
-	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.UpdateItem)))
-	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.DeleteItem)))
-	router.Handle("GET /error", mw_stack(http.HandlerFunc(todoHandler.TestError)))
+	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItem)))
+	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.listItems)))
+	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemStatus)))
+	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItem)))
+	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItem)))
+	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItem)))
+	router.Handle("GET /error", mw_stack(http.HandlerFunc(todoHandler.testError)))
 	//	router.HandleFunc("POST /todo/restore/{id}", todoHandler.RestoreItemUI)
 	return nil
 }
@@ -53,19 +59,28 @@ type idResponse struct {
 	Id int64 `json:"id" json:"id"`
 }
 
-func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	handlers.AcceptHeaderSwitch(w, r, h.createItemAPI, h.createItemUI)
 }
 
 func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	var item models.Task
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&item)
+	err = decoder.Decode(&item)
 	if err != nil {
 		h.logger.Error(err, "failed to decode todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	item.CreatedBy = currentUserId
+	item.CreatedDate = database.SqLiteNow()
+	item.ModifiedBy = currentUserId
+	item.ModifiedDate = database.SqLiteNow()
+
 	id, err := h.repo.InsertItem(item)
 	if err != nil {
 		h.logger.Error(err, "failed to insert item")
@@ -91,10 +106,14 @@ func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	errorForm := models.NewFormData()
 	name, errorForm := models.GetRequiredPropertyFromRequest(r, "name", errorForm, true)
 	description, errorForm := models.GetOptionalPropertyFromRequest(r, "description", errorForm, true)
-	assignedTo, errorForm := models.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm, true)
+	// TODO: for now this will just be the current user - assignedTo, errorForm := models.GetRequiredPropertyFromRequest(r, "assigned_to", errorForm, true)
 	tag, errorForm := models.GetRequiredPropertyFromRequest(r, "tag", errorForm, true)
 	dateRaw, errorForm := models.GetRequiredPropertyFromRequest(r, "due_date", errorForm, true)
 	date, err := time.Parse("2006-01-02", dateRaw)
@@ -104,19 +123,30 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	now := time.Now()
+
+	/*assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
+	if ok := h.handleUserNotFound(err, assignedTo); !ok {
+		errorForm.Errors["Assigned To"] = "Not a valid user"
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+		}
+		return
+	}*/
+
 	item := models.Task{
-		Name:        name,
-		Description: description,
-		AssignedTo:  assignedTo,
-		DueDate:     &database.SqLiteTime{Time: &date},
-		CreatedBy:   "CurrentUser", //todo logins
-		CreateDate:  &database.SqLiteTime{Time: &now},
-		IsDeleted:   false,
-		Tag:         tag,
+		Name:         name,
+		Description:  description,
+		DueDate:      &database.SqLiteTime{Time: &date},
+		AssignedTo:   currentUserId, // TODO: need to update this
+		CreatedBy:    currentUserId,
+		CreatedDate:  database.SqLiteNow(),
+		ModifiedBy:   currentUserId,
+		ModifiedDate: database.SqLiteNow(),
+		IsDeleted:    false,
+		Tag:          tag,
 	}
 	//Check if form is valid and respond with any error
-	formData, isValid := item.FormDataFromItem()
+	formData, isValid := formDataFromItem(item, currentUserEmail)
 	if !isValid {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", formData); err != nil {
 			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
@@ -136,7 +166,15 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Respond with templates
-	if err = h.templates.RenderOk(w, "task-row-oob", task); err != nil {
+	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
+	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+		}
+		return
+	}
+	taskListItem := models.ListItemFromTask(task, assignedToUser)
+	if err = h.templates.RenderOk(w, "task-row-oob", taskListItem); err != nil {
 		handlers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
 	}
@@ -158,11 +196,15 @@ type NoItemRowData struct {
 	HideNoData bool
 }
 
-func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	handlers.AcceptHeaderSwitch(w, r, h.updateItemAPI, h.updateItemUI)
 }
 
 func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	var item models.Task
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -174,6 +216,7 @@ func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
 		handlers.HttpError("failed to decode item", err, w)
 		return
 	}
+	item.ModifiedBy = currentUserId
 	if id != item.Id {
 		handlers.HttpError("id mismatch", errors.New("The id in the path does not match the id in the request object"), w)
 		return
@@ -186,6 +229,10 @@ func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -204,21 +251,29 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	now := time.Now()
+	// TODO: Get task from the db and only update relevant fields
+	assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
+	if ok := h.handleUserNotFound(err, assignedTo); !ok {
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+		}
+		return
+	}
+
 	item := models.Task{
-		Id:          id,
-		Name:        name,
-		Description: description,
-		AssignedTo:  assignedTo,
-		DueDate:     &database.SqLiteTime{Time: &date},
-		CreatedBy:   "CurrentUser",
-		CreateDate:  &database.SqLiteTime{Time: &now},
-		IsDeleted:   false,
-		Tag:         tag,
+		Id:           id,
+		Name:         name,
+		Description:  description,
+		AssignedTo:   assignedToUser.Id,
+		DueDate:      &database.SqLiteTime{Time: &date},
+		ModifiedBy:   currentUserId,
+		ModifiedDate: database.SqLiteNow(),
+		IsDeleted:    false,
+		Tag:          tag,
 	}
 
 	//Check if form is valid and respond with any error
-	formData := item.FormDataFromItemNoValidation()
+	formData := formDataFromItemNoValidation(item, assignedTo)
 	formData.Submit = "Update"
 
 	//update data
@@ -244,11 +299,15 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) GetItem(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	handlers.AcceptHeaderSwitch(w, r, h.getItemAPI, h.getItemUI)
 }
 
 func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -284,6 +343,10 @@ type ItemPageModel struct {
 }
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		handlers.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
@@ -295,8 +358,12 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	formData := task.FormDataFromItemNoValidation()
+
+	assignedUser, err := h.usersRepo.GetUserById(task.AssignedTo)
+
+	formData := formDataFromItemNoValidation(task, assignedUser.Email)
 	formData.Submit = "Update"
+
 	model := ItemPageModel{task, h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-item", model)
 	if err != nil {
@@ -306,11 +373,15 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) UpdateItemStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	handlers.AcceptHeaderSwitch(w, r, h.updateItemStatusAPI, h.updateItemStatusUI)
 }
 
 func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -323,10 +394,9 @@ func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	completeDate := database.SqLiteTime{}
 	if newStatus == int64(models.Completed) {
-		now := time.Now()
-		completeDate = database.SqLiteTime{Time: &now}
+		completeDate = *database.SqLiteNow()
 	}
-	err = h.repo.UpdateItemStatus(id, completeDate, newStatus)
+	err = h.repo.UpdateItemStatus(id, completeDate, newStatus, currentUserId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -334,6 +404,10 @@ func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		handlers.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
@@ -344,10 +418,13 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		handlers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
+	assert.IsTrue(task.AssignedTo == currentUserId, h.logger, "for now you can only update tasks assigned to you. %d tried to update task %d thats owned by %d", currentUserId, task.Id, task.AssignedTo)
 
-	task.ToggleStatus()
+	h.logger.Debug("does it even reach here? %d", task.Status)
+	task.ToggleStatus(currentUserId)
+	h.logger.Debug("does it even reach here? %d", task.Status)
 
-	if err = h.repo.UpdateItemStatus(id, *task.CompleteDate, int64(task.Status)); err != nil {
+	if err = h.repo.UpdateItemStatus(id, *task.CompleteDate, int64(task.Status), currentUserId); err != nil {
 		handlers.HttpErrorUI(h.templates, "Failed to update todo item", err, w)
 		return
 	}
@@ -356,18 +433,31 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		handlers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
+	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
+	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
+		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
+			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+		}
+		return
+	}
+	taskListItem := models.ListItemFromTask(task, assignedToUser)
 
-	if err = h.templates.RenderOk(w, "task-row", task); err != nil {
+	if err = h.templates.RenderOk(w, "task-row", taskListItem); err != nil {
+		h.logger.Error(err, "whut")
 		handlers.HttpErrorUI(h.templates, "Failed to execute template for the home page", err, w)
 		return
 	}
 }
 
-func (h *Handler) ListItems(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	handlers.AcceptHeaderSwitch(w, r, h.listItemsAPI, h.listItemsUI)
 }
 
-func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) listItemsAPI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	items, err := h.repo.GetItems()
 	if err != nil {
 		h.logger.Error(err, "failed to get todo items")
@@ -390,12 +480,16 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, _ *http.Request) {
 }
 
 type ListModel struct {
-	Tasks    []models.Task
+	Tasks    []models.TaskViewListItem
 	NavBar   models.NavBarObject
 	FormData models.FormData
 }
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	tasks, err := h.repo.GetItems()
 	if err != nil {
 		h.logger.Error(err, "failed to get todo tasks")
@@ -408,16 +502,20 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 
 	formData := models.NewFormData()
 	formData.Values["due_date"] = time.Now().Add(time.Hour * 24).Format("2006-01-02")
+	users := make(map[int64]models.User)
 
-	data := ListModel{tasks, h.activeScreens, formData}
-	email, name, err := helpers.GetUserFromContext(r)
-	if err != nil {
-		h.logger.Error(err, "could not get user details from http context")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	var tasksList []models.TaskViewListItem
+	for _, task := range tasks {
+		if _, exists := users[task.AssignedTo]; !exists {
+			user, err := h.usersRepo.GetUserById(task.AssignedTo)
+			assert.NoError(err, h.logger, "how does a task with an assigned user id of %d even exist?", task.AssignedTo)
+			users[task.AssignedTo] = user
+		}
+		tasksList = append(tasksList, models.ListItemFromTask(task, users[task.AssignedTo]))
 	}
 
-	data.NavBar = data.NavBar.SetUser(name, email)
+	data := ListModel{tasksList, h.activeScreens, formData}
+	data.NavBar = data.NavBar.SetUser(currentUserName, currentUserEmail)
 
 	err = h.templates.RenderOk(w, "task-list", data)
 	if err != nil {
@@ -427,17 +525,21 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	handlers.AcceptHeaderSwitch(w, r, h.deleteItemAPI, h.deleteItemUI)
 }
 
 func (h *Handler) deleteItemAPI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.repo.DeleteItem(id)
+	err = h.repo.DeleteItem(id, currentUserId, *database.SqLiteNow())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -445,12 +547,16 @@ func (h *Handler) deleteItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		handlers.HttpErrorUI(h.templates, "failed to parse id from path", err, w)
 		return
 	}
-	err = h.repo.DeleteItem(id)
+	err = h.repo.DeleteItem(id, currentUserId, *database.SqLiteNow())
 	if err != nil {
 		handlers.HttpErrorUI(h.templates, "failed to delete todo item", err, w)
 		return
@@ -470,6 +576,55 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) TestError(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) testError(w http.ResponseWriter, r *http.Request) {
+	// Get currentUser details
+	_, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
 	handlers.HttpErrorUI(h.templates, "Testing the error page", errors.New("Testing the error page"), w)
+}
+
+func formDataFromItemNoValidation(task models.Task, assignedUser string) models.FormData {
+	formData := models.NewFormData()
+	formData.Values["name"] = task.Name
+	formData.Values["description"] = task.Description
+	formData.Values["assigned_user"] = assignedUser
+	formData.Values["due_date"] = task.DueDate.StringF(constants.DateFormat)
+	formData.Values["tag"] = task.Tag
+
+	return formData
+}
+
+func formDataFromItem(task models.Task, assignedUser string) (models.FormData, bool) {
+	formData := formDataFromItemNoValidation(task, assignedUser)
+	isValid, errs := task.IsValid()
+	if !isValid {
+		formData.Errors = errs
+	}
+	return formData, isValid
+}
+
+func (h *Handler) handleUserNotFound(err error, userEmail string) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		h.logger.Error(err, "the entered email address does not corrispond to an existing user: %s", userEmail)
+	} else {
+		h.logger.Error(err, "some error occured reading from the db while querying for %s", userEmail)
+		assert.NoError(err, h.logger, "some error occurred. probably fialed to read from the db while checking user %s", userEmail)
+	}
+	return false
+}
+func (h *Handler) handleUserIdNotFound(err error, userId int64) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		h.logger.Error(err, "the entered email address does not corrispond to an existing user: %d", userId)
+	} else {
+		h.logger.Error(err, "some error occured reading from the db while querying for %d", userId)
+		assert.NoError(err, h.logger, "some error occurred. probably fialed to read from the db while checking user %d", userId)
+	}
+	return false
 }

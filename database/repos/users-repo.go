@@ -34,7 +34,7 @@ const (
 );`
 	getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
 	countUsers            = "SELECT COUNT(*) FROM users WHERE is_deleted=0"
-	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted] FROM users WHERE id = ?"
+	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE id = ?"
 	getUserByEmail        = `SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE email = ?`
 	insertUser            = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES (?, ?, ?, ?)`
 	updateUserDetails     = `UPDATE users SET [full_name] = ? WHERE id = ?`
@@ -138,7 +138,7 @@ func (r *UsersRepo) GetUserByEmail(name string) (models.User, error) {
 	return temp, nil
 }
 
-func (r *UsersRepo) GetUserPassword(id int) (string, error) {
+func (r *UsersRepo) GetUserPassword(id int64) (string, error) {
 	row := r.db.QueryRow(getUserPassword, id)
 	var password string
 	err := row.Scan(&password)
@@ -150,7 +150,7 @@ func (r *UsersRepo) GetUserPassword(id int) (string, error) {
 	return password, nil
 }
 
-func (r *UsersRepo) GetUserById(id int) (models.User, error) {
+func (r *UsersRepo) GetUserById(id int64) (models.User, error) {
 	row := r.db.QueryRow(getUser, id)
 	temp := models.User{}
 	err := scanUserFromRow(row, &temp)

@@ -17,7 +17,7 @@ func (w *wrappedWriter) WriteHeader(statusCode int) {
 }
 
 type LoggingMiddleWare struct {
-	logger *slog.Logger
+	logger slog.Logger
 }
 
 func NewLoggingMiddleWare() *LoggingMiddleWare {

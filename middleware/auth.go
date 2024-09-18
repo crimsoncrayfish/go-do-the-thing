@@ -9,6 +9,7 @@ import (
 	"go-do-the-thing/helpers/security"
 	"go-do-the-thing/helpers/slog"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -20,7 +21,7 @@ type AuthenticationMiddleware struct {
 
 func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo repos.UsersRepo) AuthenticationMiddleware {
 	return AuthenticationMiddleware{
-		Logger:     *slog.NewLogger("Auth"),
+		Logger:     slog.NewLogger("Auth"),
 		UsersRepo:  usersRepo,
 		JwtHandler: jwt,
 	}
@@ -93,8 +94,9 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 		}
 
 		values := helpers.HttpContext{Values: map[string]string{
-			constants.AuthUserId:   user.Email,
-			constants.AuthUserName: user.FullName,
+			constants.AuthUserId:    strconv.FormatInt(user.Id, 10),
+			constants.AuthUserEmail: user.Email,
+			constants.AuthUserName:  user.FullName,
 		}}
 		ctx := context.WithValue(r.Context(), constants.AuthContext, values)
 		request := r.WithContext(ctx)

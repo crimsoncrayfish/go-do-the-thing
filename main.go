@@ -68,7 +68,7 @@ func main() {
 		panic(err)
 	}
 
-	err = todo.SetupTodoHandler(*reposContainer.GetTasksRepo(), router, *renderer, middleware_full)
+	err = todo.SetupTodoHandler(*reposContainer.GetTasksRepo(), *reposContainer.GetUsersRepo(), router, *renderer, middleware_full)
 	if err != nil {
 		logger.Error(err, "Failed to initialize todo")
 		panic(err)

@@ -27,7 +27,7 @@ func NewRenderer(workingDir string) *Templates {
 	return &Templates{template.Must(parseGlobRecurse(workingDir, logger))}
 }
 
-func parseGlobRecurse(directory string, logger *slog.Logger) (*template.Template, error) {
+func parseGlobRecurse(directory string, logger slog.Logger) (*template.Template, error) {
 	templates := template.New("")
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if strings.Contains(path, ".gohtml") {

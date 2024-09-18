@@ -10,8 +10,8 @@ type Logger struct {
 	Name string
 }
 
-func NewLogger(name string) *Logger {
-	return &Logger{Name: name}
+func NewLogger(name string) Logger {
+	return Logger{Name: name}
 
 }
 
