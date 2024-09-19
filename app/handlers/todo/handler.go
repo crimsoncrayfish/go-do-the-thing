@@ -151,6 +151,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	//Check if form is valid and respond with any error
 	formData, isValid := formDataFromItem(task, currentUserEmail)
 	if !isValid {
+		h.logger.Info("invalid data")
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", formData); err != nil {
 			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
 		}
@@ -160,20 +161,21 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	//update data
 	id, err := h.repo.InsertItem(task)
 	if err != nil {
+		h.logger.Error(err, "failed to insert task")
 		handlers.HttpErrorUI(h.templates, "failed to insert todo item", err, w)
 		return
 	}
 	task, err = h.repo.GetItem(id)
 	if err != nil {
+		h.logger.Error(err, "failed to get newly inserted task")
 		handlers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
 	//Respond with templates
 	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
 	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
-			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-		}
+		assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+		// TODO: what should happen if the fetch fails after create
 		return
 	}
 	var createdBy models.User
@@ -182,9 +184,8 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	} else {
 		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
-				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-			}
+			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			// TODO: what should happen if the fetch fails after create
 			return
 		}
 	}
@@ -218,12 +219,14 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) updateItemAPI(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
+	assert.IsTrue(false, h.logger, "this probably doesnt work anymore")
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
 	var item models.Task
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
+		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -251,6 +254,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
+		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -270,9 +274,8 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Get task from the db and only update relevant fields
 	assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
 	if ok := h.handleUserNotFound(err, assignedTo); !ok {
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
-			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-		}
+		assert.NoError(err, h.logger, "how does a task with an assigned to user of %s even exist?", assignedTo)
+		// TODO: what should happen if the fetch fails while updating
 		return
 	}
 
@@ -310,9 +313,6 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
 			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen to the row if an error occurs while updating?
-			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
-				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-			}
 			return
 		}
 	}
@@ -340,11 +340,13 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
+		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	item, err := h.repo.GetItem(id)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -353,6 +355,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 	items[0] = item
 	jsonBytes, err := json.Marshal(items)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to marshal todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -360,6 +363,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonBytes)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to write response")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -384,6 +388,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err := h.repo.GetItem(id)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -403,15 +408,13 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
 			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen to the row if an error occurs while updating?
-			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
-				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-			}
 			return
 		}
 	}
 	model := ItemPageModel{models.TaskToViewModel(task, assignedUser, createdBy), h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-item", model)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "Failed to execute template for the item page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -423,6 +426,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateItemStatusAPI(w http.ResponseWriter, r *http.Request) {
+	assert.IsTrue(false, h.logger, "this probably doesnt work anymore")
 	// Get currentUser details
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
@@ -480,9 +484,6 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
 		assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 		// TODO: what should happen to the row if an error occurs while updating?
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
-			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-		}
 		return
 	}
 	var createdBy models.User
@@ -493,9 +494,6 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
 			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen to the row if an error occurs while updating?
-			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
-				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
-			}
 			return
 		}
 	}
@@ -551,6 +549,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 
 	tasks, err := h.repo.GetItemsForUser(currentUserId)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -584,6 +583,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates.RenderOk(w, "task-list", data)
 	if err != nil {
+		// TODO: some user feedback here?
 		h.logger.Error(err, "Failed to execute template for the item list page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
