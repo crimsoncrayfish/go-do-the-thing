@@ -65,6 +65,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createItemAPI(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
+	assert.IsTrue(false, h.logger, "this has diverged a lot from the UI implementation")
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
@@ -124,7 +125,8 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
+	/* TODO: defaulted this to the current user for now until i implement teams/projects invites to teams/projects and a user select
+	assignedToUser, err := h.usersRepo.GetUserByEmail(assignedTo)
 	if ok := h.handleUserNotFound(err, assignedTo); !ok {
 		errorForm.Errors["Assigned To"] = "Not a valid user"
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
@@ -133,7 +135,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}*/
 
-	item := models.Task{
+	task := models.Task{
 		Name:         name,
 		Description:  description,
 		DueDate:      &database.SqLiteTime{Time: &date},
@@ -145,8 +147,9 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		IsDeleted:    false,
 		Tag:          tag,
 	}
+
 	//Check if form is valid and respond with any error
-	formData, isValid := formDataFromItem(item, currentUserEmail)
+	formData, isValid := formDataFromItem(task, currentUserEmail)
 	if !isValid {
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", formData); err != nil {
 			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
@@ -155,12 +158,12 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//update data
-	id, err := h.repo.InsertItem(item)
+	id, err := h.repo.InsertItem(task)
 	if err != nil {
 		handlers.HttpErrorUI(h.templates, "failed to insert todo item", err, w)
 		return
 	}
-	task, err := h.repo.GetItem(id)
+	task, err = h.repo.GetItem(id)
 	if err != nil {
 		handlers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
@@ -173,7 +176,20 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	taskListItem := models.ListItemFromTask(task, assignedToUser)
+	var createdBy models.User
+	if task.CreatedBy == task.AssignedTo {
+		createdBy = assignedToUser
+	} else {
+		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
+		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
+			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-form-content", errorForm); err != nil {
+				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			}
+			return
+		}
+	}
+
+	taskListItem := models.TaskToViewModel(task, assignedToUser, createdBy)
 	if err = h.templates.RenderOk(w, "task-row-oob", taskListItem); err != nil {
 		handlers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
@@ -286,8 +302,22 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		handlers.HttpErrorUI(h.templates, "failed to get todo item", err, w)
 		return
 	}
+	var createdBy models.User
+	if task.CreatedBy == task.AssignedTo {
+		createdBy = assignedToUser
+	} else {
+		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
+		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
+			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			// TODO: what should happen to the row if an error occurs while updating?
+			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
+				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			}
+			return
+		}
+	}
 	//Respond with templates
-	model := ItemPageModel{task, h.activeScreens, formData}
+	model := ItemPageModel{models.TaskToViewModel(task, assignedToUser, createdBy), h.activeScreens, formData}
 	if err = h.templates.RenderOk(w, "task-item-content-oob", model); err != nil {
 		handlers.HttpErrorUI(h.templates, "Failed to render item row", err, w)
 		return
@@ -337,7 +367,7 @@ func (h *Handler) getItemAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 type ItemPageModel struct {
-	Task     models.Task
+	Task     models.TaskView
 	NavBar   models.NavBarObject
 	FormData models.FormData
 }
@@ -360,11 +390,26 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	assignedUser, err := h.usersRepo.GetUserById(task.AssignedTo)
+	assert.NoError(err, h.logger, "this user should exist: %d", task.AssignedTo)
 
 	formData := formDataFromItemNoValidation(task, assignedUser.Email)
 	formData.Submit = "Update"
 
-	model := ItemPageModel{task, h.activeScreens, formData}
+	var createdBy models.User
+	if task.CreatedBy == task.AssignedTo {
+		createdBy = assignedUser
+	} else {
+		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
+		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
+			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			// TODO: what should happen to the row if an error occurs while updating?
+			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
+				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			}
+			return
+		}
+	}
+	model := ItemPageModel{models.TaskToViewModel(task, assignedUser, createdBy), h.activeScreens, formData}
 	err = h.templates.RenderOk(w, "task-item", model)
 	if err != nil {
 		h.logger.Error(err, "Failed to execute template for the item page")
@@ -420,9 +465,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	}
 	assert.IsTrue(task.AssignedTo == currentUserId, h.logger, "for now you can only update tasks assigned to you. %d tried to update task %d thats owned by %d", currentUserId, task.Id, task.AssignedTo)
 
-	h.logger.Debug("does it even reach here? %d", task.Status)
 	task.ToggleStatus(currentUserId)
-	h.logger.Debug("does it even reach here? %d", task.Status)
 
 	if err = h.repo.UpdateItemStatus(id, *task.CompleteDate, int64(task.Status), currentUserId); err != nil {
 		handlers.HttpErrorUI(h.templates, "Failed to update todo item", err, w)
@@ -435,12 +478,28 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	}
 	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
 	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
+		assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+		// TODO: what should happen to the row if an error occurs while updating?
 		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
 			handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
 		}
 		return
 	}
-	taskListItem := models.ListItemFromTask(task, assignedToUser)
+	var createdBy models.User
+	if task.CreatedBy == task.AssignedTo {
+		createdBy = assignedToUser
+	} else {
+		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
+		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
+			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			// TODO: what should happen to the row if an error occurs while updating?
+			if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "task-row", nil); err != nil {
+				handlers.HttpErrorUI(h.templates, "Failed to render template for formData", err, w)
+			}
+			return
+		}
+	}
+	taskListItem := models.TaskToViewModel(task, assignedToUser, createdBy)
 
 	if err = h.templates.RenderOk(w, "task-row", taskListItem); err != nil {
 		h.logger.Error(err, "whut")
@@ -480,7 +539,7 @@ func (h *Handler) listItemsAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 type ListModel struct {
-	Tasks    []models.TaskViewListItem
+	Tasks    []models.TaskView
 	NavBar   models.NavBarObject
 	FormData models.FormData
 }
@@ -504,14 +563,20 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	formData.Values["due_date"] = time.Now().Add(time.Hour * 24).Format("2006-01-02")
 	users := make(map[int64]models.User)
 
-	var tasksList []models.TaskViewListItem
+	var tasksList []models.TaskView
 	for _, task := range tasks {
+
 		if _, exists := users[task.AssignedTo]; !exists {
 			user, err := h.usersRepo.GetUserById(task.AssignedTo)
 			assert.NoError(err, h.logger, "how does a task with an assigned user id of %d even exist?", task.AssignedTo)
 			users[task.AssignedTo] = user
 		}
-		tasksList = append(tasksList, models.ListItemFromTask(task, users[task.AssignedTo]))
+		if _, exists := users[task.CreatedBy]; !exists {
+			user, err := h.usersRepo.GetUserById(task.CreatedBy)
+			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.CreatedBy)
+			users[task.CreatedBy] = user
+		}
+		tasksList = append(tasksList, models.TaskToViewModel(task, users[task.AssignedTo], users[task.CreatedBy]))
 	}
 
 	data := ListModel{tasksList, h.activeScreens, formData}
