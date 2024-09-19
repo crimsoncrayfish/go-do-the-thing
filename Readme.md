@@ -16,6 +16,10 @@ go install github.com/air-verse/air@latest
 alias air='~/{go directory here}/air'
 air
 ```
+for templ
+```cmd
+    go install github.com/a-h/templ/cmd/templ@latest
+```
 
 ### Compilation issues on a Windows machine
 

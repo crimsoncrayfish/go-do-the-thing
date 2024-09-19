@@ -8,3 +8,5 @@
 *.exe
 /keys
 go.work.sum
+*_templ.go
+
