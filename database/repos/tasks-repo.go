@@ -40,8 +40,8 @@ const (
 	[tag] TEXT DEFAULT '' NOT NULL,
 	[is_deleted] INTEGER DEFAULT 0
 );`
-	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [tag], [complete_date] FROM items WHERE is_deleted=0"
-	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [tag], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
+	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date]  FROM items WHERE is_deleted=0"
+	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
 	getItem                = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE id = ?"
 
 	countItems       = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
@@ -80,7 +80,14 @@ func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 		&item.Status,
 		&item.AssignedTo,
 		&item.DueDate,
+		&item.CreatedBy,
+		&item.CreatedDate,
+		&item.ModifiedBy,
+		&item.ModifiedDate,
+
+		&item.IsDeleted,
 		&item.Tag,
+
 		&item.CompleteDate,
 	)
 }

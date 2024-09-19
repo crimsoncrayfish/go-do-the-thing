@@ -53,7 +53,7 @@ func (t *Task) IsValid() (bool, map[string]string) {
 	return isValid, errs
 }
 
-type TaskViewListItem struct {
+type TaskView struct {
 	Id            int64
 	Name          string
 	Description   string
@@ -61,17 +61,21 @@ type TaskViewListItem struct {
 	Status        ItemStatus
 	CompletedDate *database.SqLiteTime
 	DueDate       *database.SqLiteTime
+	CreatedDate   *database.SqLiteTime
+	CreatedBy     string
 	Tag           string
 }
 
-func ListItemFromTask(task Task, assignedTo User) TaskViewListItem {
-	return TaskViewListItem{
+func TaskToViewModel(task Task, assignedTo, createdBy User) TaskView {
+	return TaskView{
 		Id:            task.Id,
 		Name:          task.Name,
 		Description:   task.Description,
 		AssignedTo:    assignedTo.FullName,
 		Status:        task.Status,
 		CompletedDate: task.CompleteDate,
+		CreatedDate:   task.CreatedDate,
+		CreatedBy:     createdBy.FullName,
 		DueDate:       task.DueDate,
 		Tag:           task.Tag,
 	}

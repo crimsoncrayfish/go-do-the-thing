@@ -45,9 +45,10 @@ ssh-keygen -t rsa -b 4096
 - ✔️ JWT auth from scratch
 - ✔️ Registration
 - ✔️ Login
+- ✔️ Link tasks to users
 - Admin controls to enable users
+- [Templ](https://templ.guide/)
 - Containerize this so i can dev on Windows
-- Link tasks to users
 - Logout
 - Projects for task grouping
 - Time logging on tasks
