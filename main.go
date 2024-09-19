@@ -74,7 +74,7 @@ func main() {
 		panic(err)
 	}
 	home.SetupHomeHandler(router, *renderer, middleware_full)
-
+	setupHello(router, logger)
 	setupStaticContent(router)
 
 	//This is for https
@@ -95,4 +95,19 @@ func main() {
 func setupStaticContent(router *http.ServeMux) {
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
+}
+func setupHello(router *http.ServeMux, logger slog.Logger) {
+	helloWorld := func(w http.ResponseWriter, r *http.Request) {
+		param := r.PathValue("name")
+		if param == "" {
+			helloWorld().Render(r.Context(), w)
+
+		} else {
+			hello(param).Render(r.Context(), w)
+		}
+
+		return
+	}
+	router.HandleFunc("/hello/{name}", helloWorld)
+	router.HandleFunc("/hello/", helloWorld)
 }
