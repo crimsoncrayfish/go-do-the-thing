@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/models"
 	"net/http"
 )
@@ -26,17 +25,6 @@ type ErrorPage struct {
 	ErrorMessage string
 }
 
-func newErrorPage(message string, err error) ErrorPage {
-	activeScreens := models.NewNavbarObject()
-	activeScreens.IsError = true
-	return ErrorPage{activeScreens, message,
-		err.Error()}
-}
-
-func HttpErrorUI(templates helpers.Templates, message string, err error, w http.ResponseWriter) {
-	errorPage := newErrorPage(message, err)
-	err = templates.RenderWithCode(w, http.StatusInternalServerError, "error", errorPage)
-}
 func HttpError(message string, err error, w http.ResponseWriter) {
 	http.Error(w, message, http.StatusInternalServerError)
 }

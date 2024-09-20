@@ -74,7 +74,7 @@ func main() {
 		logger.Error(err, "Failed to initialize todo")
 		panic(err)
 	}
-	home.SetupHomeHandler(router, *renderer, middleware_full)
+	home.SetupHomeHandler(router, middleware_full)
 	setupStaticContent(router)
 
 	//This is for https

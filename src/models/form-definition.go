@@ -1,6 +1,10 @@
 package models
 
-import "net/http"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+)
 
 type FormData struct {
 	Values map[string]string
@@ -16,23 +20,11 @@ func NewFormData() FormData {
 	}
 }
 
-func GetRequiredPropertyFromRequest(r *http.Request, propName string, formData FormData, keepValue bool) (string, FormData) {
+func GetPropertyFromRequest(r *http.Request, propName string, required bool) (string, error) {
 	value := r.FormValue(propName)
-	if len(value) == 0 {
-		formData.Errors[propName] = propName + " is required"
-		return value, formData
-	}
-	if keepValue {
-		formData.Values[propName] = value
+	if len(value) == 0 && required {
+		return value, errors.New(fmt.Sprintf("Failed to get value for '%s'", propName))
 	}
 
-	return value, formData
-}
-
-func GetOptionalPropertyFromRequest(r *http.Request, propName string, formData FormData, keepValue bool) (string, FormData) {
-	value := r.FormValue(propName)
-	if keepValue {
-		formData.Values[propName] = value
-	}
-	return value, formData
+	return value, nil
 }

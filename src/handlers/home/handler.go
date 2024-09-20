@@ -11,12 +11,11 @@ import (
 )
 
 type HomeHandler struct {
-	model     Screens
-	templates helpers.Templates
-	logger    slog.Logger
+	model  Screens
+	logger slog.Logger
 }
 
-func SetupHomeHandler(router *http.ServeMux, templates helpers.Templates, mw_stack middleware.Middleware) {
+func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger("Home")
 	logger.Info("Setting up the Home screen")
 	handler := &HomeHandler{
@@ -25,8 +24,7 @@ func SetupHomeHandler(router *http.ServeMux, templates helpers.Templates, mw_sta
 				ActiveScreens: models.ActiveScreens{IsHome: true},
 			},
 		},
-		templates: templates,
-		logger:    logger,
+		logger: logger,
 	}
 	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
 	router.Handle("GET /home", mw_stack(http.HandlerFunc(handler.Home)))
