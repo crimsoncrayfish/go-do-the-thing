@@ -80,8 +80,3 @@ func TaskToViewModel(task Task, assignedTo, createdBy User) TaskView {
 		Tag:           task.Tag,
 	}
 }
-
-type TaskForm struct {
-	Task   TaskView
-	Errors map[string]string
-}
