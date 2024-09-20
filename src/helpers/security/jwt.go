@@ -29,6 +29,7 @@ func NewJwtHandler(keysLocation string) (JwtHandler, error) {
 
 func (s *JwtHandler) NewToken(userId, session string, expiry time.Time) (string, error) {
 	claims := jwt.MapClaims{}
+	s.logger.Debug("what")
 	claims["user_id"] = userId
 	claims["expiry"] = expiry.Format(constants.DateTimeFormat)
 	claims["session_id"] = session
