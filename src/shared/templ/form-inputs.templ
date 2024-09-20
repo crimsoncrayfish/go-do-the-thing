@@ -1,0 +1,61 @@
+package templ_shared
+
+import "time"
+
+templ FormTextInput(name, value string) {
+	<div class="mb-5">
+		<label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+			Description
+			<input
+				type="text"
+				name={ name }
+				value={ value }
+				class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+			/>
+		</label>
+	</div>
+}
+
+templ FormDatePicker(name string, date time.Time) {
+	<div class="mb-5">
+		<label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+			Due date
+			<input
+				type="date"
+				name={ name }
+				value={ date.String() }
+				class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+			/>
+		</label>
+	</div>
+}
+
+//templ FormKVSelector(name string, value int, kvList map[int]string) {
+//<!--div class="mb-5">
+//        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Assigned To
+//            <input type="text"
+//                   name="assigned_to"{ if .Values.assigned_to } value="{ .Values.assigned_to }"{end}
+//                   class="bg-gray-50 mt-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+//        </label>
+//    </div-->
+//}
+templ FormListInput(name, value string, opts []string) {
+	<div class="mb-5">
+		<label class="block mb-2 p-0 text-sm font-medium text-gray-900 dark:text-white">
+			Tag
+			<select
+				name={ name }
+				class="mt-2 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+			>
+				for _, o:= range opts {
+					<option>
+						if value==o {
+							selected
+						}
+						value={ value }>{ o }
+					</option>
+				}
+			</select>
+		</label>
+	</div>
+}
