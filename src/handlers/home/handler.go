@@ -60,7 +60,7 @@ func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	data := h.model
 
 	data.NavBar = data.NavBar.SetUser(currentUserName, currentUserEmail)
-	if err := h.templates.RenderOk(w, "home", data); err != nil {
+	if err := home_templ.Index(data.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
