@@ -1,12 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
-  content: ["./**/*.gohtml"],
+  darkMode: "class",
+  content: ["./**/*.gohtml", "./**/*.templ"],
   theme: {
-    extend : {
+    extend: {
       transitionProperty: {
-        'max-height': 'max-height'
-      }
+        "max-height": "max-height",
+      },
     },
     fontFamily: {
       sans: ["Fira Code", "fira-code"],
@@ -15,5 +15,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
-
+};

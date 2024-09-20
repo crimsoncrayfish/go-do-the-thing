@@ -88,6 +88,7 @@ func (h Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("what")
 	errorForm := models.NewFormData()
 	email, errorForm := models.GetRequiredPropertyFromRequest(r, "email", errorForm, true)
 	password, errorForm := models.GetRequiredPropertyFromRequest(r, "password", errorForm, false)
@@ -137,6 +138,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, nil)
 		return
 	}
+	h.logger.Debug("what")
 	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Time.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr

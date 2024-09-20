@@ -9,7 +9,6 @@ import (
 	"go-do-the-thing/src/handlers/home"
 	"go-do-the-thing/src/handlers/todo"
 	"go-do-the-thing/src/handlers/users"
-	"go-do-the-thing/src/hello"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
@@ -76,7 +75,6 @@ func main() {
 		panic(err)
 	}
 	home.SetupHomeHandler(router, *renderer, middleware_full)
-	setupHello(router, logger)
 	setupStaticContent(router)
 
 	//This is for https
@@ -97,20 +95,4 @@ func main() {
 func setupStaticContent(router *http.ServeMux) {
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
-}
-func setupHello(router *http.ServeMux, logger slog.Logger) {
-	logger.Info("setting up hello")
-	helloWorld := func(w http.ResponseWriter, r *http.Request) {
-		param := r.PathValue("name")
-		if param == "" {
-			hello.HelloWorld().Render(r.Context(), w)
-
-		} else {
-			hello.Hello(param).Render(r.Context(), w)
-		}
-
-		return
-	}
-	router.HandleFunc("/hello/{name}", helloWorld)
-	router.HandleFunc("/hello/", helloWorld)
 }
