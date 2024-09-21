@@ -84,16 +84,14 @@ func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 		&item.CreatedDate,
 		&item.ModifiedBy,
 		&item.ModifiedDate,
-
 		&item.IsDeleted,
 		&item.Tag,
-
 		&item.CompleteDate,
 	)
 }
 
 func (r *TasksRepo) GetItemsForUser(userId int64) (items []models.Task, err error) {
-	rows, err := r.database.Query(getItemsNotDeleted, userId)
+	rows, err := r.database.Query(getItemsByAssignedUser, userId)
 	if err != nil {
 		return nil, err
 	}

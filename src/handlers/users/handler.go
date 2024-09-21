@@ -44,7 +44,7 @@ func SetupUserHandler(
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
 	router.Handle("GET /register", mw_no_auth(http.HandlerFunc(handler.GetRegisterUI)))
 	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.LoginUI)))
-	router.Handle("POST /signup", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
+	router.Handle("POST /register", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
 
 	return nil
@@ -79,7 +79,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		http.SetCookie(w, nil)
 		if errors.Is(err, sql.ErrNoRows) {
-			h.invalidLogin(w, r, form, "User not in database")
+			h.invalidLogin(w, r, form, "User '%s' not in database", email)
 			return
 		}
 		h.loginError(err, w, r, form, "Failed to read user from DB with email %s", email)
@@ -188,7 +188,6 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 
 	if len(form.GetErrors()) > 0 {
 		h.logger.Info("Failed to register due to invalid form details")
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -198,7 +197,6 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	if password != password2 {
 		h.logger.Info("Failed to register due to passwords not matching")
 		form.SetError("Password", "The password fields dont match")
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -238,6 +236,12 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		IsAdmin:      false,
 	}
 	_, err = h.repo.Create(user)
-	h.logger.Info("Successfully created user")
-	handlers.Redirect("/login", w)
+	h.logger.Info("Successfully created user %s", user.Email)
+	loginForm := form_models.NewLoginForm()
+	loginForm.Email = user.Email
+	if err := templ_users.LoginFormContent(loginForm).Render(r.Context(), w); err != nil {
+		h.logger.Error(err, "failed to render template for the home page")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

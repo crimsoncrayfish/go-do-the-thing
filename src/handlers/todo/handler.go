@@ -416,19 +416,20 @@ type ListModel struct {
 }
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("List all items")
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
 	// NOTE: Take action
 	tasks, err := h.repo.GetItemsForUser(currentUserId)
+	h.logger.Debug(currentUserEmail)
 	if err != nil {
 		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo tasks")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	sort.Slice(tasks, func(i, j int) bool {
 		return tasks[i].DueDate.Time.Before(*tasks[j].DueDate.Time)
 	})
