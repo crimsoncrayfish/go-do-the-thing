@@ -51,9 +51,9 @@ ssh-keygen -t rsa -b 4096
 - ✔️ Login
 - ✔️ Link tasks to users
 - ✔️ [Templ](https://templ.guide/)
+- ✔️ Logout
 - Admin controls to enable users
 - Containerize this so i can dev on Windows
-- Logout
 - Projects for task grouping
 - Time logging on tasks
 - Export to csv
