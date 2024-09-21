@@ -1,6 +1,6 @@
 # A todo app to explore GO, HTMX and Tailwind
 
-![demo](https://github.com/user-attachments/assets/b7878ba7-3ec4-45ea-8d48-1a2cc8728cc6)
+https://github.com/user-attachments/assets/ef0b5232-a4b3-46a8-8da0-feb16d6b9495
 
 ### Some requirements
 
