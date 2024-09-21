@@ -1,31 +1,32 @@
 package home_templ
 
 import (
-	"go-do-the-thing/src/models"
-	templ_shared "go-do-the-thing/src/shared/templ"
+"go-do-the-thing/src/models"
+templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ Index(navbar models.NavBarObject) {
-	<html lang="en">
-		@templ_shared.Header()
-		<body id="main-body" class="dark:bg-gray-900 antialiased">
-			@IndexBody(navbar)
-		</body>
-	</html>
+<html lang="en">
+@templ_shared.Header()
+
+<body id="main-body" class="dark:bg-gray-900 antialiased">
+	@IndexBody(navbar)
+</body>
+
+</html>
 }
 
 templ IndexBody(navbar models.NavBarObject) {
-	@templ_shared.NavBar(navbar)
-	<div class="px-1 mt-10 md:px-[10%] w-full text-gray-900 dark:text-white">
-		@templ_shared.SvgLogoBig()
-		<div class="m-auto w-fit py-10 text-3xl">
-			<h2>
-				A playground for <a class="text-blue-500 underline" href="https://go.dev/">GOLANG</a>, <a
-	class="text-blue-500 underline"
-	href="https://htmx.org/"
->HTMX</a>
-				and <a class="text-blue-500 underline" href="https://tailwindcss.com/">Tailwind</a>
-			</h2>
-		</div>
+@templ_shared.NavBar(navbar)
+<div class="px-1 mt-10 md:px-[10%] w-full text-gray-900 dark:text-white">
+	@templ_shared.SvgLogoBig()
+	<div class="m-auto w-fit py-10 text-3xl">
+		<h2>
+			A playground for <a class="text-blue-500 underline" href="https://go.dev/">GOLANG</a>, <a
+				class="text-blue-500 underline" href="https://htmx.org/">HTMX</a>, <a class="text-blue-500 underline"
+				href="https://templ.guide/">Templ</a>
+			and <a class="text-blue-500 underline" href="https://tailwindcss.com/">Tailwind</a>
+		</h2>
 	</div>
+</div>
 }

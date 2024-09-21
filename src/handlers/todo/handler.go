@@ -11,6 +11,7 @@ import (
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
+	fm "go-do-the-thing/src/models/forms"
 	"net/http"
 	"sort"
 	"strconv"
@@ -18,11 +19,12 @@ import (
 )
 
 type Handler struct {
-	repo          repos.TasksRepo
-	usersRepo     repos.UsersRepo
-	activeScreens models.NavBarObject
-	logger        slog.Logger
+	repo      repos.TasksRepo
+	usersRepo repos.UsersRepo
+	logger    slog.Logger
 }
+
+var activeScreens models.NavBarObject
 
 func SetupTodoHandler(
 	tasksRepo repos.TasksRepo,
@@ -32,11 +34,11 @@ func SetupTodoHandler(
 ) error {
 	logger := slog.NewLogger("Tasks")
 
+	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
-		repo:          tasksRepo,
-		usersRepo:     usersRepo,
-		activeScreens: models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}},
-		logger:        logger,
+		repo:      tasksRepo,
+		usersRepo: usersRepo,
+		logger:    logger,
 	}
 
 	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItemUI)))
@@ -55,7 +57,7 @@ type idResponse struct {
 }
 
 var tagOptions = []string{"Project 1", "Project 2", "Personal"}
-var defaultForm = models.NewDefaultTaskForm()
+var defaultForm = fm.NewDefaultTaskForm()
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Creating an item")
@@ -64,7 +66,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
-	form := models.NewTaskForm()
+	form := fm.NewTaskForm()
 	name, err := models.GetPropertyFromRequest(r, "name", true)
 	if err != nil {
 		form.Errors["Name"] = err.Error()
@@ -191,7 +193,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	form := models.NewTaskForm()
+	form := fm.NewTaskForm()
 	name, err := models.GetPropertyFromRequest(r, "name", true)
 	if err != nil {
 		form.Errors["Name"] = err.Error()
@@ -285,9 +287,8 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 }
 
 type ItemPageModel struct {
-	Task     models.TaskView
-	NavBar   models.NavBarObject
-	FormData models.FormData
+	Task   models.TaskView
+	NavBar models.NavBarObject
 }
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
@@ -331,7 +332,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskView := models.TaskToViewModel(task, assignedUser, createdBy)
-	navbar := h.activeScreens.SetUser(currentUserName, currentUserEmail)
+	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
 	if err = templ_todo.TaskItem(taskView, navbar, formData, tagOptions).Render(r.Context(), w); err != nil {
 		// TODO: some user feedback here?
 		h.logger.Error(err, "Failed to execute template for the item page")
@@ -411,7 +412,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 type ListModel struct {
 	Tasks    []models.TaskView
 	NavBar   models.NavBarObject
-	FormData models.TaskForm
+	FormData fm.TaskForm
 }
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
@@ -450,7 +451,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	navbar := h.activeScreens.SetUser(currentUserName, currentUserEmail)
+	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
 	if err = templ_todo.TaskList(navbar, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
 		// TODO: Should this panic
 		h.logger.Error(err, "Failed to execute template for the item list page")
@@ -501,8 +502,8 @@ func (h *Handler) testError(w http.ResponseWriter, r *http.Request) {
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 }
 
-func formDataFromItemNoValidation(task models.Task, assignedUser string) models.TaskForm {
-	formData := models.NewTaskForm()
+func formDataFromItemNoValidation(task models.Task, assignedUser string) fm.TaskForm {
+	formData := fm.NewTaskForm()
 	formData.Task.Name = task.Name
 	formData.Task.Description = task.Description
 	formData.Task.AssignedTo = assignedUser
@@ -512,7 +513,7 @@ func formDataFromItemNoValidation(task models.Task, assignedUser string) models.
 	return formData
 }
 
-func formDataFromItem(task models.Task, assignedUser string) (models.TaskForm, bool) {
+func formDataFromItem(task models.Task, assignedUser string) (fm.TaskForm, bool) {
 	formData := formDataFromItemNoValidation(task, assignedUser)
 	isValid, errs := task.IsValid()
 	if !isValid {

@@ -11,19 +11,20 @@ import (
 )
 
 type HomeHandler struct {
-	model  Screens
 	logger slog.Logger
 }
+
+var activeScreens Screens
 
 func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger("Home")
 	logger.Info("Setting up the Home screen")
-	handler := &HomeHandler{
-		model: Screens{
-			models.NavBarObject{
-				ActiveScreens: models.ActiveScreens{IsHome: true},
-			},
+	activeScreens = Screens{
+		models.NavBarObject{
+			ActiveScreens: models.ActiveScreens{IsHome: true},
 		},
+	}
+	handler := &HomeHandler{
 		logger: logger,
 	}
 	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
@@ -39,11 +40,9 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	data := h.model
+	navbar := activeScreens.NavBar.SetUser(currentUserName, currentUserEmail)
 
-	data.NavBar = data.NavBar.SetUser(currentUserName, currentUserEmail)
-
-	if err := home_templ.Index(data.NavBar).Render(r.Context(), w); err != nil {
+	if err := home_templ.Index(navbar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,10 +54,9 @@ func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	data := h.model
+	navbar := activeScreens.NavBar.SetUser(currentUserName, currentUserEmail)
 
-	data.NavBar = data.NavBar.SetUser(currentUserName, currentUserEmail)
-	if err := home_templ.Index(data.NavBar).Render(r.Context(), w); err != nil {
+	if err := home_templ.Index(navbar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
