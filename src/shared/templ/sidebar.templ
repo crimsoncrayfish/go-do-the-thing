@@ -21,7 +21,7 @@ templ SideBar(navbar models.NavBarObject) {
 				<ul class="space-y-2 font-medium">
 					@navBarListItem("Take me back home", navbar.ActiveScreens.IsHome, "/home")
 					@navBarListItem("Whats on the agenda?", navbar.ActiveScreens.IsTodoList, "/todo/items")
-					@navBarListItem("My side projects...", navbar.ActiveScreens.IsTodoList, "/projects")
+					@navBarListItem("My side projects...", navbar.ActiveScreens.IsProjects, "/projects")
 					@navBarListItem("Lets form a habbit!", false, "/habbits")
 					@navBarListItem("This is an ERROR", navbar.ActiveScreens.IsError, "/error")
 				</ul>

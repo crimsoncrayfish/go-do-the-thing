@@ -35,7 +35,7 @@ templ TaskList(navbar models.NavBarObject, formdata models.TaskForm, tasks []mod
 						@templ_shared.SvgPlus()
 					</button>
 				</div>
-				@TaskForm("todo/item/", "create", formdata, tagOptions)
+				@TaskForm("todo/item", "create", formdata, tagOptions)
 			</div>
 		</div>
 	</div>

@@ -58,6 +58,13 @@ func (t *SqLiteTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (t *SqLiteTime) ShortString() string {
+	if t.Time == nil {
+		return ""
+	}
+	return t.Time.Format(constants.DateFormat)
+}
+
 func (t *SqLiteTime) String() string {
 	if t.Time == nil {
 		return ""
