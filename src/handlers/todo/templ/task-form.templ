@@ -1,11 +1,11 @@
 package templ_todo
 
 import (
-	"go-do-the-thing/src/models"
+	form_models "go-do-the-thing/src/models/forms"
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskForm(postTo string, formType string, formdata models.TaskForm, tagOptions []string) {
+templ TaskForm(postTo string, formType string, formdata form_models.TaskForm, tagOptions []string) {
 	<div id="create-task-form">
 		<form
 			hx-post={ postTo }
@@ -16,12 +16,12 @@ templ TaskForm(postTo string, formType string, formdata models.TaskForm, tagOpti
 	</div>
 }
 
-templ TaskFormContent(formType string, formdata models.TaskForm, tagOptions []string) {
-	@templ_shared.FormTextInput("name", formdata.Task.Name)
-	@templ_shared.FormTextInput("description", formdata.Task.Description)
-	@templ_shared.FormDatePicker("due_date", formdata.Task.DueDate)
-	//@templ_shared.FormUserSelector("assigned_to", formdata.AssignedTo, users)
-	@templ_shared.FormListInput("tag", formdata.Task.Tag, tagOptions)
+templ TaskFormContent(formType string, formdata form_models.TaskForm, tagOptions []string) {
+	@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
+	@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
+		formdata.Task.Description)
+	@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
+	@templ_shared.FormListInput("Tag", "tag", formdata.Task.Tag, tagOptions)
 	for k, v:= range formdata.Errors {
 		<div class="py-4 text-red-500">
 			An error occurred with '{ k }' with message '{ v }'

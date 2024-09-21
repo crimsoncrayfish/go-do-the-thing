@@ -9,7 +9,6 @@ import (
 	"go-do-the-thing/src/handlers/home"
 	"go-do-the-thing/src/handlers/todo"
 	"go-do-the-thing/src/handlers/users"
-	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -37,7 +36,6 @@ func main() {
 	}
 	logger.Info("Running project in dir %s", workingDir)
 	faviconLocation = workingDir + "/static/img/todo.ico"
-	renderer := helpers.NewRenderer(workingDir)
 	logger.Info("Setting up TODO items")
 
 	dbConnection, err := database.Init("todo")
@@ -63,7 +61,7 @@ func main() {
 	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
-	err = users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, *renderer, middleware_full, middleware_no_auth, jwtHandler)
+	err = users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, middleware_full, middleware_no_auth, jwtHandler)
 	if err != nil {
 		logger.Error(err, "Failed to initialize users")
 		panic(err)

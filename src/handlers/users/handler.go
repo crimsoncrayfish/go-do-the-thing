@@ -2,17 +2,17 @@ package users
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	"go-do-the-thing/src/handlers"
-	"go-do-the-thing/src/helpers"
+	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
+	form_models "go-do-the-thing/src/models/forms"
 	"net/http"
 	"time"
 
@@ -20,38 +20,25 @@ import (
 )
 
 type Handler struct {
-	templates helpers.Templates
-	security  security.JwtHandler
-	model     Screens
-	repo      repos.UsersRepo
-	logger    slog.Logger
-}
-
-// TODO: What even is this
-type Screens struct {
-	NavBar models.NavBarObject
+	security security.JwtHandler
+	repo     repos.UsersRepo
+	logger   slog.Logger
 }
 
 func SetupUserHandler(
 	userRepo repos.UsersRepo,
 	router *http.ServeMux,
-	templates helpers.Templates,
 	mw middleware.Middleware,
 	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
 ) error {
 	logger := slog.NewLogger("Users")
 	logger.Info("Setting up users")
+
 	handler := &Handler{
-		model: Screens{
-			NavBar: models.NavBarObject{
-				ActiveScreens: models.ActiveScreens{IsHome: true},
-			},
-		},
-		templates: templates,
-		repo:      userRepo,
-		security:  security,
-		logger:    logger,
+		repo:     userRepo,
+		security: security,
+		logger:   logger,
 	}
 
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
@@ -60,50 +47,27 @@ func SetupUserHandler(
 	router.Handle("POST /signup", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
 
-	router.HandleFunc("GET /users", handler.GetAll)
 	return nil
 }
 
-func (h Handler) GetAll(w http.ResponseWriter, r *http.Request) {
-	users, err := h.repo.GetUsers()
-	if err != nil {
-		h.logger.Error(err, "failed to get users")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	jsonBytes, err := json.Marshal(users)
-	if err != nil {
-		h.logger.Error(err, "failed to marshal users")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonBytes)
-	if err != nil {
-		h.logger.Error(err, "failed to write response")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-}
-
 func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("what")
-	errorForm := models.NewFormData()
+	form := form_models.NewLoginForm()
 	email, err := models.GetPropertyFromRequest(r, "email", true)
-	errorForm.Values["email"] = email
+	form.Email = email
 	if err != nil {
-		errorForm.Errors["email"] = err.Error()
+		form.Errors["email"] = err.Error()
 	}
 
 	password, err := models.GetPropertyFromRequest(r, "password", true)
 	// NOTE: Dont add the password back in to the form as i dont want to send it back and forth
 	if err != nil {
-		errorForm.Errors["password"] = err.Error()
+		form.Errors["password"] = err.Error()
 	}
-	if len(errorForm.Errors) > 0 {
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "login-form-content", errorForm); err != nil {
-			h.logger.Error(err, "failed to render task login form")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	if len(form.Errors) > 0 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			assert.NoError(err, h.logger, "Failed to render template for formData")
 		}
 		http.SetCookie(w, nil)
 		return
@@ -113,21 +77,19 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
-		// TODO: keep track of IPs that have invalid logins and ban them after a set count
-		// TODO: check err type
 		http.SetCookie(w, nil)
 		if errors.Is(err, sql.ErrNoRows) {
-			h.invalidLogin(w, errorForm, "User not in database")
+			h.invalidLogin(w, r, form, "User not in database")
 			return
 		}
-		h.serverError(err, w, errorForm, "Failed to read user from DB with email %s", email)
+		h.loginError(err, w, r, form, "Failed to read user from DB with email %s", email)
 		return
 	}
 
 	passwordHash, err := h.repo.GetUserPassword(user.Id)
 	if err != nil {
 		http.SetCookie(w, nil)
-		h.serverError(err, w, errorForm, "Failed to read password for user %d", user.Id)
+		h.loginError(err, w, r, form, "Failed to read password for user %d", user.Id)
 		return
 	}
 
@@ -135,52 +97,53 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// NOTE: Not a valid password but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		// TODO: keep track of IPs that have invalid logins and ban them after a set count
-		h.invalidLogin(w, errorForm, "Invalid password")
+		h.invalidLogin(w, r, form, "Invalid password")
 		http.SetCookie(w, nil)
 		return
 	}
-	user.SessionId = uuid.New().String()
 
+	user.SessionId = uuid.New().String()
 	user.SessionStartTime = database.SqLiteNow()
+
 	if err := h.repo.UpdateSession(user); err != nil {
-		h.serverError(err, w, errorForm, "Failed to set session id for user %d", user.Id)
+		h.loginError(err, w, r, form, "Failed to set session id for user %d", user.Id)
 		http.SetCookie(w, nil)
 		return
 	}
-	h.logger.Debug("what")
 	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Time.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
-		h.serverError(err, w, errorForm, "failed to generate token")
+		h.loginError(err, w, r, form, "failed to generate token")
 		http.SetCookie(w, nil)
 		return
 	}
 	cookie := http.Cookie{Name: "token", Value: tokenString, SameSite: http.SameSiteDefaultMode}
 	http.SetCookie(w, &cookie)
-	// TODO: what to do?
 	handlers.Redirect("/", w)
 }
 
-func (h Handler) serverError(err error, w http.ResponseWriter, formData models.FormData, message string, params ...any) {
+func (h Handler) loginError(err error, w http.ResponseWriter, r *http.Request, form form_models.LoginForm, message string, params ...any) {
 	h.logger.Error(err, message, params...)
-	formData.Errors["Failed Login"] = "Something went wrong on the server. Please try again."
-	if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "login-form-content", formData); err != nil {
+	form.SetError("Failed Login", "Something went wrong on the server. Please try again.")
+	http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+	if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render task login form content")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (h Handler) invalidLogin(w http.ResponseWriter, formData models.FormData, message string, params ...any) {
+func (h Handler) invalidLogin(w http.ResponseWriter, r *http.Request, form form_models.LoginForm, message string, params ...any) {
 	h.logger.Info(message, params...)
-	formData.Errors["Failed Login"] = "Login credentials are invalid."
-	if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "login-form-content", formData); err != nil {
-		h.logger.Error(err, "failed to render task login form content")
+	form.SetError("Failed Login", "Invalid login credentials")
+	if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render task login form content")
 	}
 }
 
-func (h Handler) GetLoginUI(w http.ResponseWriter, _ *http.Request) {
-	if err := h.templates.RenderOk(w, "login", nil); err != nil {
+func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
+	form := form_models.NewLoginForm()
+	if err := templ_users.Login(form).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -192,8 +155,10 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	assert.IsTrue(false, h.logger, "Not implemented")
 }
 
-func (h Handler) GetRegisterUI(w http.ResponseWriter, _ *http.Request) {
-	if err := h.templates.RenderOk(w, "signup", nil); err != nil {
+func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
+	form := form_models.NewRegistrationForm()
+	if err := templ_users.Register(form).Render(r.Context(), w); err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		h.logger.Error(err, "failed to render form")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -201,29 +166,30 @@ func (h Handler) GetRegisterUI(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
-	errorForm := models.NewFormData()
+	form := form_models.NewRegistrationForm()
 	name, err := models.GetPropertyFromRequest(r, "name", true)
-	errorForm.Values["name"] = name
+	form.Name = name
 	if err != nil {
-		errorForm.Errors["name"] = err.Error()
+		form.SetError("name", err.Error())
 	}
 	email, err := models.GetPropertyFromRequest(r, "email", true)
-	errorForm.Values["email"] = email
+	form.Email = email
 	if err != nil {
-		errorForm.Errors["email"] = err.Error()
+		form.SetError("email", err.Error())
 	}
 	password, err := models.GetPropertyFromRequest(r, "password", true)
 	if err != nil {
-		errorForm.Errors["password"] = err.Error()
+		form.SetError("password", err.Error())
 	}
 	password2, err := models.GetPropertyFromRequest(r, "password2", true)
 	if err != nil {
-		errorForm.Errors["confirmation password"] = err.Error()
+		form.SetError("confirmation password", err.Error())
 	}
 
-	if len(errorForm.Errors) > 0 {
+	if len(form.GetErrors()) > 0 {
 		h.logger.Info("Failed to register due to invalid form details")
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "signup-form-content", errorForm); err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -231,8 +197,9 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	}
 	if password != password2 {
 		h.logger.Info("Failed to register due to passwords not matching")
-		errorForm.Errors["Password"] = "The password fields dont match"
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "signup-form-content", errorForm); err != nil {
+		form.SetError("Password", "The password fields dont match")
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -241,8 +208,9 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	user, _ := h.repo.GetUserByEmail(email) // TODO: what to do with this err message
 	if (models.User{}) != user {
 		h.logger.Info("Registration failure. Email %s already in use", email)
-		errorForm.Errors["Email"] = "Email already in use"
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "signup-form-content", errorForm); err != nil {
+		form.SetError("Email", "Email already in use")
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -253,8 +221,9 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	passwordHash, err := security.SetPassword(password)
 	if err != nil {
 		h.logger.Error(err, "Failed to hash password")
-		errorForm.Errors["Create"] = "Failed to create users due to a server error"
-		if err := h.templates.RenderWithCode(w, http.StatusUnprocessableEntity, "signup-form-content", errorForm); err != nil {
+		form.SetError("Create", "Failed to create users due to a server error")
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
