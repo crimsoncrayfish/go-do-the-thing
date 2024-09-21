@@ -20,10 +20,10 @@ func NewFormData() FormData {
 	}
 }
 
-func GetPropertyFromRequest(r *http.Request, propName string, required bool) (string, error) {
+func GetPropertyFromRequest(r *http.Request, propName, title string, required bool) (string, error) {
 	value := r.FormValue(propName)
 	if len(value) == 0 && required {
-		return value, errors.New(fmt.Sprintf("'%s' is required", propName))
+		return value, errors.New(fmt.Sprintf("%s is required", title))
 	}
 
 	return value, nil

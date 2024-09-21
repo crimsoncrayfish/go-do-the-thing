@@ -15,21 +15,23 @@ templ TaskForm(postTo string, formType string, formdata form_models.TaskForm, ta
 }
 
 templ TaskFormContent(formType string, formdata form_models.TaskForm, tagOptions []string) {
-@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
-@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
-formdata.Task.Description)
-@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
-@templ_shared.FormListInput("Tag", "tag", formdata.Task.Tag, tagOptions)
-for k, v:= range formdata.Errors {
-<div class="py-4 text-red-500">
-	An error occurred with '{ k }' with message '{ v }'
-</div>
-}
-<button type="submit" class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4
+	@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
+	@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
+		formdata.Task.Description)
+	@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
+	@templ_shared.FormListInput("Tag", "tag", formdata.Task.Tag, tagOptions)
+	for _, v:= range formdata.Errors {
+		<div class="py-4 text-red-500">
+			{ v }
+		</div>
+	}
+	<button
+		type="submit"
+		class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4
                         focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
                         me-2 mb-2 dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
                         dark:focus:ring-green-800 flex items-center">
-	{ formType } Task
-	@templ_shared.SvgPlus()
-</button>
+		{ formType } Task
+		@templ_shared.SvgPlus()
+	</button>
 }

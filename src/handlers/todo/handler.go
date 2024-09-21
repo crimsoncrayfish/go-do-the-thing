@@ -66,16 +66,16 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Collect data
 	form := fm.NewTaskForm()
-	name, err := models.GetPropertyFromRequest(r, "name", true)
+	name, err := models.GetPropertyFromRequest(r, "name", "Task Name", true)
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description, _ := models.GetPropertyFromRequest(r, "description", false)
-	tag, err := models.GetPropertyFromRequest(r, "tag", true)
+	description, _ := models.GetPropertyFromRequest(r, "description", "Description", false)
+	tag, err := models.GetPropertyFromRequest(r, "tag", "Tag", true)
 	if err != nil {
 		form.Errors["Tag"] = err.Error()
 	}
-	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", true)
+	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", "Due on", true)
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}
@@ -192,19 +192,19 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	form := fm.NewTaskForm()
-	name, err := models.GetPropertyFromRequest(r, "name", true)
+	name, err := models.GetPropertyFromRequest(r, "name", "Task Name", true)
 	if err != nil {
-		form.Errors["Name"] = err.Error()
+		form.Errors["name"] = err.Error()
 	}
-	description, _ := models.GetPropertyFromRequest(r, "description", false)
+	description, _ := models.GetPropertyFromRequest(r, "description", "Description", false)
 
-	tag, err := models.GetPropertyFromRequest(r, "tag", true)
+	tag, err := models.GetPropertyFromRequest(r, "tag", "Tag", true)
 	if err != nil {
-		form.Errors["Tag"] = err.Error()
+		form.Errors["tag"] = err.Error()
 	}
-	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", true)
+	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", "Due on", true)
 	if err != nil {
-		form.Errors["Due Date"] = err.Error()
+		form.Errors["due_on"] = err.Error()
 	}
 	date, err := time.Parse("2006-01-02", dateRaw)
 	form.Task = models.TaskView{
@@ -277,7 +277,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formData := formDataFromItemNoValidation(item, currentUserEmail)
-	if err := templ_todo.TaskFormContent("Create", formData, tagOptions).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskFormContent("Update", formData, tagOptions).Render(r.Context(), w); err != nil {
 		assert.NoError(err, h.logger, "failed to render form content after update")
 		// TODO: what should happen if the fetch fails after create
 		return
