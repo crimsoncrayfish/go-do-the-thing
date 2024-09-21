@@ -101,8 +101,8 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 	return nil
 }
 
-func (r *UsersRepo) UpdateSession(user models.User) error {
-	_, err := r.db.Exec(updateUserSession, user.SessionId, user.SessionStartTime.String(), user.Id)
+func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *database.SqLiteTime) error {
+	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime.String(), userId)
 	if err != nil {
 		return err
 	}

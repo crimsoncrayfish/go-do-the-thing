@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/src/database/repos"
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
+	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
@@ -50,6 +51,8 @@ func SetupUserHandler(
 	return nil
 }
 
+var emptyAuthCookie = http.Cookie{Name: "token", Value: "", SameSite: http.SameSiteDefaultMode}
+
 func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewLoginForm()
 	email, err := models.GetPropertyFromRequest(r, "email", true)
@@ -69,7 +72,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			assert.NoError(err, h.logger, "Failed to render template for formData")
 		}
-		http.SetCookie(w, nil)
+		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
 	user, err := h.repo.GetUserByEmail(email)
@@ -77,7 +80,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
-		http.SetCookie(w, nil)
+		http.SetCookie(w, &emptyAuthCookie)
 		if errors.Is(err, sql.ErrNoRows) {
 			h.invalidLogin(w, r, form, "User '%s' not in database", email)
 			return
@@ -88,7 +91,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 
 	passwordHash, err := h.repo.GetUserPassword(user.Id)
 	if err != nil {
-		http.SetCookie(w, nil)
+		http.SetCookie(w, &emptyAuthCookie)
 		h.loginError(err, w, r, form, "Failed to read password for user %d", user.Id)
 		return
 	}
@@ -98,23 +101,23 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		// TODO: keep track of IPs that have invalid logins and ban them after a set count
 		h.invalidLogin(w, r, form, "Invalid password")
-		http.SetCookie(w, nil)
+		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
 
 	user.SessionId = uuid.New().String()
 	user.SessionStartTime = database.SqLiteNow()
 
-	if err := h.repo.UpdateSession(user); err != nil {
+	if err := h.repo.UpdateSession(user.Id, user.SessionId, user.SessionStartTime); err != nil {
 		h.loginError(err, w, r, form, "Failed to set session id for user %d", user.Id)
-		http.SetCookie(w, nil)
+		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
 	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Time.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
 		h.loginError(err, w, r, form, "failed to generate token")
-		http.SetCookie(w, nil)
+		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
 	cookie := http.Cookie{Name: "token", Value: tokenString, SameSite: http.SameSiteDefaultMode}
@@ -151,8 +154,15 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
-	// TODO:
-	assert.IsTrue(false, h.logger, "Not implemented")
+	// NOTE: confirm logged in
+	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
+	if err := h.repo.UpdateSession(currentUserId, "", &database.SqLiteTime{}); err != nil {
+		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
+	}
+	http.SetCookie(w, &emptyAuthCookie)
+	handlers.Redirect("/login", w)
 }
 
 func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
@@ -239,7 +249,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email
-	if err := templ_users.LoginFormContent(loginForm).Render(r.Context(), w); err != nil {
+	if err := templ_users.LoginFormOOB(loginForm).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
