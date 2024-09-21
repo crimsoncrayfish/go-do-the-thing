@@ -55,13 +55,13 @@ var emptyAuthCookie = http.Cookie{Name: "token", Value: "", SameSite: http.SameS
 
 func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewLoginForm()
-	email, err := models.GetPropertyFromRequest(r, "email", true)
+	email, err := models.GetPropertyFromRequest(r, "email", "Email", true)
 	form.Email = email
 	if err != nil {
 		form.Errors["email"] = err.Error()
 	}
 
-	password, err := models.GetPropertyFromRequest(r, "password", true)
+	password, err := models.GetPropertyFromRequest(r, "password", "Password", true)
 	// NOTE: Dont add the password back in to the form as i dont want to send it back and forth
 	if err != nil {
 		form.Errors["password"] = err.Error()
@@ -177,21 +177,21 @@ func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewRegistrationForm()
-	name, err := models.GetPropertyFromRequest(r, "name", true)
+	name, err := models.GetPropertyFromRequest(r, "name", "Full Name", true)
 	form.Name = name
 	if err != nil {
 		form.SetError("name", err.Error())
 	}
-	email, err := models.GetPropertyFromRequest(r, "email", true)
+	email, err := models.GetPropertyFromRequest(r, "email", "Email", true)
 	form.Email = email
 	if err != nil {
 		form.SetError("email", err.Error())
 	}
-	password, err := models.GetPropertyFromRequest(r, "password", true)
+	password, err := models.GetPropertyFromRequest(r, "password", "Password", true)
 	if err != nil {
 		form.SetError("password", err.Error())
 	}
-	password2, err := models.GetPropertyFromRequest(r, "password2", true)
+	password2, err := models.GetPropertyFromRequest(r, "password2", "Confimation Password", true)
 	if err != nil {
 		form.SetError("confirmation password", err.Error())
 	}
