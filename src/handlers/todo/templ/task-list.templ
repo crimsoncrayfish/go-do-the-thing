@@ -1,99 +1,85 @@
 package templ_todo
 
 import (
-	"go-do-the-thing/src/models"
-	m "go-do-the-thing/src/models"
-	mf "go-do-the-thing/src/models/forms"
-	ts "go-do-the-thing/src/shared/templ"
+"go-do-the-thing/src/models"
+m "go-do-the-thing/src/models"
+mf "go-do-the-thing/src/models/forms"
+ts "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, tagOptions []string) {
-	@ts.NavBar(navbar)
-	<div class="px-1 lg:px-[10%] w-full text-gray-900 dark:text-white">
-		<div class="pt-5 px-5 flex w-full  items-center justify-between">
-			<p class="text-xl text-gray-900 dark:text-white">TODO: Items</p>
-			<div>
-				<button
-					type="button"
-					onclick="swapClassForId('max-h-0', 'max-h-[100%]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-					class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4
+@ts.NavBar(navbar)
+<div class="px-1 lg:px-[10%] w-full text-gray-900 dark:text-white">
+	<div class="pt-5 px-5 flex w-full  items-center justify-between">
+		<p class="text-xl text-gray-900 dark:text-white">TODO: Items</p>
+		<div>
+			<button type="button"
+				onclick="swapClassForId('max-h-0', 'max-h-[100%]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
+				class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4
                         focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
                         me-2 mb-2 dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
-                        dark:focus:ring-green-800 flex items-center"
-				>
-					Add task
-					@ts.SvgPlus()
-				</button>
-			</div>
-		</div>
-		<div
-			id="create-task-form-container"
-			class=" max-h-0 opacity-0 transition-[opacity, max-height] duration-500 ease-in-out"
-		>
-			<div
-				class="overflow-y-auto overflow-x-hidden z-50 my-5 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
-			>
-				<div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-					<div
-						class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
-					>
-						<p class="text-gray-900 text-xl dark:text-white">TODO:</p>
-						<button
-							class="text-gray-900 dark:text-white"
-							onclick="swapClassForId('max-h-0', 'max-h-[100%]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-						>
-							@ts.SvgPlus()
-						</button>
-					</div>
-					@TaskForm("todo/item", "create", formdata, tagOptions)
-				</div>
-			</div>
-		</div>
-		<div class="relative items-center overflow-x-auto my-10">
-			<table class="w-full bg-gray-900 text-sm text-left rtl:text-right text-gray-50 dark:text-gray-400">
-				<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-					<tr>
-						<th scope="col" class="px-6 py-3">
-							<p class="hidden lg:block">Status</p>
-						</th>
-						<th scope="col" class="columns-2xl px-6 py-3">Task</th>
-						<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
-						<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
-						<th scope="col" class="columns-lg hidden xl:table-cell px-6 py-3">Tag</th>
-						<th scope="col" class="px-6 py-3">
-							<p class="hidden lg:block">Actions</p>
-						</th>
-					</tr>
-				</thead>
-				<tbody id="task-rows">
-					for _, task := range tasks {
-						@TaskRow(task)
-					}
-				</tbody>
-			</table>
-			@NoDataRow(tasks)
+                        dark:focus:ring-green-800 flex items-center">
+				Add Task
+				@ts.SvgPlus()
+			</button>
 		</div>
 	</div>
+	<div id="create-task-form-container"
+		class=" max-h-0 opacity-0 transition-[opacity, max-height] duration-500 ease-in-out">
+		<div
+			class="overflow-y-auto overflow-x-hidden z-50 my-5 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
+			<div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+				<div
+					class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+					<p class="text-gray-900 text-xl dark:text-white">TODO:</p>
+					<button class="text-gray-900 dark:text-white"
+						onclick="swapClassForId('max-h-0', 'max-h-[100%]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');">
+						@ts.SvgClose()
+					</button>
+				</div>
+				@TaskForm("todo/item", "Create", formdata, tagOptions)
+			</div>
+		</div>
+	</div>
+	<div class="relative items-center overflow-x-auto my-10">
+		<table class="w-full bg-gray-900 text-sm text-left rtl:text-right text-gray-50 dark:text-gray-400">
+			<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+				<tr>
+					<th scope="col" class="px-6 py-3">
+						<p class="hidden lg:block">Status</p>
+					</th>
+					<th scope="col" class="columns-2xl px-6 py-3">Task</th>
+					<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
+					<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
+					<th scope="col" class="columns-lg hidden xl:table-cell px-6 py-3">Tag</th>
+					<th scope="col" class="px-6 py-3">
+						<p class="hidden lg:block">Actions</p>
+					</th>
+				</tr>
+			</thead>
+			<tbody id="task-rows">
+				for _, task := range tasks {
+				@TaskRow(task)
+				}
+			</tbody>
+		</table>
+		@NoDataRow(tasks)
+	</div>
+</div>
 }
 
 templ NoDataRow(tasks []models.TaskView) {
-	<div
-		id="no-data-row"
-		class={ templ.KV("hidden", len(tasks)> 0),"p-4 border-b dark:border-gray-700 bg-gray-50",
+<div id="no-data-row" class={ templ.KV("hidden", len(tasks)> 0),"p-4 border-b dark:border-gray-700 bg-gray-50",
 	"dark:bg-gray-800" }
 	>
-		No data found
-	</div>
+	No data found
+</div>
 }
 
 templ NoDataRowOOB(hidden bool) {
-	<div
-		id="no-data-row"
-		hx-swap-oob="true"
-		hx-select="#no-data-row"
-		class={ "p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800" , templ.KV( "hidden" , hidden) }
-	>
-		No data
-		found
-	</div>
+<div id="no-data-row" hx-swap-oob="true" hx-select="#no-data-row"
+	class={ "p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800" , templ.KV( "hidden" , hidden) }>
+	No data
+	found
+</div>
 }
