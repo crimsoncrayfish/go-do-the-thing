@@ -807,6 +807,10 @@ video {
        columns: 32rem;
 }
 
+.flex-row {
+  flex-direction: row;
+}
+
 .flex-col {
   flex-direction: column;
 }

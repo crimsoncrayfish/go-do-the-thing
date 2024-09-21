@@ -1,173 +1,102 @@
 package templ_todo
 
 import (
-	"fmt"
-	"go-do-the-thing/src/models"
-	form_models "go-do-the-thing/src/models/forms"
-	templ_shared "go-do-the-thing/src/shared/templ"
+"fmt"
+"go-do-the-thing/src/models"
+form_models "go-do-the-thing/src/models/forms"
+templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata form_models.TaskForm, tagOptions []string) {
-	@templ_shared.NavBar(navbar)
-	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-gray-900 dark:text-white">
-		<div class="flex w-full justify-between items-center">
-			<div class="flex items-center">
-				<button
-					hx-get="/todo/items"
-					hx-target="body"
-					class="text-green-700 hover:text-white mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+@templ_shared.NavBar(navbar)
+<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-gray-900 dark:text-white">
+	<div class="flex w-full justify-between items-center">
+		<div class="flex items-center">
+			<button hx-get="/todo/items" hx-target="body" class="text-green-700 hover:text-white mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
                         dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
-                        dark:focus:ring-green-800 flex items-center"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="1.5"
-						stroke="currentColor"
-						class="size-6"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M15.75 19.5 8.25 12l7.5-7.5"
-						></path>
-					</svg>
-					Back
-				</button>
-			</div>
-			<button
-				onclick="swapClassForId('max-h-0', 'max-h-[100%]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
-				class="float-end text-green-700 hover:text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
-                dark:focus:ring-green-800 flex items-center"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="1.5"
-					stroke="currentColor"
-					class="size-6"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
-					></path>
-				</svg>
-				Edit
+                        dark:focus:ring-green-800 flex items-center">
+				@templ_shared.SvgBack()
+				&nbsp;Back
 			</button>
 		</div>
+		<button onclick="swapClassForId('max-h-0', 'max-h-[100%]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
+			class="float-end text-green-700 hover:text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
+                dark:focus:ring-green-800 flex items-center">
+			@templ_shared.SvgEdit()
+			&nbsp;Edit
+		</button>
+	</div>
+	<div id="edit-task-form-container"
+		class=" max-h-0 opacity-0 transition-[opacity, max-height] pt-2 duration-500 ease-in-out">
 		<div
-			id="edit-task-form-container"
-			class=" max-h-0 opacity-0 transition-[opacity, max-height] pt-2 duration-500 ease-in-out"
-		>
-			<div
-				class="overflow-y-auto overflow-x-hidden z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
-			>
-				<div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-					<div
-						class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
-					>
-						<p class="text-gray-900 text-xl dark:text-white">TODO:</p>
-						<button
-							class="text-gray-900 dark:text-white"
-							onclick="swapClassForId('max-h-0', 'max-h-[100%]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								class="size-6"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M6 18 18 6M6 6l12 12"
-								></path>
-							</svg>
-						</button>
-					</div>
-					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, tagOptions)
+			class="overflow-y-auto overflow-x-hidden z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
+			<div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+				<div
+					class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+					<p class="text-gray-900 text-xl dark:text-white">TODO:</p>
+					<button class="text-gray-900 dark:text-white"
+						onclick="swapClassForId('max-h-0', 'max-h-[100%]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');">
+						@templ_shared.SvgClose()
+					</button>
 				</div>
+				@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, tagOptions)
 			</div>
 		</div>
-		@taskItemContent(task)
 	</div>
+	@taskItemContent(task)
+</div>
 }
 
 templ taskItemContent(task models.TaskView) {
-	<div id="task-item-content">
-		<div
-			class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
-		>
-			<div class="relative bg-white shadow dark:bg-gray-700">
-				<div
-					class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-gray-600"
-				>
-					<div class="sm:flex w-full sm:justify-between items-center">
-						<div>
-							<div class="flex items-center">
-								@statusIcon(task)
-								<div class="mx-4 text-xl ">
-									if len(task.Name) > 0 {
-										{ task.Name }
-									} else {
-										{ task.Description }
-									}
-								</div>
+<div id="task-item-content">
+	<div
+		class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
+		<div class="relative bg-white shadow dark:bg-gray-700">
+			<div
+				class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-gray-600">
+				<div class="sm:flex w-full sm:justify-between items-center">
+					<div>
+						<div class="flex items-center">
+							@statusIcon(task)
+							<div class="mx-4 text-xl ">
+								if len(task.Name) > 0 {
+								{ task.Name }
+								} else {
+								{ task.Description }
+								}
 							</div>
-							if task.CompletedDate.Time != nil {
-								<div class="text-sm">
-									Completed on: { task.CompletedDate.String() }
-								</div>
-							}
 						</div>
-						<div class="pt-2 sm:pt-0 flex items-center">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								class="size-6 text-orange-400"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
-								></path>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M6 6h.008v.008H6V6Z"
-								></path>
-							</svg>
-							<div class="mx-4">{ task.Tag }</div>
+						if task.CompletedDate.Time != nil {
+						<div class="text-sm">
+							Completed on: { task.CompletedDate.String() }
 						</div>
+						}
+					</div>
+					<div class="pt-2 sm:pt-0 flex items-center">
+						@templ_shared.SvgTag()
+						<div class="mx-4">{ task.Tag }</div>
 					</div>
 				</div>
 			</div>
-			<div class="p-4 bg-transparent border-b dark:border-gray-600 divide-black dark:divide-gray-600">
-				if len(task.Name) > 0 {
-					{ task.Description }
-				}
-				<div class="sm:flex w-full sm:justify-between items-center">
-					<p>Assigned To: { task.AssignedTo }</p>
-					<p class="pt-2 sm:p-0">Due on: { task.DueDate.Time.Format("2006-01-02") }</p>
-				</div>
-				<div>Created by: { task.CreatedBy }</div>
-				<div>Created on: { task.CreatedDate.String() }</div>
+		</div>
+		<div class="p-4 bg-transparent border-b dark:border-gray-600 divide-black dark:divide-gray-600">
+			if len(task.Name) > 0 {
+			{ task.Description }
+			}
+			<div class="sm:flex w-full sm:justify-between items-center">
+				<p>Assigned To: { task.AssignedTo }</p>
+				<p class="pt-2 sm:p-0">Due on: { task.DueDate.Time.Format("2006-01-02") }</p>
 			</div>
+			<div>Created by: { task.CreatedBy }</div>
+			<div>Created on: { task.CreatedDate.String() }</div>
 		</div>
 	</div>
+</div>
 }
 
 templ TaskItemContentOOB(task models.TaskView) {
-	<div id="task-item-content" hx-swap-oob="true">
-		@taskItemContent(task)
-	</div>
+<div id="task-item-content" hx-swap-oob="true">
+	@taskItemContent(task)
+</div>
 }
