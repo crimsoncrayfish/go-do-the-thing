@@ -73,9 +73,9 @@ templ taskItemContent(task models.TaskView) {
 							@statusIcon(task)
 							<div class="mx-4 text-xl ">
 								if len(task.Name) > 0 {
-								task.Name
+								{ task.Name }
 								} else {
-								task.Description
+								{ task.Description }
 								}
 							</div>
 						</div>
@@ -102,7 +102,7 @@ templ taskItemContent(task models.TaskView) {
 		</div>
 		<div class="p-4 bg-transparent border-b dark:border-gray-600 divide-black dark:divide-gray-600">
 			if len(task.Name) > 0 {
-			task.Description
+			{ task.Description }
 			}
 			<div class="sm:flex w-full sm:justify-between items-center">
 				<p>Assigned To: { task.AssignedTo }</p>
