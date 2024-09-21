@@ -60,7 +60,6 @@ var tagOptions = []string{"Project 1", "Project 2", "Personal"}
 var defaultForm = fm.NewDefaultTaskForm()
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Creating an item")
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
@@ -182,7 +181,6 @@ type NoItemRowData struct {
 }
 
 func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Updating an item")
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
@@ -292,7 +290,6 @@ type ItemPageModel struct {
 }
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Get an item")
 	// NOTE: Auth check
 	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
@@ -342,7 +339,6 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Update an item status")
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
@@ -422,7 +418,6 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Take action
 	tasks, err := h.repo.GetItemsForUser(currentUserId)
-	h.logger.Debug(currentUserEmail)
 	if err != nil {
 		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo tasks")
@@ -462,7 +457,6 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete an item")
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")

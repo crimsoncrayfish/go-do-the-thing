@@ -9,7 +9,9 @@ type ActiveScreens struct {
 
 type UserDetails struct {
 	FullName string
+	Nickname string
 	Email    string
+	IsAdmin  bool
 }
 
 type NavBarObject struct {
@@ -27,7 +29,9 @@ func NewNavbarObject() NavBarObject {
 func (n NavBarObject) SetUser(name, email string) NavBarObject {
 	n.User = UserDetails{
 		FullName: name,
+		Nickname: name, //TODO: implement nicknames
 		Email:    email,
+		IsAdmin:  false,
 	}
 	return n
 }

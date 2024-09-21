@@ -6,30 +6,45 @@ import (
 )
 
 templ Login(form form_models.LoginForm) {
+	<!DOCTYPE html>
 	<html lang="en">
 		@templ_shared.Header()
 		<body id="main-body" class="dark:bg-gray-900 antialiased">
-			@LoginForm(form)
+			@LoginFormContainer(form)
 		</body>
 	</html>
 }
 
-templ LoginForm(form form_models.LoginForm) {
+templ LoginFormOOB(form form_models.LoginForm) {
+	<div
+		id="login-form"
+		hx-swap-oob="outerHTML:#main-body"
+		class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
+	>
+		@loginForm(form)
+	</div>
+}
+
+templ LoginFormContainer(form form_models.LoginForm) {
 	<div id="login-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-		<div
-			class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"
-		>
-			<div class="px-10 mt-10 text-gray-900 dark:text-white">
-				@templ_shared.SvgLogo()
-			</div>
-			<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-				<h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-					Sign in to your account
-				</h1>
-				<form hx-post="/login" class="space-y-4 md:space-y-6">
-					@LoginFormContent(form)
-				</form>
-			</div>
+		@loginForm(form)
+	</div>
+}
+
+templ loginForm(form form_models.LoginForm) {
+	<div
+		class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"
+	>
+		<div class="px-10 mt-10 text-gray-900 dark:text-white">
+			@templ_shared.SvgLogo()
+		</div>
+		<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+			<h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+				Sign in to your account
+			</h1>
+			<form hx-post="/login" class="space-y-4 md:space-y-6">
+				@LoginFormContent(form)
+			</form>
 		</div>
 	</div>
 }
