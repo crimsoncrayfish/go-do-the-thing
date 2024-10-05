@@ -1,90 +1,78 @@
 package templ_users
 
 import (
-	form_models "go-do-the-thing/src/models/forms"
-	templ_shared "go-do-the-thing/src/shared/templ"
+form_models "go-do-the-thing/src/models/forms"
+templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ Login(form form_models.LoginForm) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@templ_shared.Header()
-		<body id="main-body" class="dark:bg-gray-900 antialiased">
-			@LoginFormContainer(form)
-		</body>
-	</html>
+<!DOCTYPE html>
+<html lang="en">
+@templ_shared.Header()
+
+<body id="main-body" class="dark:bg-primary-900 antialiased">
+	@LoginFormContainer(form)
+</body>
+
+</html>
 }
 
 templ LoginFormOOB(form form_models.LoginForm) {
-	<div
-		id="login-form"
-		hx-swap-oob="outerHTML:#main-body"
-		class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
-	>
-		@loginForm(form)
-	</div>
+<div id="login-form" hx-swap-oob="outerHTML:#main-body"
+	class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+	@loginForm(form)
+</div>
 }
 
 templ LoginFormContainer(form form_models.LoginForm) {
-	<div id="login-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-		@loginForm(form)
-	</div>
+<div id="login-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+	@loginForm(form)
+</div>
 }
 
 templ loginForm(form form_models.LoginForm) {
-	<div
-		class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"
-	>
-		<div class="px-10 mt-10 text-gray-900 dark:text-white">
-			@templ_shared.SvgLogo()
-		</div>
-		<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-			<h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-				Sign in to your account
-			</h1>
-			<form hx-post="/login" class="space-y-4 md:space-y-6">
-				@LoginFormContent(form)
-			</form>
-		</div>
+<div
+	class="w-full bg-primary-50 rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-primary-800 dark:border-primary-700">
+	<div class="px-10 mt-10 text-primary-900 dark:text-primary-50">
+		@templ_shared.SvgLogo()
 	</div>
+	<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+		<h1 class="text-xl font-bold leading-tight tracking-tight text-primary-900 md:text-2xl dark:text-primary-50">
+			Sign in to your account
+		</h1>
+		<form hx-post="/login" class="space-y-4 md:space-y-6">
+			@LoginFormContent(form)
+		</form>
+	</div>
+</div>
 }
 
 templ LoginFormContent(form form_models.LoginForm) {
-	@templ_shared.FormTextInput("Email", "email", "my.email@example.com", form.Email)
-	@templ_shared.FormPasswordInput("Password", "password", "••••••••")
-	<div class="flex items-center justify-between">
-		<div class="flex items-start">
-			<div class="flex items-center h-5">
-				<input
-					id="remember"
-					type="checkbox"
-					class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-				/>
-			</div>
-			<div class="ml-3 text-sm">
-				<label for="remember" class="text-gray-500 dark:text-gray-300">Remember me</label>
-			</div>
+@templ_shared.FormTextInput("Email", "email", "my.email@example.com", form.Email)
+@templ_shared.FormPasswordInput("Password", "password", "••••••••")
+<div class="flex items-center justify-between">
+	<div class="flex items-start">
+		<div class="flex items-center h-5">
+			<input id="remember" type="checkbox"
+				class="w-4 h-4 border border-primary-300 rounded bg-primary-50 focus:ring-3 focus:ring-primary-300 dark:bg-primary-700 dark:border-primary-600 dark:focus:ring-primary-600 dark:ring-offset-primary-800" />
 		</div>
-		<a href="#" class="text-sm font-medium text-grey-600 hover:underline dark:text-gray-300">Forgot password?</a>
+		<div class="ml-3 text-sm">
+			<label for="remember" class="text-primary-500 dark:text-primary-300">Remember me</label>
+		</div>
 	</div>
-	for _, v := range form.Errors {
-		<div class="py-4 text-red-500">
-			{ v }
-		</div>
-	}
-	<button
-		type="submit"
-		class="text-slate-500 pl-3 flex items-center justify-center hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-30"
-	>
-		Sign in
-	</button>
-	<p class="text-sm font-light text-gray-500 dark:text-gray-400">
-		Don’t have an account yet? <a
-	hx-get="register"
-	hx-target="#login-form"
-	hx-swap="outerHTML"
-	href="#"
-	class="font-medium text-primary-600 hover:underline dark:text-primary-500"
->Sign up</a>
-	</p>
+	<a href="#" class="text-sm font-medium text-grey-600 hover:underline dark:text-primary-300">Forgot password?</a>
+</div>
+for _, v := range form.Errors {
+<div class="py-4 text-error">
+	{ v }
+</div>
+}
+<button type="submit"
+	class="text-primary-500 pl-3 flex items-center justify-center hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-30">
+	Sign in
+</button>
+<p class="text-sm font-light text-primary-500 dark:text-primary-400">
+	Don’t have an account yet? <a hx-get="register" hx-target="#login-form" hx-swap="outerHTML" href="#"
+		class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
+</p>
 }

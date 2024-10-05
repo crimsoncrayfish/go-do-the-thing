@@ -1,32 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ block "error" .}}
-    <div id="main-body" hx-swap-oob="true" hx-target="#main-body">
-        {{ template "navbar" . }}
-        <div class="px-1 md:px-[10%] w-full text-gray-900 dark:text-white">
-            <div class="flex w-full justify-between items-center py-4">
-                <div class="flex items-center py-4">
-                    <button hx-get="/" hx-target="body"
-                            class="text-green-700 hover:text-white mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                        dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600
-                        dark:focus:ring-green-800 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
-                        </svg>
-                        Back
-                    </button>
-                    <div class="text-gray-900 dark:text-white">
-                        Something bad happened. I probably missed a todo lol
-                    </div>
+<div id="main-body" hx-swap-oob="true" hx-target="#main-body">
+    {{ template "navbar" . }}
+    <div class="px-1 md:px-[10%] w-full text-primary-900 dark:text-primary-50">
+        <div class="flex w-full justify-between items-center py-4">
+            <div class="flex items-center py-4">
+                <button hx-get="/" hx-target="body" class="text-action-700 hover:text-primary-50 mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                        dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
+                        dark:focus:ring-action-800 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                    </svg>
+                    Back
+                </button>
+                <div class="text-primary-900 dark:text-primary-50">
+                    Something bad happened. I probably missed a todo lol
                 </div>
-                <div>
-                    <div class="flex w-full justify-between items-center py-4">
-                        {{ .ErrorMessage}}
-                    </div>
+            </div>
+            <div>
+                <div class="flex w-full justify-between items-center py-4">
+                    {{ .ErrorMessage}}
                 </div>
             </div>
         </div>
     </div>
+</div>
 {{ end}}
+
 </html>
