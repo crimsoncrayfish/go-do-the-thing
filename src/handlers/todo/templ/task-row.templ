@@ -7,7 +7,7 @@ templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskRow(task models.TaskView) {
-<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="transition-transform cursor-pointer text-gray-900 dark:text-gray-50
+<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform cursor-pointer text-gray-900 dark:text-gray-50
         odd:bg-white odd:dark:bg-gray-900
         even:bg-gray-50 even:dark:bg-gray-800
         hover:bg-gray-100 hover:dark:bg-gray-700 border-b dark:border-gray-700 ">
@@ -17,7 +17,7 @@ templ TaskRow(task models.TaskView) {
 
 templ TaskRowOOB(task models.TaskView) {
 <tbody id="task-rows" hx-swap-oob="afterbegin">
-	<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="transition-transform cursor-pointer text-gray-900 dark:text-gray-50
+	<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform cursor-pointer text-gray-900 dark:text-gray-50
         odd:bg-white odd:dark:bg-gray-900
         even:bg-gray-50 even:dark:bg-gray-800
         hover:bg-gray-100 hover:dark:bg-gray-700 border-b dark:border-gray-700 ">

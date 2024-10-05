@@ -1,0 +1,41 @@
+.item-list {
+  transform-style: preserve-3d;
+  transform: perspective(1000px);
+  overflow: unset;
+}
+
+.item-list .item-row {
+  z-index: 1000;
+}
+
+.item-list .item-row {
+  transition: .5s;
+}
+
+.item-list .item-row:hover {
+  transform: translateZ(40px);
+}
+
+.item-list .item-row:hover+* {
+  transform: translateZ(20px) rotateX(-20deg);
+}
+
+.item-list .item-row:hover+*+* {
+  transform: translateZ(10px) rotateX(-10deg);
+}
+
+.item-list .item-row:hover+*+*+* {
+  transform: translateZ(5px) rotateX(-5deg);
+}
+
+.item-list .item-row:has(+*:hover) {
+  transform: translateZ(20px) rotateX(20deg);
+}
+
+.item-list .item-row:has(+*+*:hover) {
+  transform: translateZ(10px) rotateX(10deg);
+}
+
+.item-list .item-row:has(+*+*+*:hover) {
+  transform: translateZ(5px) rotateX(5deg);
+}

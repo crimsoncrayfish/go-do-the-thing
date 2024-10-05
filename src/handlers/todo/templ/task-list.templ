@@ -42,7 +42,8 @@ templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, 
 		</div>
 	</div>
 	<div class="relative items-center overflow-x-auto my-10">
-		<table class="w-full bg-gray-900 text-sm text-left rtl:text-right text-gray-50 dark:text-gray-400">
+		<table
+			class="w-[90%] mb-2 mx-auto bg-gray-900 text-sm text-left rtl:text-right text-gray-50 dark:text-gray-400">
 			<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
 				<tr>
 					<th scope="col" class="px-6 py-3">
@@ -57,7 +58,7 @@ templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, 
 					</th>
 				</tr>
 			</thead>
-			<tbody id="task-rows">
+			<tbody id="task-rows" class="item-list">
 				for _, task := range tasks {
 				@TaskRow(task)
 				}
