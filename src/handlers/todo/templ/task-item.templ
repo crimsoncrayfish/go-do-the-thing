@@ -3,23 +3,34 @@ package templ_todo
 import (
 	"fmt"
 	"go-do-the-thing/src/models"
-	form_models "go-do-the-thing/src/models/forms"
-	templ_shared "go-do-the-thing/src/shared/templ"
+	fm "go-do-the-thing/src/models/forms"
+	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata form_models.TaskForm, tagOptions []string) {
-	@templ_shared.NavBar(navbar)
+templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, tagOptions []string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@ts.Header()
+		<body id="main-body" class="dark:bg-primary-900 antialiased">
+			@TaskItem(task, navbar, formdata, tagOptions)
+		</body>
+	</html>
+}
+
+templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, tagOptions []string) {
+	@ts.NavBar(navbar)
 	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
 		<div class="flex w-full justify-between items-center">
 			<div class="flex items-center">
 				<button
 					hx-get="/todo/items"
+					hx-replace-url="true"
 					hx-target="body"
 					class="text-action-700 hover:text-primary-50 mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
                         dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
                         dark:focus:ring-action-800 flex items-center"
 				>
-					@templ_shared.SvgBack()
+					@ts.SvgBack()
 					Back
 				</button>
 			</div>
@@ -29,7 +40,7 @@ templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata form_m
                 dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
                 dark:focus:ring-action-800 flex items-center"
 			>
-				@templ_shared.SvgEdit()
+				@ts.SvgEdit()
 				&nbsp;Edit
 			</button>
 		</div>
@@ -49,7 +60,7 @@ templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata form_m
 							class="text-primary-900 dark:text-primary-50"
 							onclick="swapClassForId('max-h-0', 'max-h-[100%]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
 						>
-							@templ_shared.SvgClose()
+							@ts.SvgClose()
 						</button>
 					</div>
 					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, tagOptions)
@@ -88,7 +99,7 @@ templ taskItemContent(task models.TaskView) {
 							}
 						</div>
 						<div class="pt-2 sm:pt-0 flex items-center">
-							@templ_shared.SvgTag()
+							@ts.SvgTag()
 							<div class="mx-4">{ task.Tag }</div>
 						</div>
 					</div>
