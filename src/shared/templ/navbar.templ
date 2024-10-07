@@ -4,11 +4,11 @@ import "go-do-the-thing/src/models"
 
 templ NavBar(navbar models.NavBarObject) {
 	<header
-		class="sticky top-0 z-10 flex justify-between items-center w-full bg-white border-b border-gray-200 dark:border-gray-600 dark:bg-gray-800"
+		class="sticky top-0 z-10 flex justify-between items-center w-full bg-primary-50 border-b border-primary-200 dark:border-primary-600 dark:bg-primary-800"
 	>
 		<button
 			onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
-			class="text-slate-500 pl-3 flex items-center justify-center hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"
+			class="text-primary-500 pl-3 flex items-center justify-center hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
 		>
 			<span class="sr-only">
 				Navigation
@@ -24,11 +24,11 @@ templ NavBar(navbar models.NavBarObject) {
 				<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
 			</svg>
 		</button>
-		<div class="flex cursor-pointer items-center px-3 w-fit py-3 mx-auto lg:px-4 text-gray-900 dark:text-white">
+		<div class="flex cursor-pointer items-center px-3 w-fit py-3 mx-auto lg:px-4 text-primary-900 dark:text-primary-50">
 			<a class="flex items-center" hx-get="/home" hx-target="body">
 				@SvgLogoTiny()
 				<p
-					class="hidden md:block self-center text-2xl font-semibold whitespace-nowrap dark:text-white text-ellipsis"
+					class="hidden md:block self-center text-2xl font-semibold whitespace-nowrap dark:text-primary-50 text-ellipsis"
 				>
 					Think
 					of a heading
@@ -37,9 +37,9 @@ templ NavBar(navbar models.NavBarObject) {
 		</div>
 		<div
 			onclick="toggleClassForId('hidden', 'profile-menu')"
-			class="cursor-pointer flex items-center text-gray-900 dark:text-white pr-5 py-4"
+			class="cursor-pointer flex items-center text-primary-900 dark:text-primary-50 pr-5 py-4"
 		>
-			<p class="text-gray-900 dark:text-white pr-5 py-4">{ navbar.User.FullName }</p>
+			<p class="text-primary-900 dark:text-primary-50 pr-5 py-4">{ navbar.User.FullName }</p>
 			<div>
 				<button class="relative inline-block">
 					@SvgProfileIcon()

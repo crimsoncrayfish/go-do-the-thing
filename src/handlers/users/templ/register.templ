@@ -1,63 +1,58 @@
 package templ_users
 
 import (
-	form_models "go-do-the-thing/src/models/forms"
-	templ_shared "go-do-the-thing/src/shared/templ"
+form_models "go-do-the-thing/src/models/forms"
+templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ Register(form form_models.RegistrationForm) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@templ_shared.Header()
-		<body id="main-body" class="dark:bg-gray-900 antialiased">
-			@RegistrationForm(form)
-		</body>
-	</html>
+<!DOCTYPE html>
+<html lang="en">
+@templ_shared.Header()
+
+<body id="main-body" class="dark:bg-primary-900 antialiased">
+	@RegistrationForm(form)
+</body>
+
+</html>
 }
 
 templ RegistrationForm(form form_models.RegistrationForm) {
-	<div id="signup-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-		<div
-			class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"
-		>
-			<div class="px-10 mt-10 text-gray-900 dark:text-white">
-				@templ_shared.SvgLogo()
-			</div>
-			<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-				<h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-					Register an Account
-				</h1>
-				<form hx-post="/register" class="space-y-4 md:space-y-6">
-					@RegistrationFormContent(form)
-				</form>
-			</div>
+<div id="signup-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+	<div
+		class="w-full bg-primary-50 rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-primary-800 dark:border-primary-700">
+		<div class="px-10 mt-10 text-primary-900 dark:text-primary-50">
+			@templ_shared.SvgLogo()
+		</div>
+		<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+			<h1
+				class="text-xl font-bold leading-tight tracking-tight text-primary-900 md:text-2xl dark:text-primary-50">
+				Register an Account
+			</h1>
+			<form hx-post="/register" class="space-y-4 md:space-y-6">
+				@RegistrationFormContent(form)
+			</form>
 		</div>
 	</div>
+</div>
 }
 
 templ RegistrationFormContent(form form_models.RegistrationForm) {
-	@templ_shared.FormTextInput("Name", "name", "Full name", form.Name)
-	@templ_shared.FormTextInput("Email address", "email", "my.email@example.com", form.Email)
-	@templ_shared.FormPasswordInput("Enter a password", "password", "••••••••")
-	@templ_shared.FormPasswordInput("Confirm password", "password2", "••••••••")
-	<div class="text-red-500">
-		for _, v := range form.Errors {
-			<p class="py-2">{ v }</p>
-		}
-	</div>
-	<button
-		type="submit"
-		class="text-slate-500 pl-3 flex items-center justify-center hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-30"
-	>
-		Register
-	</button>
-	<p class="text-sm font-light text-gray-500 dark:text-gray-400">
-		Already have an account? <a
-	hx-get="login"
-	hx-target="#signup-form"
-	hx-swap="outerHTML"
-	href="#"
-	class="font-medium text-primary-600 hover:underline dark:text-primary-500"
->Sign in</a>
-	</p>
+@templ_shared.FormTextInput("Name", "name", "Full name", form.Name)
+@templ_shared.FormTextInput("Email address", "email", "my.email@example.com", form.Email)
+@templ_shared.FormPasswordInput("Enter a password", "password", "••••••••")
+@templ_shared.FormPasswordInput("Confirm password", "password2", "••••••••")
+<div class="text-error">
+	for _, v := range form.Errors {
+	<p class="py-2">{ v }</p>
+	}
+</div>
+<button type="submit"
+	class="text-primary-500 pl-3 flex items-center justify-center hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-30">
+	Register
+</button>
+<p class="text-sm font-light text-primary-500 dark:text-primary-400">
+	Already have an account? <a hx-get="login" hx-target="#signup-form" hx-swap="outerHTML" href="#"
+		class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign in</a>
+</p>
 }
