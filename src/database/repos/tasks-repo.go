@@ -30,15 +30,15 @@ const (
 	[status] INTEGER DEFAULT 0,
 	[complete_date] TEXT DEFAULT '' NOT NULL,	
     [due_date] TEXT,
-
-    [created_by] TEXT,
+    [created_by] INTEGER,
     [created_date] TEXT,
-
-    [modified_by] TEXT,
+    [modified_by] INTEGER,
     [modified_date] TEXT,
-	
 	[tag] TEXT DEFAULT '' NOT NULL,
-	[is_deleted] INTEGER DEFAULT 0
+	[is_deleted] INTEGER DEFAULT 0,
+	FOREIGN KEY (assigned_to) REFERENCES users(id),
+	FOREIGN KEY (created_by) REFERENCES users(id),
+	FOREIGN KEY (modified_by) REFERENCES users(id)
 );`
 	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date]  FROM items WHERE is_deleted=0"
 	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
@@ -64,10 +64,8 @@ func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 		&item.CreatedDate,
 		&item.ModifiedBy,
 		&item.ModifiedDate,
-
 		&item.IsDeleted,
 		&item.Tag,
-
 		&item.CompleteDate,
 	)
 }
