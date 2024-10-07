@@ -52,7 +52,7 @@ templ RegistrationFormContent(form form_models.RegistrationForm) {
 	Register
 </button>
 <p class="text-sm font-light text-primary-500 dark:text-primary-400">
-	Already have an account? <a hx-get="login" hx-target="#signup-form" hx-swap="outerHTML" href="#"
-		class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign in</a>
+	Already have an account? <a hx-get="login" hx-replace-url="true" hx-target=" #signup-form" hx-swap="outerHTML"
+		href="#" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign in</a>
 </p>
 }

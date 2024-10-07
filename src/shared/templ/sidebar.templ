@@ -104,6 +104,7 @@ templ navBarListItem(description string, isActive bool, navigation string) {
 	<li>
 		<a
 			hx-get={ navigation }
+			hx-replace-url="true"
 			hx-target="body"
 			class="flex items-center p-2 text-primary-900 dark:text-primary-50 cursor-pointer"
 		>

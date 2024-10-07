@@ -330,12 +330,23 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 
 	taskView := models.TaskToViewModel(task, assignedUser, createdBy)
 	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
-	if err = templ_todo.TaskItem(taskView, navbar, formData, tagOptions).Render(r.Context(), w); err != nil {
-		// TODO: some user feedback here?
-		h.logger.Error(err, "Failed to execute template for the item page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	contentType := r.Header.Get("accept")
+	if contentType == "text/html" {
+		if err = templ_todo.TaskItem(taskView, navbar, formData, tagOptions).Render(r.Context(), w); err != nil {
+			// TODO: some user feedback here?
+			h.logger.Error(err, "Failed to execute template for the item page")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err = templ_todo.TaskItemWithBody(taskView, navbar, formData, tagOptions).Render(r.Context(), w); err != nil {
+			// TODO: some user feedback here?
+			h.logger.Error(err, "Failed to execute template for the item page")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
+
 }
 
 func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
@@ -448,12 +459,23 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Success zone
 	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
-	if err = templ_todo.TaskList(navbar, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
-		// TODO: Should this panic
-		h.logger.Error(err, "Failed to execute template for the item list page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	contentType := r.Header.Get("accept")
+	if contentType == "text/html" {
+		if err = templ_todo.TaskList(navbar, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
+			// TODO: Should this panic
+			h.logger.Error(err, "Failed to execute template for the item list page")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err = templ_todo.TaskListWithBody(navbar, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
+			// TODO: Should this panic
+			h.logger.Error(err, "Failed to execute template for the item list page")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
+
 }
 
 func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {

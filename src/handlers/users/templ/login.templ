@@ -72,7 +72,7 @@ for _, v := range form.Errors {
 	Sign in
 </button>
 <p class="text-sm font-light text-primary-500 dark:text-primary-400">
-	Don’t have an account yet? <a hx-get="register" hx-target="#login-form" hx-swap="outerHTML" href="#"
-		class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
+	Don’t have an account yet? <a hx-get="register" hx-replace-url="true" hx-target="#login-form" hx-swap="outerHTML"
+		href="#" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
 </p>
 }

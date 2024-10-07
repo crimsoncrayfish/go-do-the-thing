@@ -7,6 +7,16 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
+templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, tagOptions []string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@ts.Header()
+		<body id="main-body" class="dark:bg-primary-900 antialiased">
+			@TaskList(navbar, formdata, tasks, tagOptions)
+		</body>
+	</html>
+}
+
 templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, tagOptions []string) {
 	@ts.NavBar(navbar)
 	<div class="px-1 lg:px-[10%] w-full text-primary-900 dark:text-primary-50">
@@ -83,7 +93,8 @@ templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, 
 templ NoDataRow(tasks []models.TaskView) {
 	<div
 		id="no-data-row"
-		class={ templ.KV("hidden", len(tasks)> 0),"p-4 border-b dark:border-primary-700 bg-primary-50",
+		class={ templ.KV("hidden", len(tasks)> 0)," p-4 w-[90%] mx-auto","border-b",
+	"dark:border-primary-700 bg-primary-50",
 	"dark:bg-primary-800" }
 	>
 		No data found
