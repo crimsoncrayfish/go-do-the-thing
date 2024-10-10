@@ -408,7 +408,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	taskListItem := models.TaskToViewModel(task, assignedToUser, createdBy)
-	if err = templ_todo.TaskRow(taskListItem).Render(r.Context(), w); err != nil {
+	if err = templ_todo.TaskRowContent(taskListItem).Render(r.Context(), w); err != nil {
 		// TODO: what to do here
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
