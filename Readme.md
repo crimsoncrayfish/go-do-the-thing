@@ -44,21 +44,21 @@ ssh-keygen -t rsa -b 4096
 
 ### Goals
 
-[x] Home page
-[x] Basic tasks (create, edit and list)
-[x] JWT auth from scratch
-[x] Registration
-[x] Login
-[x] Link tasks to users
-[x] [Templ](https://templ.guide/)
-[x] Logout
-[] improve task editing security
-[] Admin controls to enable users
-[] Containerize this so i can dev on Windows
-[] Projects for task grouping
-[] Time logging on tasks
-[] Export to csv
-[] Dashboard with stats
+- [x] Home page
+- [x] Basic tasks (create, edit and list)
+- [x] JWT auth from scratch
+- [x] Registration
+- [x] Login
+- [x] Link tasks to users
+- [x] [Templ](https://templ.guide/)
+- [x] Logout
+- [ ] improve task editing security
+- [ ] Admin controls to enable users
+- [ ] Containerize this so i can dev on Windows
+- [ ] Projects for task grouping
+- [ ] Time logging on tasks
+- [ ] Export to csv
+- [ ] Dashboard with stats
 
 ### Known issues
-[] hover on table rows with the z axis translation causes rows to end up "behind" the table
+- [ ] hover on table rows with the z axis translation causes rows to end up "behind" the table
