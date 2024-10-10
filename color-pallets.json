@@ -1,0 +1,15 @@
+{
+  "teal":{
+      "primary-50": "#E0F7FA", // Lightest Blue
+      "primary-100": "#B2EBF2",
+      "primary-200": "#80DEEA",
+      "primary-300": "#4DD0E1",
+      "primary-400": "#26C6DA",
+      "primary-500": "#00BFD4",
+      "primary-600": "#00A2A1",
+      "primary-700": "#007B7D",
+      "primary-800": "#005D57",
+      "primary-900": "#003D3C",
+      "primary-950": "#002622",
+  }
+}

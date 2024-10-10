@@ -1,132 +1,93 @@
 package templ_todo
 
 import (
-	"fmt"
-	"go-do-the-thing/src/models"
-	templ_shared "go-do-the-thing/src/shared/templ"
+"fmt"
+"go-do-the-thing/src/models"
+templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskRow(task models.TaskView) {
-	<tr
-		id={ fmt.Sprintf("task-row-%d", task.Id) }
-		class="item-row transition-transform hover:translate-z-[40px] cursor-pointer text-primary-900 dark:text-primary-50
-        odd:bg-primary-50 odd:dark:bg-primary-900
-        even:bg-primary-50 even:dark:bg-primary-800
-        hover:bg-primary-100 hover:dark:bg-primary-700 border-b dark:border-primary-700 "
-	>
-		@taskRowContent(task)
-	</tr>
+<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform hover:translate-z-[40px] cursor-pointer text-primary-900 dark:text-primary-50
+        odd:bg-primary-100 odd:dark:bg-primary-900
+        even:bg-primary-200 even:dark:bg-primary-800
+        hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700 ">
+	@TaskRowContent(task)
+</tr>
 }
 
 templ TaskRowOOB(task models.TaskView) {
-	<tbody id="task-rows" hx-swap-oob="afterbegin">
-		<tr
-			id={ fmt.Sprintf("task-row-%d", task.Id) }
-			class="item-row transition-transform hover:translate-z-[40px] cursor-pointer text-primary-900 dark:text-primary-50
-        odd:bg-primary-50 odd:dark:bg-primary-900
-        even:bg-primary-50 even:dark:bg-primary-800
-        hover:bg-primary-100 hover:dark:bg-primary-700 border-b dark:border-primary-700 "
-		>
-			@taskRowContent(task)
-		</tr>
-	</tbody>
+<tbody id="task-rows" hx-swap-oob="afterbegin">
+	<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform hover:translate-z-[40px] cursor-pointer text-primary-900 dark:text-primary-50
+        odd:bg-primary-100 odd:dark:bg-primary-900
+        even:bg-primary-200 even:dark:bg-primary-800
+        hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700 ">
+		@TaskRowContent(task)
+	</tr>
+</tbody>
 }
 
-templ taskRowContent(task models.TaskView) {
-	<td class="pl-5 w-0 mx-auto">
-		<div hx-swap="outerHTML" hx-target="closest tr" hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }>
-			@statusIcon(task)
-		</div>
-	</td>
-	<td
-		hx-swap="outerHTML"
-		hx-target="body"
-		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		hx-replace-url="true"
-		class="px-6 py-4 font-medium text-xl"
-	>
+templ TaskRowContent(task models.TaskView) {
+<td class="pl-5 w-0 mx-auto">
+	<div hx-swap="innetHTML" hx-target="closest tr" hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }>
+		@statusIcon(task)
+	</div>
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) } hx-replace-url="true"
+	class="px-6 py-4 font-medium text-xl">
+	if task.Name != "" {
+	{ task.Name }
+	} else {
+	{ task.Description }
+	}
+	<dl class="text-sm">
 		if task.Name != "" {
-			{ task.Name }
-		} else {
-			{ task.Description }
+		<dt class="sr-only">Description</dt>
+		<dd class="font-light text-wrap">{ task.Description }</dd>
 		}
-		<dl class="text-sm">
-			if task.Name != "" {
-				<dt class="sr-only">Description</dt>
-				<dd class="font-light text-wrap">{ task.Description }</dd>
-			}
-			<dt class="sr-only lg:hidden">Assigned To</dt>
-			<dd class="font-light lg:hidden">{ task.AssignedTo }</dd>
-			<dt class="sr-only md:hidden">Due date</dt>
-			<dd class="font-light md:hidden">{ task.DueDate.Time.Format("2006-01-02") }</dd>
-			<dt class="sr-only xl:hidden">Tag</dt>
-			<dd class="font-light xl:hidden">{ task.Tag }</dd>
-		</dl>
-	</td>
-	<td
-		hx-swap="outerHTML"
-		hx-target="body"
-		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		hx-replace-url="true"
-		class="hidden md:table-cell px-6 py-4"
-	>
-		{ task.DueDate.Time.Format("2006-01-02") }
-	</td>
-	<td
-		hx-swap="outerHTML"
-		hx-target="body"
-		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		hx-replace-url="true"
-		class="hidden lg:table-cell px-6 py-4"
-	>
-		{ task.AssignedTo }
-	</td>
-	<td
-		hx-swap="outerHTML"
-		hx-target="body"
-		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		hx-replace-url="true"
-		class="hidden xl:table-cell px-6 py-4"
-	>
-		<div class="flex flex-row">
-			@templ_shared.SvgTag()
-			<p>&nbsp;{ task.Tag }</p>
-		</div>
-	</td>
-	<td class="px-6 py-4">
-		<button
-			class="text-error"
-			hx-swap="outerHTML swap:0.5s"
-			hx-target="closest tr"
-			hx-on--after-request={ fmt.Sprintf("toggleClassForId('-translate-x-full','task-row-%d')", task.Id) }
-			hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		>
-			@templ_shared.SvgBin()
-		</button>
-	</td>
+		<dt class="sr-only lg:hidden">Assigned To</dt>
+		<dd class="font-light lg:hidden">{ task.AssignedTo }</dd>
+		<dt class="sr-only md:hidden">Due date</dt>
+		<dd class="font-light md:hidden">{ task.DueDate.Time.Format("2006-01-02") }</dd>
+		<dt class="sr-only xl:hidden">Tag</dt>
+		<dd class="font-light xl:hidden">{ task.Tag }</dd>
+	</dl>
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) } hx-replace-url="true"
+	class="hidden md:table-cell px-6 py-4">
+	{ task.DueDate.Time.Format("2006-01-02") }
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) } hx-replace-url="true"
+	class="hidden lg:table-cell px-6 py-4">
+	{ task.AssignedTo }
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) } hx-replace-url="true"
+	class="hidden xl:table-cell px-6 py-4">
+	<div class="flex flex-row">
+		@templ_shared.SvgTag()
+		<p>&nbsp;{ task.Tag }</p>
+	</div>
+</td>
+<td class="px-6 py-4">
+	<button class="text-error" hx-swap="outerHTML swap:0.5s" hx-target="closest tr" hx-on--after-request={
+		fmt.Sprintf("toggleClassForId('-translate-x-full','task-row-%d')", task.Id) } hx-delete={
+		fmt.Sprintf("/todo/item/%d", task.Id) }>
+		@templ_shared.SvgBin()
+	</button>
+</td>
 }
 
 templ statusIcon(task models.TaskView) {
-	<div
-		if task.Status==models.Completed {
-			class="text-action-400"
-		}
-		else
-		if beforeNow(task) {
-			class="text-error"
-		} else {
-			class="text-warn"
-		}
-	>
-		if task.Status == models.Completed {
-			@templ_shared.SvgCheck()
-		} else {
-			@templ_shared.SvgWait()
-		}
-	</div>
+<div if task.Status==models.Completed { class="text-action-400" } else if beforeNow(task) { class="text-error" } else {
+	class="text-warn" }>
+	if task.Status == models.Completed {
+	@templ_shared.SvgCheck()
+	} else {
+	@templ_shared.SvgWait()
+	}
+</div>
 }
 
 func beforeNow(task models.TaskView) bool {
-	beforenow, _ := task.DueDate.BeforeNow()
-	return beforenow
+beforenow, _ := task.DueDate.BeforeNow()
+return beforenow
 }

@@ -1,13 +1,16 @@
 .item-list {
   transform-style: preserve-3d;
   transform: perspective(1000px);
-  overflow: unset;
 }
 
 .item-list .item-row {
-  z-index: 1000;
-  position: inherit;
+  z-index: 1;
+  position: relative;
   transition: .5s;
+}
+
+.item-list.item-row {
+  z-index: 1000;
 }
 
 .item-list .item-row:hover+* {
