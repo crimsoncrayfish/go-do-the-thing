@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
@@ -12,11 +14,10 @@ type UsersRepo struct {
 }
 
 func InitUsersRepo(connection database.DatabaseConnection) (*UsersRepo, error) {
-	//do db migration
+	logger := slog.NewLogger(TasksRepoName)
 	_, err := connection.Exec(createTable)
-	if err != nil {
-		return &UsersRepo{}, err
-	}
+	assert.NoError(err, logger, "Failed to create Users table")
+
 	return &UsersRepo{connection}, nil
 }
 
