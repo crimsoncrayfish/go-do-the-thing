@@ -12,12 +12,10 @@ type RolesRepo struct {
 	database database.DatabaseConnection
 }
 
-const RolesRepoName = "roles"
-
 // NOTE: Depends on: []
 // READONLY REPO
 func InitRepo(database database.DatabaseConnection) *RolesRepo {
-	logger := slog.NewLogger(RolesRepoName)
+	logger := slog.NewLogger("roles repo")
 	_, err := database.Exec(createRolesTable)
 	assert.NoError(err, logger, "Failed to create Roles table")
 	_, err = database.Exec(seedRolesTable)
