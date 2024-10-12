@@ -2,7 +2,6 @@ package repos
 
 import (
 	"go-do-the-thing/src/database"
-	project_repos "go-do-the-thing/src/database/repos/projects"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 )
@@ -13,12 +12,12 @@ type RepoContainer struct {
 
 	// NOTE: Enum-like tables
 	tagsRepo  *TagsRepo
-	rolesRepo *project_repos.RolesRepo
+	rolesRepo *RolesRepo
 
 	// NOTE: Projects
-	projectsRepo     *project_repos.ProjectsRepo
-	projectUsersRepo *project_repos.ProjectUsersRepo
-	projectTagsRepo  *project_repos.ProjectTagsRepo
+	projectsRepo     *ProjectsRepo
+	projectUsersRepo *ProjectUsersRepo
+	projectTagsRepo  *ProjectTagsRepo
 
 	// NOTE: Tasks
 	tasksRepo    *TasksRepo
@@ -30,13 +29,13 @@ func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 	assert.IsTrue(false, logger, "Something happened?")
 
 	tagsRepo := initTagsRepo(connection)
-	rolesRepo := project_repos.InitRolesRepo(connection)
+	rolesRepo := initRolesRepo(connection)
 
 	usersRepo := initUsersRepo(connection)
 
-	projectsRepo := project_repos.InitProjectsRepo(connection)
-	projectUsersRepo := project_repos.InitProjectUsersRepo(connection)
-	projectTagsRepo := project_repos.InitProjectTagsRepo(connection)
+	projectsRepo := initProjectsRepo(connection)
+	projectUsersRepo := initProjectUsersRepo(connection)
+	projectTagsRepo := initProjectTagsRepo(connection)
 
 	tasksRepo := initTasksRepo(connection)
 	taskTagsRepo := initTaskTagsRepo(connection)
@@ -61,7 +60,7 @@ func (r *RepoContainer) GetTagsRepo() *TagsRepo {
 	return r.tagsRepo
 }
 
-func (r *RepoContainer) GetRolesRepo() *project_repos.RolesRepo {
+func (r *RepoContainer) GetRolesRepo() *RolesRepo {
 	return r.rolesRepo
 }
 
@@ -71,15 +70,15 @@ func (r *RepoContainer) GetUsersRepo() *UsersRepo {
 }
 
 // NOTE: Projects
-func (r *RepoContainer) GetProjectsRepo() *project_repos.ProjectsRepo {
+func (r *RepoContainer) GetProjectsRepo() *ProjectsRepo {
 	return r.projectsRepo
 }
 
-func (r *RepoContainer) GetProjectUsersRepo() *project_repos.ProjectUsersRepo {
+func (r *RepoContainer) GetProjectUsersRepo() *ProjectUsersRepo {
 	return r.projectUsersRepo
 }
 
-func (r *RepoContainer) GetProjectTagsRepo() *project_repos.ProjectTagsRepo {
+func (r *RepoContainer) GetProjectTagsRepo() *ProjectTagsRepo {
 	return r.projectTagsRepo
 }
 

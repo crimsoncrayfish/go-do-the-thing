@@ -1,4 +1,4 @@
-package project_repos
+package repos
 
 import (
 	"go-do-the-thing/src/database"
@@ -11,11 +11,9 @@ type ProjectUsersRepo struct {
 	database database.DatabaseConnection
 }
 
-const ProjectUsersRepoName = "tags"
-
-// NOTE: READONLY REPO
-func InitProjectUsersRepo(database database.DatabaseConnection) *ProjectUsersRepo {
-	logger := slog.NewLogger(ProjectUsersRepoName)
+// NOTE: Depends on: [./users-repo.go, ./projects-repo.go]
+func initProjectUsersRepo(database database.DatabaseConnection) *ProjectUsersRepo {
+	logger := slog.NewLogger("project users repo")
 	_, err := database.Exec(createProjectUsersTable)
 	assert.NoError(err, logger, "Failed to create ProjectUsers table")
 
