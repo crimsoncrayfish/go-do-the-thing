@@ -25,4 +25,8 @@ const (
 	[project_id] INTEGER,
 	[tag_id] INTEGER,
 );`
+	insertProjectTag = `INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?)`
+	deleteTag        = `DELETE FROM project_tags WHERE [tag_id] = ?`
+	deleteProject    = `DELETE FROM project_tags WHERE [project_id] = ?`
+	deleteProjectTag = `DELETE FROM project_tags WHERE [tag_id] = ? AND [project_id] = ?`
 )

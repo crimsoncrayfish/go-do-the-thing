@@ -15,3 +15,14 @@ type Project struct {
 	ModifiedDate *database.SqLiteTime
 	IsDeleted    bool
 }
+
+type ProjectTag struct {
+	ProjectId int
+	TagId     int
+}
+
+type ProjectUser struct {
+	ProjectId int
+	UserId    int
+	RoleId    RoleEnum
+}
