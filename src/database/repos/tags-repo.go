@@ -7,30 +7,26 @@ import (
 )
 
 type TagsRepo struct {
-	logger   slog.Logger
 	database database.DatabaseConnection
 }
 
-const TagsRepoName = "tags"
+const tagsRepoName = "tags"
 
-// NOTE: READONLY REPO
-func InitTagsRepo(database database.DatabaseConnection) (*TagsRepo, error) {
-	logger := slog.NewLogger(TagsRepoName)
+func initTagsRepo(database database.DatabaseConnection) *TagsRepo {
+	logger := slog.NewLogger(tagsRepoName)
 	_, err := database.Exec(createTagsTable)
 	assert.NoError(err, logger, "Failed to create Tags table")
 	_, err = database.Exec(seedTagsTable)
-	assert.NoError(err, logger, "Failed to seed Tags table")
+	assert.NoError(err, logger, "Failed to create Tags table")
 	return &TagsRepo{
 		database: database,
-		logger:   logger,
-	}, nil
+	}
 }
 
 const (
 	createTagsTable = `CREATE TABLE IF NOT EXISTS tags (
-	[id] INTEGER PRIMARY KEY,
-   	[name] TEXT DEFAULT '' NOT NULL,
+	[id] INTEGER,
+	[name] INTEGER,
 );`
-	seedTagsTable = `SOME SQL HERE TO SEED THE TAGS`
-	getAllTags    = `SOME SQL HERE TO GET ALL TAGS`
+	seedTagsTable = `SOME SQL HERE`
 )

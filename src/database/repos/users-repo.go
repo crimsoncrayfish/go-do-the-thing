@@ -13,12 +13,12 @@ type UsersRepo struct {
 	db database.DatabaseConnection
 }
 
-func InitUsersRepo(connection database.DatabaseConnection) (*UsersRepo, error) {
+func initUsersRepo(connection database.DatabaseConnection) *UsersRepo {
 	logger := slog.NewLogger(TasksRepoName)
 	_, err := connection.Exec(createTable)
 	assert.NoError(err, logger, "Failed to create Users table")
 
-	return &UsersRepo{connection}, nil
+	return &UsersRepo{connection}
 }
 
 const (
