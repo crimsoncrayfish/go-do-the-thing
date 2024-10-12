@@ -1,4 +1,4 @@
-package project_repos
+package repos
 
 import (
 	"go-do-the-thing/src/database"
@@ -10,14 +10,12 @@ type ProjectsRepo struct {
 	database database.DatabaseConnection
 }
 
-const ProjectsRepoName = "projects"
-
-func InitProjectsRepo(database database.DatabaseConnection) *ProjectsRepo {
-	logger := slog.NewLogger(ProjectTagsRepoName)
+// NOTE: Depends on: [./users-repo.go]
+func initProjectsRepo(database database.DatabaseConnection) *ProjectsRepo {
+	logger := slog.NewLogger("projects repo")
 	_, err := database.Exec(createProjectsTable)
 	assert.NoError(err, logger, "Failed to create Projects table")
-	_, err = database.Exec(createProjectTagsTable)
-	assert.NoError(err, logger, "Failed to create Project Tags table")
+
 	return &ProjectsRepo{
 		database: database,
 	}
@@ -30,5 +28,9 @@ const (
    	[description] TEXT,
 );`
 
+	getProjects   = `SELECT [],[],[] FROM projects WHERE owner = ?`
+	getProject    = `SELECT [],[],[] FROM projects WHERE owner = ? AND id = ?`
 	insertProject = `INSERT INTO projects `
+	updateProject = `UPDATE projects SET VALUES() WHERE id = ?`
+	deleteProject = `UPDATE projects SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
 )

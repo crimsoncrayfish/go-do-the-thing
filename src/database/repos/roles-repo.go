@@ -1,4 +1,4 @@
-package project_repos
+package repos
 
 import (
 	"database/sql"
@@ -14,8 +14,9 @@ type RolesRepo struct {
 
 const RolesRepoName = "roles"
 
-// NOTE: READONLY REPO
-func InitRolesRepo(database database.DatabaseConnection) *RolesRepo {
+// NOTE: Depends on: []
+// READONLY REPO
+func initRolesRepo(database database.DatabaseConnection) *RolesRepo {
 	logger := slog.NewLogger(RolesRepoName)
 	_, err := database.Exec(createRolesTable)
 	assert.NoError(err, logger, "Failed to create Roles table")

@@ -12,10 +12,9 @@ type TasksRepo struct {
 	database database.DatabaseConnection
 }
 
-const TasksRepoName = "items"
-
+// NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
 func initTasksRepo(database database.DatabaseConnection) *TasksRepo {
-	logger := slog.NewLogger(TasksRepoName)
+	logger := slog.NewLogger("tasks repo")
 	_, err := database.Exec(createTasksTable)
 	assert.NoError(err, logger, "Failed to create Tasks table")
 

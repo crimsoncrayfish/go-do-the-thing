@@ -13,8 +13,9 @@ type UsersRepo struct {
 	db database.DatabaseConnection
 }
 
+// NOTE: Depends on: []
 func initUsersRepo(connection database.DatabaseConnection) *UsersRepo {
-	logger := slog.NewLogger(TasksRepoName)
+	logger := slog.NewLogger("users repo")
 	_, err := connection.Exec(createTable)
 	assert.NoError(err, logger, "Failed to create Users table")
 
@@ -34,7 +35,6 @@ const (
 	[create_date] TEXT
 );`
 	getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
-	countUsers            = "SELECT COUNT(*) FROM users WHERE is_deleted=0"
 	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE id = ?"
 	getUserByEmail        = `SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE email = ?`
 	insertUser            = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES (?, ?, ?, ?)`
@@ -44,7 +44,6 @@ const (
 	updateUserIsAdmin     = `UPDATE users SET [is_admin] = ? WHERE id = ?`
 	getUserPassword       = `SELECT [password_hash] FROM [users] WHERE id = ?`
 	deleteUser            = `UPDATE users SET [is_deleted] = 1 WHERE id = ?`
-	restoreUsers          = `UPDATE users SET [is_deleted] = 0 WHERE id = ?`
 	logoutUser            = `UPDATE users SET [session_id] = "", [session_start_time] = "" WHERE id = ?`
 )
 
