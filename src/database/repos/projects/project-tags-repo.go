@@ -1,4 +1,4 @@
-package repos
+package project_repos
 
 import (
 	"go-do-the-thing/src/database"
@@ -12,7 +12,7 @@ type ProjectTagsRepo struct {
 
 const ProjectTagsRepoName = "project-tags"
 
-func initProjectTagsRepo(database database.DatabaseConnection) *ProjectTagsRepo {
+func InitProjectTagsRepo(database database.DatabaseConnection) *ProjectTagsRepo {
 	logger := slog.NewLogger(ProjectTagsRepoName)
 	_, err := database.Exec(createProjectTagsTable)
 	assert.NoError(err, logger, "Failed to create Project Tags table")
