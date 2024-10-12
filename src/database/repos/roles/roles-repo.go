@@ -1,4 +1,4 @@
-package repos
+package roles_repo
 
 import (
 	"database/sql"
@@ -16,7 +16,7 @@ const RolesRepoName = "roles"
 
 // NOTE: Depends on: []
 // READONLY REPO
-func initRolesRepo(database database.DatabaseConnection) *RolesRepo {
+func InitRepo(database database.DatabaseConnection) *RolesRepo {
 	logger := slog.NewLogger(RolesRepoName)
 	_, err := database.Exec(createRolesTable)
 	assert.NoError(err, logger, "Failed to create Roles table")

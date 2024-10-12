@@ -1,4 +1,4 @@
-package repos
+package task_tags_repo
 
 import (
 	"go-do-the-thing/src/database"
@@ -11,7 +11,7 @@ type TaskTagsRepo struct {
 }
 
 // NOTE: Depends on: [./tags-repo.go, ./users-repo.go]
-func initTaskTagsRepo(database database.DatabaseConnection) *TaskTagsRepo {
+func InitRepo(database database.DatabaseConnection) *TaskTagsRepo {
 	logger := slog.NewLogger("tasks tags repo")
 	_, err := database.Exec(createTaskTagsTable)
 	assert.NoError(err, logger, "Failed to create Task Tags table")

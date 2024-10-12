@@ -2,43 +2,51 @@ package repos
 
 import (
 	"go-do-the-thing/src/database"
+	project_tags_repo "go-do-the-thing/src/database/repos/project-tags"
+	project_users_repo "go-do-the-thing/src/database/repos/project-users"
+	projects_repo "go-do-the-thing/src/database/repos/projects"
+	roles_repo "go-do-the-thing/src/database/repos/roles"
+	tags_repo "go-do-the-thing/src/database/repos/tags"
+	task_tags_repo "go-do-the-thing/src/database/repos/task-tags"
+	tasks_repo "go-do-the-thing/src/database/repos/tasks"
+	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 )
 
 type RepoContainer struct {
 	// NOTE: User data tables
-	usersRepo *UsersRepo
+	usersRepo *users_repo.UsersRepo
 
 	// NOTE: Enum-like tables
-	tagsRepo  *TagsRepo
-	rolesRepo *RolesRepo
+	tagsRepo  *tags_repo.TagsRepo
+	rolesRepo *roles_repo.RolesRepo
 
 	// NOTE: Projects
-	projectsRepo     *ProjectsRepo
-	projectUsersRepo *ProjectUsersRepo
-	projectTagsRepo  *ProjectTagsRepo
+	projectsRepo     *projects_repo.ProjectsRepo
+	projectUsersRepo *project_users_repo.ProjectUsersRepo
+	projectTagsRepo  *project_tags_repo.ProjectTagsRepo
 
 	// NOTE: Tasks
-	tasksRepo    *TasksRepo
-	taskTagsRepo *TaskTagsRepo
+	tasksRepo    *tasks_repo.TasksRepo
+	taskTagsRepo *task_tags_repo.TaskTagsRepo
 }
 
 func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 	logger := slog.NewLogger("whaaaaat?")
 	assert.IsTrue(false, logger, "Something happened?")
 
-	tagsRepo := initTagsRepo(connection)
-	rolesRepo := initRolesRepo(connection)
+	tagsRepo := tags_repo.InitRepo(connection)
+	rolesRepo := roles_repo.InitRepo(connection)
 
-	usersRepo := initUsersRepo(connection)
+	usersRepo := users_repo.InitRepo(connection)
 
-	projectsRepo := initProjectsRepo(connection)
-	projectUsersRepo := initProjectUsersRepo(connection)
-	projectTagsRepo := initProjectTagsRepo(connection)
+	projectsRepo := projects_repo.InitRepo(connection)
+	projectUsersRepo := project_users_repo.InitRepo(connection)
+	projectTagsRepo := project_tags_repo.InitRepo(connection)
 
-	tasksRepo := initTasksRepo(connection)
-	taskTagsRepo := initTaskTagsRepo(connection)
+	tasksRepo := tasks_repo.InitRepo(connection)
+	taskTagsRepo := task_tags_repo.InitRepo(connection)
 
 	return &RepoContainer{
 		rolesRepo: rolesRepo,
@@ -56,37 +64,37 @@ func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 }
 
 // NOTE: ENUMS
-func (r *RepoContainer) GetTagsRepo() *TagsRepo {
+func (r *RepoContainer) GetTagsRepo() *tags_repo.TagsRepo {
 	return r.tagsRepo
 }
 
-func (r *RepoContainer) GetRolesRepo() *RolesRepo {
+func (r *RepoContainer) GetRolesRepo() *roles_repo.RolesRepo {
 	return r.rolesRepo
 }
 
 // NOTE: Users
-func (r *RepoContainer) GetUsersRepo() *UsersRepo {
+func (r *RepoContainer) GetUsersRepo() *users_repo.UsersRepo {
 	return r.usersRepo
 }
 
 // NOTE: Projects
-func (r *RepoContainer) GetProjectsRepo() *ProjectsRepo {
+func (r *RepoContainer) GetProjectsRepo() *projects_repo.ProjectsRepo {
 	return r.projectsRepo
 }
 
-func (r *RepoContainer) GetProjectUsersRepo() *ProjectUsersRepo {
+func (r *RepoContainer) GetProjectUsersRepo() *project_users_repo.ProjectUsersRepo {
 	return r.projectUsersRepo
 }
 
-func (r *RepoContainer) GetProjectTagsRepo() *ProjectTagsRepo {
+func (r *RepoContainer) GetProjectTagsRepo() *project_tags_repo.ProjectTagsRepo {
 	return r.projectTagsRepo
 }
 
 // NOTE: Tasks
-func (r *RepoContainer) GetTasksRepo() *TasksRepo {
+func (r *RepoContainer) GetTasksRepo() *tasks_repo.TasksRepo {
 	return r.tasksRepo
 }
 
-func (r *RepoContainer) GetTaskTagsRepo() *TasksRepo {
-	return r.tasksRepo
+func (r *RepoContainer) GetTaskTagsRepo() *task_tags_repo.TaskTagsRepo {
+	return r.taskTagsRepo
 }

@@ -1,4 +1,4 @@
-package repos
+package tags_repo
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ type TagsRepo struct {
 }
 
 // NOTE: Depends on: []
-func initTagsRepo(database database.DatabaseConnection) *TagsRepo {
+func InitRepo(database database.DatabaseConnection) *TagsRepo {
 	logger := slog.NewLogger("tags repo")
 	_, err := database.Exec(createTagsTable)
 	assert.NoError(err, logger, "Failed to create Tags table")

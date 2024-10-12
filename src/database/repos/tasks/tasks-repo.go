@@ -1,4 +1,4 @@
-package repos
+package tasks_repo
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ type TasksRepo struct {
 }
 
 // NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
-func initTasksRepo(database database.DatabaseConnection) *TasksRepo {
+func InitRepo(database database.DatabaseConnection) *TasksRepo {
 	logger := slog.NewLogger("tasks repo")
 	_, err := database.Exec(createTasksTable)
 	assert.NoError(err, logger, "Failed to create Tasks table")

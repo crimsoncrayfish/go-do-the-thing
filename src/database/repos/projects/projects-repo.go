@@ -1,4 +1,4 @@
-package repos
+package projects_repo
 
 import (
 	"go-do-the-thing/src/database"
@@ -11,7 +11,7 @@ type ProjectsRepo struct {
 }
 
 // NOTE: Depends on: [./users-repo.go]
-func initProjectsRepo(database database.DatabaseConnection) *ProjectsRepo {
+func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
 	logger := slog.NewLogger("projects repo")
 	_, err := database.Exec(createProjectsTable)
 	assert.NoError(err, logger, "Failed to create Projects table")
