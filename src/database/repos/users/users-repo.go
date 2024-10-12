@@ -1,4 +1,4 @@
-package repos
+package users_repo
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ type UsersRepo struct {
 }
 
 // NOTE: Depends on: []
-func initUsersRepo(connection database.DatabaseConnection) *UsersRepo {
+func InitRepo(connection database.DatabaseConnection) *UsersRepo {
 	logger := slog.NewLogger("users repo")
 	_, err := connection.Exec(createTable)
 	assert.NoError(err, logger, "Failed to create Users table")
