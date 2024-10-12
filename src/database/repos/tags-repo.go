@@ -16,8 +16,6 @@ func initTagsRepo(database database.DatabaseConnection) *TagsRepo {
 	logger := slog.NewLogger(tagsRepoName)
 	_, err := database.Exec(createTagsTable)
 	assert.NoError(err, logger, "Failed to create Tags table")
-	_, err = database.Exec(seedTagsTable)
-	assert.NoError(err, logger, "Failed to create Tags table")
 	return &TagsRepo{
 		database: database,
 	}
@@ -27,6 +25,9 @@ const (
 	createTagsTable = `CREATE TABLE IF NOT EXISTS tags (
 	[id] INTEGER,
 	[name] INTEGER,
+	[user_id] INTEGER
 );`
-	seedTagsTable = `SOME SQL HERE`
+	insertTag = `INSERT OR IGNORE INTO tags(id, name, user_id) VALUES(?, ?, ?)`
+	getTags   = `SELECT id, name FROM tags WHERE [user_id] = ?`
+	deleteTag = `DELETE FROM tags WHERE [id] = ?, [user_id] = ?`
 )
