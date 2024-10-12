@@ -14,7 +14,7 @@ type RolesRepo struct {
 const RolesRepoName = "roles"
 
 // NOTE: READONLY REPO
-func InitRolesRepo(database database.DatabaseConnection) (*RolesRepo, error) {
+func initRolesRepo(database database.DatabaseConnection) *RolesRepo {
 	logger := slog.NewLogger(RolesRepoName)
 	_, err := database.Exec(createRolesTable)
 	assert.NoError(err, logger, "Failed to create Roles table")
@@ -23,7 +23,7 @@ func InitRolesRepo(database database.DatabaseConnection) (*RolesRepo, error) {
 	return &RolesRepo{
 		database: database,
 		logger:   logger,
-	}, nil
+	}
 }
 
 const (

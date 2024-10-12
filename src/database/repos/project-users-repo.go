@@ -14,16 +14,15 @@ type ProjectUsersRepo struct {
 const ProjectUsersRepoName = "tags"
 
 // NOTE: READONLY REPO
-func InitProjectUsersRepo(database database.DatabaseConnection) (*ProjectUsersRepo, error) {
+func initProjectUsersRepo(database database.DatabaseConnection) *ProjectUsersRepo {
 	logger := slog.NewLogger(ProjectUsersRepoName)
 	_, err := database.Exec(createProjectUsersTable)
 	assert.NoError(err, logger, "Failed to create ProjectUsers table")
-	_, err = database.Exec(seedProjectUsersTable)
-	assert.NoError(err, logger, "Failed to seed ProjectUsers table")
+
 	return &ProjectUsersRepo{
 		database: database,
 		logger:   logger,
-	}, nil
+	}
 }
 
 const (
@@ -31,6 +30,5 @@ const (
 	[id] INTEGER PRIMARY KEY,
    	[name] TEXT DEFAULT '' NOT NULL,
 );`
-	seedProjectUsersTable = `SOME SQL HERE TO SEED THE TAGS`
-	getAllProjectUsers    = `SOME SQL HERE TO GET ALL TAGS`
+	getAllProjectUsers = `SOME SQL HERE TO GET ALL TAGS`
 )

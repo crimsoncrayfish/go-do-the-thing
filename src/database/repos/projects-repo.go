@@ -12,13 +12,15 @@ type ProjectsRepo struct {
 
 const ProjectsRepoName = "projects"
 
-func InitProjectsRepo(database database.DatabaseConnection) (*ProjectsRepo, error) {
+func initProjectsRepo(database database.DatabaseConnection) *ProjectsRepo {
 	logger := slog.NewLogger(ProjectUsersRepoName)
 	_, err := database.Exec(createProjectsTable)
 	assert.NoError(err, logger, "Failed to create Projects table")
+	_, err = database.Exec(createProjectTagsTable)
+	assert.NoError(err, logger, "Failed to create Project Tags table")
 	return &ProjectsRepo{
 		database: database,
-	}, nil
+	}
 }
 
 const (
@@ -27,8 +29,6 @@ const (
    	[name] TEXT DEFAULT '' NOT NULL,
    	[description] TEXT,
 );`
-	createProjectTagsTable = `CREATE TABLE IF NOT EXISTS project_tags (
-	[project_id] INTEGER,
-	[tag_id] INTEGER,
-);`
+
+	insertProject = `INSERT INTO projects `
 )

@@ -14,12 +14,12 @@ type TasksRepo struct {
 
 const TasksRepoName = "items"
 
-func InitTasksRepo(database database.DatabaseConnection) (*TasksRepo, error) {
+func initTasksRepo(database database.DatabaseConnection) *TasksRepo {
 	logger := slog.NewLogger(TasksRepoName)
 	_, err := database.Exec(createTasksTable)
 	assert.NoError(err, logger, "Failed to create Tasks table")
 
-	return &TasksRepo{database}, nil
+	return &TasksRepo{database}
 }
 
 const (
@@ -42,11 +42,7 @@ const (
 	FOREIGN KEY (modified_by) REFERENCES users(id)
 	FOREIGN KEY (project_id) REFERENCES projects(id)
 );`
-	// TODO: implement task tags
-	createTaskTagsTable = `CREATE TABLE IF NOT EXISTS project_tags (
-	[project_id] INTEGER,
-	[tag_id] INTEGER,
-);`
+
 	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date]  FROM items WHERE is_deleted=0"
 	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
 	getItem                = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date] FROM items WHERE id = ?"
