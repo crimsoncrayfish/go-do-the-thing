@@ -38,7 +38,7 @@ const (
 	[is_deleted] INTEGER DEFAULT 0,
 	FOREIGN KEY (assigned_to) REFERENCES users(id),
 	FOREIGN KEY (created_by) REFERENCES users(id),
-	FOREIGN KEY (modified_by) REFERENCES users(id)
+	FOREIGN KEY (modified_by) REFERENCES users(id),
 	FOREIGN KEY (project_id) REFERENCES projects(id)
 );`
 
