@@ -13,6 +13,8 @@ type TaskTagsRepo struct {
 // NOTE: Depends on: [./tags-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TaskTagsRepo {
 	logger := slog.NewLogger("tasks tags repo")
+	assert.IsTrue(false, logger, "not implemented exception")
+
 	_, err := database.Exec(createTaskTagsTable)
 	assert.NoError(err, logger, "Failed to create Task Tags table")
 	return &TaskTagsRepo{

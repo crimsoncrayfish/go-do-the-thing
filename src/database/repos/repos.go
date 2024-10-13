@@ -19,17 +19,17 @@ type RepoContainer struct {
 	usersRepo *users_repo.UsersRepo
 
 	// NOTE: Enum-like tables
-	tagsRepo  *tags_repo.TagsRepo
+	// TODO: tagsRepo  *tags_repo.TagsRepo
 	rolesRepo *roles_repo.RolesRepo
 
 	// NOTE: Projects
 	projectsRepo     *projects_repo.ProjectsRepo
 	projectUsersRepo *project_users_repo.ProjectUsersRepo
-	projectTagsRepo  *project_tags_repo.ProjectTagsRepo
+	// TODO: projectTagsRepo  *project_tags_repo.ProjectTagsRepo
 
 	// NOTE: Tasks
-	tasksRepo    *tasks_repo.TasksRepo
-	taskTagsRepo *task_tags_repo.TaskTagsRepo
+	tasksRepo *tasks_repo.TasksRepo
+	// TODO: taskTagsRepo *task_tags_repo.TaskTagsRepo
 }
 
 func NewContainer(connection database.DatabaseConnection) *RepoContainer {

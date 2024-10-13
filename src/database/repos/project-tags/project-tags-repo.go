@@ -13,6 +13,7 @@ type ProjectTagsRepo struct {
 // NOTE: Depends on: [./tags-repo.go, ./projects-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectTagsRepo {
 	logger := slog.NewLogger("project tags repo")
+	assert.IsTrue(false, logger, "not implemented exception")
 	_, err := database.Exec(createProjectTagsTable)
 	assert.NoError(err, logger, "Failed to create Project Tags table")
 	return &ProjectTagsRepo{
