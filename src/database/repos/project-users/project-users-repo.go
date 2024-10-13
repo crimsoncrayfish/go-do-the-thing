@@ -1,9 +1,11 @@
 package project_users_repo
 
 import (
+	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
+	"go-do-the-thing/src/models"
 )
 
 type ProjectUsersRepo struct {
@@ -32,11 +34,79 @@ const (
 	FOREIGN KEY (user_id) REFERENCES users(id),
 	FOREIGN KEY (role_id) REFERENCES roles(id)
 );`
-	getAllForProject = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE project_id = ?`
-	getAllForUser    = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE user_id = ?`
-	insert           = `INSERT INTO project_users (project_id, user_id, role_id) VALUES (?, ?, ?)`
-	update           = `UPDATE project_users SET [role_id] = ? WHERE [project_id] = ? AND [user_id] = ?`
-	delete           = `DELETE FROM project_users WHERE [project_id] = ? AND [user_id] = ?`
+	getAllForProject  = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE project_id = ?`
+	getAllForUser     = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE user_id = ?`
+	insertProjectUser = `INSERT INTO project_users (project_id, user_id, role_id) VALUES (?, ?, ?)`
+	updateProjectUser = `UPDATE project_users SET [role_id] = ? WHERE [project_id] = ? AND [user_id] = ?`
+	deleteProjectUser = `DELETE FROM project_users WHERE [project_id] = ? AND [user_id] = ?`
 	//assertUserIsInProject = ``
 	//assertUserHasRole     = ``
 )
+
+func scanFromRow(row *sql.Row, item *models.ProjectUser) error {
+	return row.Scan(
+		&item.ProjectId,
+		&item.UserId,
+		&item.RoleId,
+	)
+}
+
+func scanFromRows(rows *sql.Rows, item *models.ProjectUser) error {
+	return rows.Scan(
+		&item.ProjectId,
+		&item.UserId,
+		&item.RoleId,
+	)
+}
+
+func (r *ProjectUsersRepo) GetAllForProject(projectId int) ([]models.ProjectUser, error) {
+	rows, err := r.database.Query(getAllForUser, projectId)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+	}(rows)
+
+	projectUsers := make([]models.ProjectUser, 0)
+	for rows.Next() {
+		projectUser := models.ProjectUser{}
+
+		err = scanFromRows(rows, &projectUser)
+		if err != nil {
+			return nil, err
+		}
+		projectUsers = append(projectUsers, projectUser)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return projectUsers, nil
+}
+
+func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, error) {
+	rows, err := r.database.Query(getAllForUser, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+	}(rows)
+
+	projectUsers := make([]models.ProjectUser, 0)
+	for rows.Next() {
+		projectUser := models.ProjectUser{}
+
+		err = scanFromRows(rows, &projectUser)
+		if err != nil {
+			return nil, err
+		}
+		projectUsers = append(projectUsers, projectUser)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return projectUsers, nil
+}
