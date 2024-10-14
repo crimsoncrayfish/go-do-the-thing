@@ -54,7 +54,7 @@ const (
 	restoreItem      = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
 )
 
-func scanTaskFromRow(row *sql.Row, item *models.Task) error {
+func scanFromRow(row *sql.Row, item *models.Task) error {
 	return row.Scan(
 		&item.Id,
 		&item.Name,
@@ -72,7 +72,7 @@ func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 	)
 }
 
-func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
+func scanFromRows(rows *sql.Rows, item *models.Task) error {
 	return rows.Scan(
 		&item.Id,
 		&item.Name,
@@ -103,7 +103,7 @@ func (r *TasksRepo) GetItemsForUser(userId int64) (items []models.Task, err erro
 	for rows.Next() {
 		item := models.Task{}
 
-		err = scanTaskFromRows(rows, &item)
+		err = scanFromRows(rows, &item)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func (r *TasksRepo) GetItems() (items []models.Task, err error) {
 	for rows.Next() {
 		item := models.Task{}
 
-		err = scanTaskFromRows(rows, &item)
+		err = scanFromRows(rows, &item)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +197,7 @@ func (r *TasksRepo) RestoreItem(id int64) (err error) {
 func (r *TasksRepo) GetItem(id int64) (models.Task, error) {
 	row := r.database.QueryRow(getItem, id)
 	temp := models.Task{}
-	err := scanTaskFromRow(row, &temp)
+	err := scanFromRow(row, &temp)
 	if err != nil {
 		return models.Task{}, err
 	}

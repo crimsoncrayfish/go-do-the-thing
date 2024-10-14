@@ -13,6 +13,7 @@ type Project struct {
 	CreatedDate  *database.SqLiteTime
 	ModifiedBy   int
 	ModifiedDate *database.SqLiteTime
+	IsComplete   bool
 	IsDeleted    bool
 }
 
