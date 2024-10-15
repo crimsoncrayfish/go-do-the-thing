@@ -50,7 +50,7 @@ func main() {
 		panic(err)
 	}
 
-	reposContainer, err := repos.NewContainer(dbConnection)
+	reposContainer := repos.NewContainer(dbConnection)
 	if err != nil {
 		logger.Error(err, "could not initialise repositories")
 		panic(err)
