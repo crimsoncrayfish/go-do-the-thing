@@ -1,24 +1,23 @@
 package models
 
 import (
-	"go-do-the-thing/src/database"
 	"time"
 )
 
 type Task struct {
-	Id           int64                `json:"id,omitempty"`
-	Name         string               `json:"name"`
-	Description  string               `json:"description,omitempty"`
-	AssignedTo   int64                `json:"assigned_to"`
-	Status       ItemStatus           `json:"status"`
-	CompleteDate *database.SqLiteTime `json:"complete_date"`
-	DueDate      *database.SqLiteTime `json:"due_date"`
-	CreatedBy    int64                `json:"created_by"`
-	CreatedDate  *database.SqLiteTime `json:"created_date"`
-	ModifiedBy   int64                `json:"modified_by"`
-	ModifiedDate *database.SqLiteTime `json:"modified_date"`
-	IsDeleted    bool                 `json:"is_deleted"`
-	Project      int64                `json:"project_id"`
+	Id           int64      `json:"id,omitempty"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description,omitempty"`
+	AssignedTo   int64      `json:"assigned_to"`
+	Status       ItemStatus `json:"status"`
+	CompleteDate time.Time  `json:"complete_date"`
+	DueDate      time.Time  `json:"due_date"`
+	CreatedBy    int64      `json:"created_by"`
+	CreatedDate  time.Time  `json:"created_date"`
+	ModifiedBy   int64      `json:"modified_by"`
+	ModifiedDate time.Time  `json:"modified_date"`
+	IsDeleted    bool       `json:"is_deleted"`
+	Project      int64      `json:"project_id"`
 }
 
 type ItemStatus int
@@ -30,14 +29,13 @@ const (
 
 func (t *Task) ToggleStatus(modifiedBy int64) {
 	t.ModifiedBy = modifiedBy
-	t.ModifiedDate = database.SqLiteNow()
+	t.ModifiedDate = time.Now()
 	if t.Status == Scheduled {
 		t.Status = Completed
-		now := time.Now()
-		t.CompleteDate = &database.SqLiteTime{Time: &now}
+		t.CompleteDate = time.Now()
 	} else {
 		t.Status = Scheduled
-		t.CompleteDate = &database.SqLiteTime{}
+		t.CompleteDate = time.Time{}
 	}
 }
 
@@ -59,9 +57,9 @@ type TaskView struct {
 	Description   string
 	AssignedTo    string
 	Status        ItemStatus
-	CompletedDate *database.SqLiteTime
-	DueDate       *database.SqLiteTime
-	CreatedDate   *database.SqLiteTime
+	CompletedDate time.Time
+	DueDate       time.Time
+	CreatedDate   time.Time
 	CreatedBy     string
 	Project       int64
 }

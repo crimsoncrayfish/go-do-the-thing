@@ -158,7 +158,7 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	if err := h.repo.UpdateSession(currentUserId, "", &database.SqLiteTime{}); err != nil {
+	if err := h.repo.UpdateSession(currentUserId, "", time.Time{}); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
 	}
 	http.SetCookie(w, &emptyAuthCookie)

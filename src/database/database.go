@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
 type DatabaseConnection struct {

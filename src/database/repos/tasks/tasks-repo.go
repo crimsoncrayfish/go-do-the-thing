@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"time"
 )
 
 type TasksRepo struct {
@@ -29,12 +30,12 @@ const (
 	[assigned_to] INTEGER,
 	[project_id] INTEGER,
 	[status] INTEGER DEFAULT 0,
-	[complete_date] TEXT DEFAULT '' NOT NULL,	
+	[complete_date] INT, 
     [due_date] TEXT,
     [created_by] INTEGER,
-    [created_date] TEXT,
+    [created_date] INT,
     [modified_by] INTEGER,
-    [modified_date] TEXT,
+    [modified_date] INT,
 	[is_deleted] INTEGER DEFAULT 0,
 	FOREIGN KEY (assigned_to) REFERENCES users(id),
 	FOREIGN KEY (created_by) REFERENCES users(id),
@@ -46,7 +47,7 @@ const (
 	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
 	getItem                = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date] FROM items WHERE id = ?"
 
-	countItems       = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
+	countItems       = "SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?"
 	insertItem       = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [project_id]) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	updateItemStatus = `UPDATE items SET [status] = ?, [complete_date] = ?, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
 	updateItem       = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [project_id] = ? WHERE id = ?`
@@ -148,11 +149,11 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.Description,
 		item.Status,
 		item.AssignedTo,
-		item.DueDate.String(),
+		item.DueDate,
 		item.CreatedBy,
-		database.SqLiteNow().String(),
+		time.Now(),
 		item.ModifiedBy,
-		database.SqLiteNow().String(),
+		time.Now(),
 		item.Project,
 	)
 	if err != nil {
@@ -163,35 +164,23 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 }
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
-	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Project, item.Id)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate, item.Project, item.Id)
+	return err
 }
 
-func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(updateItemStatus, status, completeDate.String(), modifiedBy, database.SqLiteNow().String(), id)
-	if err != nil {
-		return err
-	}
-	return nil
+func (r *TasksRepo) UpdateItemStatus(id int64, completeDate time.Time, status, modifiedBy int64) (err error) {
+	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, time.Now(), id)
+	return err
 }
 
-func (r *TasksRepo) DeleteItem(id, modifiedBy int64, modifiedDate database.SqLiteTime) (err error) {
-	_, err = r.database.Exec(deleteItem, modifiedBy, modifiedDate.String(), id)
-	if err != nil {
-		return err
-	}
-	return nil
+func (r *TasksRepo) DeleteItem(id, modifiedBy int64, modifiedDate time.Time) (err error) {
+	_, err = r.database.Exec(deleteItem, modifiedBy, modifiedDate, id)
+	return err
 }
 
 func (r *TasksRepo) RestoreItem(id int64) (err error) {
 	_, err = r.database.Exec(restoreItem, id)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *TasksRepo) GetItem(id int64) (models.Task, error) {
@@ -204,8 +193,8 @@ func (r *TasksRepo) GetItem(id int64) (models.Task, error) {
 	return temp, nil
 }
 
-func (r *TasksRepo) GetItemsCount() (int, error) {
-	row := r.database.QueryRow(countItems)
+func (r *TasksRepo) GetItemsCount(userId int64) (int, error) {
+	row := r.database.QueryRow(countItems, userId)
 	var temp int
 	err := row.Scan(&temp)
 	if err != nil {

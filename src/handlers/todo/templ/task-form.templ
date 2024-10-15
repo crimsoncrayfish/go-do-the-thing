@@ -21,7 +21,6 @@ templ TaskFormContent(formType string, formdata form_models.TaskForm, tagOptions
 	@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
 		formdata.Task.Description)
 	@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
-	@templ_shared.FormListInput("Tag", "tag", formdata.Task.Tag, tagOptions)
 	for _, v:= range formdata.Errors {
 		<div class="py-4 text-error">
 			{ v }

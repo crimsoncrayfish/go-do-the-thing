@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"time"
 )
 
 type UsersRepo struct {
@@ -28,11 +29,11 @@ const (
    	[email] TEXT UNIQUE,
    	[full_name] TEXT DEFAULT "",
     [session_id] TEXT DEFAULT "",
-	[session_start_time] TEXT DEFAULT "",
+	[session_start_time] INT DEFAULT "",
     [password_hash] TEXT DEFAULT "",
 	[is_deleted] INTEGER DEFAULT 0,
 	[is_admin] INTEGER DEFAULT 0,
-	[create_date] TEXT
+	[create_date] INT
 );`
 	getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
 	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE id = ?"
@@ -101,7 +102,7 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 	return nil
 }
 
-func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *database.SqLiteTime) error {
+func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime time.Time) error {
 	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime.String(), userId)
 	if err != nil {
 		return err

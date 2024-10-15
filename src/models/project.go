@@ -1,18 +1,20 @@
 package models
 
-import "go-do-the-thing/src/database"
+import (
+	"time"
+)
 
 type Project struct {
 	Id           int
 	Name         string
 	Description  string
 	Owner        int
-	StartDate    *database.SqLiteTime
-	DueDate      *database.SqLiteTime
+	StartDate    time.Time
+	DueDate      time.Time
 	CreatedBy    int
-	CreatedDate  *database.SqLiteTime
+	CreatedDate  time.Time
 	ModifiedBy   int
-	ModifiedDate *database.SqLiteTime
+	ModifiedDate time.Time
 	IsComplete   bool
 	IsDeleted    bool
 }

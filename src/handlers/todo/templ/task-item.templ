@@ -1,115 +1,132 @@
 package templ_todo
 
 import (
-"fmt"
-"go-do-the-thing/src/models"
-fm "go-do-the-thing/src/models/forms"
-ts "go-do-the-thing/src/shared/templ"
+	"fmt"
+	"go-do-the-thing/src/helpers/constants"
+	"go-do-the-thing/src/models"
+	fm "go-do-the-thing/src/models/forms"
+	ts "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, tagOptions []string) {
-<!DOCTYPE html>
-<html lang="en">
-@ts.Header()
-
-<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-	@TaskItem(task, navbar, formdata, tagOptions)
-</body>
-
-</html>
+	<!DOCTYPE html>
+	<html lang="en">
+		@ts.Header()
+		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
+			@TaskItem(task, navbar, formdata, tagOptions)
+		</body>
+	</html>
 }
 
 templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, tagOptions []string) {
-@ts.NavBar(navbar)
-<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
-	<div class="flex w-full justify-between items-center">
-		<div class="flex items-center">
-			<button hx-get="/todo/items" hx-replace-url="true" hx-target="body" class="text-action-700 hover:text-primary-50 mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+	@ts.NavBar(navbar)
+	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
+		<div class="flex w-full justify-between items-center">
+			<div class="flex items-center">
+				<button
+					hx-get="/todo/items"
+					hx-replace-url="true"
+					hx-target="body"
+					class="text-action-700 hover:text-primary-50 mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
                         dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                        dark:focus:ring-action-800 flex items-center">
-				@ts.SvgBack()
-				Back
+                        dark:focus:ring-action-800 flex items-center"
+				>
+					@ts.SvgBack()
+					Back
+				</button>
+			</div>
+			<button
+				onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
+				class="float-end text-action-700 hover:text-primary-50 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
+                dark:focus:ring-action-800 flex items-center"
+			>
+				@ts.SvgEdit()
+				&nbsp;Edit
 			</button>
 		</div>
-		<button onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
-			class="float-end text-action-700 hover:text-primary-50 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                dark:focus:ring-action-800 flex items-center">
-			@ts.SvgEdit()
-			&nbsp;Edit
-		</button>
-	</div>
-	<div id="edit-task-form-container"
-		class=" max-h-0 opacity-0 transition-[opacity, max-height] pt-2 duration-500 ease-in-out">
 		<div
-			class="overflow-y-auto overflow-x-hidden z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
-			<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
-				<div
-					class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600">
-					<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
-					<button class="text-primary-900 dark:text-primary-50"
-						onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');">
-						@ts.SvgClose()
-					</button>
+			id="edit-task-form-container"
+			class=" max-h-0 opacity-0 transition-[opacity, max-height] pt-2 duration-500 ease-in-out"
+		>
+			<div
+				class="overflow-y-auto overflow-x-hidden z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
+			>
+				<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
+					<div
+						class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600"
+					>
+						<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
+						<button
+							class="text-primary-900 dark:text-primary-50"
+							onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-task-form-container');swapClassForId('opacity-0', 'opacity-100','edit-task-form-container');"
+						>
+							@ts.SvgClose()
+						</button>
+					</div>
+					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, tagOptions)
 				</div>
-				@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, tagOptions)
 			</div>
 		</div>
+		@taskItemContent(task)
 	</div>
-	@taskItemContent(task)
-</div>
 }
 
 templ taskItemContent(task models.TaskView) {
-<div id="task-item-content">
-	<div
-		class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
-		<div class="relative bg-primary-50 shadow dark:bg-primary-700">
-			<div
-				class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-primary-600">
-				<div class="sm:flex w-full sm:justify-between items-center">
-					<div>
-						<div class="flex items-center">
-							@statusIcon(task)
-							<div class="mx-4 text-xl ">
-								if len(task.Name) > 0 {
-								{ task.Name }
-								} else {
-								{ task.Description }
-								}
+	<div id="task-item-content">
+		<div
+			class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
+		>
+			<div class="relative bg-primary-50 shadow dark:bg-primary-700">
+				<div
+					class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-primary-600"
+				>
+					<div class="sm:flex w-full sm:justify-between items-center">
+						<div>
+							<div class="flex items-center">
+								@statusIcon(task)
+								<div class="mx-4 text-xl ">
+									if len(task.Name) > 0 {
+										{ task.Name }
+									} else {
+										{ task.Description }
+									}
+								</div>
+							</div>
+							if !task.CompletedDate.IsZero() {
+								<div class="text-sm">
+									Completed on: { task.CompletedDate.String() }
+								</div>
+							}
+						</div>
+						<div class="pt-2 sm:pt-0 flex items-center">
+							@ts.SvgTag()
+							<div class="mx-4">
+								<p>TODO: My tags here</p>
 							</div>
 						</div>
-						if task.CompletedDate.Time != nil {
-						<div class="text-sm">
-							Completed on: { task.CompletedDate.String() }
-						</div>
-						}
-					</div>
-					<div class="pt-2 sm:pt-0 flex items-center">
-						@ts.SvgTag()
-						<div class="mx-4">{ task.Tag }</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<div
-			class="p-4 bg-transparent border-b dark:border-primary-600 divide-primary-900 dark:divide-primary-600">
-			if len(task.Name) > 0 {
-			{ task.Description }
-			}
-			<div class="sm:flex w-full sm:justify-between items-center">
-				<p>Assigned To: { task.AssignedTo }</p>
-				<p class="pt-2 sm:p-0">Due on: { task.DueDate.Time.Format("2006-01-02") }</p>
+			<div
+				class="p-4 bg-transparent border-b dark:border-primary-600 divide-primary-900 dark:divide-primary-600"
+			>
+				if len(task.Name) > 0 {
+					{ task.Description }
+				}
+				<div class="sm:flex w-full sm:justify-between items-center">
+					<p>Assigned To: { task.AssignedTo }</p>
+					<p class="pt-2 sm:p-0">Due on: { task.DueDate.Format(constants.DateFormat) }</p>
+				</div>
+				<div>Created by: { task.CreatedBy }</div>
+				<div>Created on: { task.CreatedDate.String() }</div>
 			</div>
-			<div>Created by: { task.CreatedBy }</div>
-			<div>Created on: { task.CreatedDate.String() }</div>
 		</div>
 	</div>
-</div>
 }
 
 templ TaskItemContentOOB(task models.TaskView) {
-<div id="task-item-content" hx-swap-oob="true">
-	@taskItemContent(task)
-</div>
+	<div id="task-item-content" hx-swap-oob="true">
+		@taskItemContent(task)
+	</div>
 }
