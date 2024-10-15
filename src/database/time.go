@@ -12,6 +12,10 @@ type SqLiteTime struct {
 	*time.Time
 }
 
+func NewSqliteTime(time time.Time) *SqLiteTime {
+	return &SqLiteTime{&time}
+}
+
 func SqLiteNow() *SqLiteTime {
 	now := time.Now()
 	return &SqLiteTime{&now}

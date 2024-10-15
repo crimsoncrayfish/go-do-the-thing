@@ -33,8 +33,7 @@ func (t *Task) ToggleStatus(modifiedBy int64) {
 	t.ModifiedDate = database.SqLiteNow()
 	if t.Status == Scheduled {
 		t.Status = Completed
-		now := time.Now()
-		t.CompleteDate = &database.SqLiteTime{Time: &now}
+		t.CompleteDate = database.SqLiteNow()
 	} else {
 		t.Status = Scheduled
 		t.CompleteDate = &database.SqLiteTime{}
