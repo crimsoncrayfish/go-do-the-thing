@@ -28,11 +28,11 @@ const (
    	[email] TEXT UNIQUE,
    	[full_name] TEXT DEFAULT "",
     [session_id] TEXT DEFAULT "",
-	[session_start_time] TEXT DEFAULT "",
+	[session_start_time] INT DEFAULT "",
     [password_hash] TEXT DEFAULT "",
 	[is_deleted] INTEGER DEFAULT 0,
 	[is_admin] INTEGER DEFAULT 0,
-	[create_date] TEXT
+	[create_date] INT
 );`
 	getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
 	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE id = ?"
@@ -74,7 +74,7 @@ func scanUsersFromRows(rows *sql.Rows, user *models.User) error {
 }
 
 func (r *UsersRepo) Create(user models.User) (int64, error) {
-	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().String())
+	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().Unix())
 	if err != nil {
 		return 0, err
 	}
@@ -102,7 +102,7 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 }
 
 func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *database.SqLiteTime) error {
-	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime.String(), userId)
+	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime.Unix(), userId)
 	if err != nil {
 		return err
 	}

@@ -21,17 +21,12 @@ func SqLiteNow() *SqLiteTime {
 	return &SqLiteTime{&now}
 }
 
-func (t *SqLiteTime) Scan(v interface{}) error {
-	if v.(string) == "" {
-		return nil
+func (t *SqLiteTime) Scan(v interface{}) {
+	if v.(int64) == 0 {
+		return
 	}
-	vt, err := time.Parse(constants.DateTimeFormat, v.(string))
-	if err != nil {
-		return err
-	}
+	vt := time.Unix(v.(int64), 0)
 	*t = SqLiteTime{&vt}
-
-	return nil
 }
 
 func (t *SqLiteTime) Format(formatString string) (string, error) {
@@ -74,6 +69,13 @@ func (t *SqLiteTime) String() string {
 		return ""
 	}
 	return t.Time.Format(constants.DateTimeFormat)
+}
+
+func (t *SqLiteTime) Unix() int64 {
+	if t.Time == nil {
+		return 0
+	}
+	return t.Time.Unix()
 }
 
 func (t *SqLiteTime) StringF(format string) string {
