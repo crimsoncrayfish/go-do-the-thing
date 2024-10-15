@@ -1,6 +1,9 @@
 package templ_shared
 
-import "go-do-the-thing/src/database"
+import (
+"go-do-the-thing/src/database"
+"go-do-the-thing/src/helpers/constants"
+)
 
 templ FormTextInput(title, name, placeholder, value string) {
 <div class="mb-5">
@@ -25,7 +28,7 @@ templ FormDatePicker(title, name string, date *database.SqLiteTime) {
 <div class="mb-5">
 	<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">
 		{ title }
-		<input type="date" name={ name } value={ date.ShortString() }
+		<input type="date" name={ name } value={ date.Format(constants.DateFormat) }
 			class="bg-primary-50 mt-2 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link" />
 	</label>
 </div>
