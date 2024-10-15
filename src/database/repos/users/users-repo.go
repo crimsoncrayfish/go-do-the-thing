@@ -75,7 +75,7 @@ func scanUsersFromRows(rows *sql.Rows, user *models.User) error {
 }
 
 func (r *UsersRepo) Create(user models.User) (int64, error) {
-	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().String())
+	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now())
 	if err != nil {
 		return 0, err
 	}

@@ -25,8 +25,7 @@ func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {
 	}
 }
 
-const (
-	createProjectUsersTable = `CREATE TABLE IF NOT EXISTS project_users (
+const createProjectUsersTable = `CREATE TABLE IF NOT EXISTS project_users (
 	[project_id] INTEGER,
 	[user_id] INTEGER,
 	[role_id] INTEGER,
@@ -34,13 +33,10 @@ const (
 	FOREIGN KEY (user_id) REFERENCES users(id),
 	FOREIGN KEY (role_id) REFERENCES roles(id)
 );`
-	getAllForProject  = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE project_id = ?`
-	getAllForUser     = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE user_id = ?`
-	insertProjectUser = `INSERT INTO project_users (project_id, user_id, role_id) VALUES (?, ?, ?)`
-	updateProjectUser = `UPDATE project_users SET [role_id] = ? WHERE [project_id] = ? AND [user_id] = ?`
-	deleteProjectUser = `DELETE FROM project_users WHERE [project_id] = ? AND [user_id] = ?`
-	//assertUserIsInProject = ``
-	//assertUserHasRole     = ``
+const (
+
+// assertUserIsInProject = “
+// assertUserHasRole     = “
 )
 
 func scanFromRow(row *sql.Row, item *models.ProjectUser) error {
@@ -59,8 +55,10 @@ func scanFromRows(rows *sql.Rows, item *models.ProjectUser) error {
 	)
 }
 
+const getAllForProject = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE project_id = ?`
+
 func (r *ProjectUsersRepo) GetAllForProject(projectId int) ([]models.ProjectUser, error) {
-	rows, err := r.database.Query(getAllForUser, projectId)
+	rows, err := r.database.Query(getAllForProject, projectId)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +82,8 @@ func (r *ProjectUsersRepo) GetAllForProject(projectId int) ([]models.ProjectUser
 	}
 	return projectUsers, nil
 }
+
+const getAllForUser = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE user_id = ?`
 
 func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, error) {
 	rows, err := r.database.Query(getAllForUser, userId)
@@ -109,4 +109,28 @@ func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, erro
 		return nil, err
 	}
 	return projectUsers, nil
+}
+
+const insertProjectUser = `INSERT INTO project_users (project_id, user_id, role_id) VALUES (?, ?, ?)`
+
+func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) error {
+	_, err := r.database.Exec(insertProjectUser, projectId, userId, roleId)
+
+	return err
+}
+
+const updateProjectUser = `UPDATE project_users SET [role_id] = ? WHERE [project_id] = ? AND [user_id] = ?`
+
+func (r *ProjectUsersRepo) Update(projectId, userId, roleId int64) error {
+	_, err := r.database.Exec(updateProjectUser, roleId, projectId, userId)
+
+	return err
+}
+
+const deleteProjectUser = `DELETE FROM project_users WHERE [project_id] = ? AND [user_id] = ?`
+
+func (r *ProjectUsersRepo) Delete(projectId, userId, roleId int64) error {
+	_, err := r.database.Exec(deleteProjectUser, projectId, userId)
+
+	return err
 }

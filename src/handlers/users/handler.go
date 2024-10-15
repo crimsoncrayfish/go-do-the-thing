@@ -106,7 +106,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user.SessionId = uuid.New().String()
-	user.SessionStartTime = database.SqLiteNow()
+	user.SessionStartTime = time.Now()
 
 	if err := h.repo.UpdateSession(user.Id, user.SessionId, user.SessionStartTime); err != nil {
 		h.loginError(err, w, r, form, "Failed to set session id for user %d", user.Id)
