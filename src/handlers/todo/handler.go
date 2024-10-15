@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/database/repos"
+	tasks_repo "go-do-the-thing/src/database/repos/tasks"
+	users_repo "go-do-the-thing/src/database/repos/users"
 	templ_todo "go-do-the-thing/src/handlers/todo/templ"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
@@ -19,16 +20,16 @@ import (
 )
 
 type Handler struct {
-	repo      repos.TasksRepo
-	usersRepo repos.UsersRepo
+	repo      tasks_repo.TasksRepo
+	usersRepo users_repo.UsersRepo
 	logger    slog.Logger
 }
 
 var activeScreens models.NavBarObject
 
 func SetupTodoHandler(
-	tasksRepo repos.TasksRepo,
-	usersRepo repos.UsersRepo,
+	tasksRepo tasks_repo.TasksRepo,
+	usersRepo users_repo.UsersRepo,
 	router *http.ServeMux,
 	mw_stack middleware.Middleware,
 ) error {
@@ -71,10 +72,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		form.Errors["Name"] = err.Error()
 	}
 	description, _ := models.GetPropertyFromRequest(r, "description", "Description", false)
-	tag, err := models.GetPropertyFromRequest(r, "tag", "Tag", true)
-	if err != nil {
-		form.Errors["Tag"] = err.Error()
-	}
+
 	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", "Due on", true)
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
@@ -84,8 +82,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	form.Task = models.TaskView{
 		Name:        name,
 		Description: description,
-		Tag:         tag,
-		DueDate:     &database.SqLiteTime{Time: &date},
+		DueDate:     database.NewSqliteTime(date),
 	}
 	if err != nil || len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -99,14 +96,13 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	task := models.Task{
 		Name:         name,
 		Description:  description,
-		DueDate:      &database.SqLiteTime{Time: &date},
+		DueDate:      database.NewSqliteTime(date),
 		AssignedTo:   currentUserId, // TODO: need to update this
 		CreatedBy:    currentUserId,
 		CreatedDate:  database.SqLiteNow(),
 		ModifiedBy:   currentUserId,
 		ModifiedDate: database.SqLiteNow(),
 		IsDeleted:    false,
-		Tag:          tag,
 	}
 
 	// NOTE: Validate data
@@ -198,10 +194,6 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 	description, _ := models.GetPropertyFromRequest(r, "description", "Description", false)
 
-	tag, err := models.GetPropertyFromRequest(r, "tag", "Tag", true)
-	if err != nil {
-		form.Errors["tag"] = err.Error()
-	}
 	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", "Due on", true)
 	if err != nil {
 		form.Errors["due_on"] = err.Error()
@@ -210,8 +202,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	form.Task = models.TaskView{
 		Name:        name,
 		Description: description,
-		Tag:         tag,
-		DueDate:     &database.SqLiteTime{Time: &date},
+		DueDate:     database.NewSqliteTime(date),
 	}
 	if err != nil || len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -233,11 +224,10 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		Name:         name,
 		Description:  description,
 		AssignedTo:   assignedToUser.Id,
-		DueDate:      &database.SqLiteTime{Time: &date},
+		DueDate:      database.NewSqliteTime(date),
 		ModifiedBy:   currentUserId,
 		ModifiedDate: database.SqLiteNow(),
 		IsDeleted:    false,
-		Tag:          tag,
 	}
 
 	// NOTE: Take action
@@ -375,7 +365,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Take action
 	task.ToggleStatus(currentUserId)
-	if err = h.repo.UpdateItemStatus(id, *task.CompleteDate, int64(task.Status), currentUserId); err != nil {
+	if err = h.repo.UpdateItemStatus(id, task.CompleteDate, int64(task.Status), currentUserId); err != nil {
 		// TODO: what to do here
 		h.logger.Error(err, "Failed to update todo item")
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -437,7 +427,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].DueDate.Time.Before(*tasks[j].DueDate.Time)
+		return tasks[i].DueDate.Before(tasks[j].DueDate)
 	})
 
 	users := make(map[int64]models.User)
@@ -492,15 +482,14 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	err = h.repo.DeleteItem(id, currentUserId, *database.SqLiteNow())
+	err = h.repo.DeleteItem(id, currentUserId, database.SqLiteNow())
 	if err != nil {
 		assert.NoError(err, h.logger, "failed to delete todo item")
 		return
 	}
 
 	// NOTE: Success zone
-	// TODO: this should only get the count for the current user
-	hasData, err := h.repo.GetItemsCount()
+	hasData, err := h.repo.GetItemsCount(currentUserId)
 	if err != nil {
 		assert.NoError(err, h.logger, "failed to update ui")
 		return
@@ -525,7 +514,6 @@ func formDataFromItemNoValidation(task models.Task, assignedUser string) fm.Task
 	formData.Task.Description = task.Description
 	formData.Task.AssignedTo = assignedUser
 	formData.Task.DueDate = task.DueDate
-	formData.Task.Tag = task.Tag
 
 	return formData
 }
