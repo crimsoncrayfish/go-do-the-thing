@@ -1,6 +1,8 @@
 package models
 
-import "go-do-the-thing/src/database"
+import (
+	"go-do-the-thing/src/database"
+)
 
 type Project struct {
 	Id           int
@@ -13,6 +15,7 @@ type Project struct {
 	CreatedDate  *database.SqLiteTime
 	ModifiedBy   int
 	ModifiedDate *database.SqLiteTime
+	IsComplete   bool
 	IsDeleted    bool
 }
 

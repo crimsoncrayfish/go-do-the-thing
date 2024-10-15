@@ -1,6 +1,8 @@
 package models
 
-import "go-do-the-thing/src/database"
+import (
+	"go-do-the-thing/src/database"
+)
 
 type User struct {
 	Id               int64                `json:"id,omitempty"`
