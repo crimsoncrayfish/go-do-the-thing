@@ -167,12 +167,12 @@ func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	return err
 }
 
-func (r *TasksRepo) UpdateItemStatus(id int64, completeDate database.SqLiteTime, status, modifiedBy int64) (err error) {
+func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime, status, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(updateItemStatus, status, completeDate.Unix(), modifiedBy, database.SqLiteNow().Unix(), id)
 	return err
 }
 
-func (r *TasksRepo) DeleteItem(id, modifiedBy int64, modifiedDate database.SqLiteTime) (err error) {
+func (r *TasksRepo) DeleteItem(id, modifiedBy int64, modifiedDate *database.SqLiteTime) (err error) {
 	_, err = r.database.Exec(deleteItem, modifiedBy, modifiedDate.Unix(), id)
 	return err
 }
