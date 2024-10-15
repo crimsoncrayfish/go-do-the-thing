@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/database/repos"
+	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers"
@@ -22,12 +22,12 @@ import (
 
 type Handler struct {
 	security security.JwtHandler
-	repo     repos.UsersRepo
+	repo     users_repo.UsersRepo
 	logger   slog.Logger
 }
 
 func SetupUserHandler(
-	userRepo repos.UsersRepo,
+	userRepo users_repo.UsersRepo,
 	router *http.ServeMux,
 	mw middleware.Middleware,
 	mw_no_auth middleware.Middleware,
