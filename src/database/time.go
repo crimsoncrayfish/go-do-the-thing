@@ -85,6 +85,10 @@ func (t *SqLiteTime) StringF(format string) string {
 	return t.Time.Format(format)
 }
 
+func (t *SqLiteTime) Before(other *SqLiteTime) bool {
+	return t.Time.Before(*other.Time)
+}
+
 func (t *SqLiteTime) BeforeNow() (bool, error) {
 	if t.Time == nil {
 		return false, errors.New("No date configured")
