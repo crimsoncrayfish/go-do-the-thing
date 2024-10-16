@@ -25,20 +25,17 @@ func InitRepo(database database.DatabaseConnection) *RolesRepo {
 	}
 }
 
-const (
-	createRolesTable = `CREATE TABLE IF NOT EXISTS roles (
+const createRolesTable = `CREATE TABLE IF NOT EXISTS roles (
 	[id] INTEGER PRIMARY KEY,
    	[name] TEXT DEFAULT '' NOT NULL,
    	[Description] TEXT DEFAULT '' NOT NULL,
 );`
-	seedRolesTable = `INSERT OR IGNORE INTO roles (id, name, description) VALUES
+const seedRolesTable = `INSERT OR IGNORE INTO roles (id, name, description) VALUES
 	(1, 'Big boss', 'Project Administrator.'),
 	(2, 'Little boss', 'Can create, assign and complete tasks as well as add/remove users from the project.'),
 	(3, 'Grunt', 'Can create, assign and complete tasks.'),
 	(4, 'Pleb', 'Can complete tasks.')
 	`
-	getAllRoles = `SELECT id, name, description FROM roles`
-)
 
 func scanRoleFromRows(rows *sql.Rows, item *models.Role) error {
 	return rows.Scan(
@@ -47,6 +44,8 @@ func scanRoleFromRows(rows *sql.Rows, item *models.Role) error {
 		&item.Description,
 	)
 }
+
+const getAllRoles = `SELECT id, name, description FROM roles`
 
 func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
 	rows, err := r.database.Query(getAllRoles)
