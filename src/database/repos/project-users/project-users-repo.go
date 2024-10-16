@@ -33,11 +33,6 @@ const createProjectUsersTable = `CREATE TABLE IF NOT EXISTS project_users (
 	FOREIGN KEY (user_id) REFERENCES users(id),
 	FOREIGN KEY (role_id) REFERENCES roles(id)
 );`
-const (
-
-// assertUserIsInProject = “
-// assertUserHasRole     = “
-)
 
 func scanFromRow(row *sql.Row, item *models.ProjectUser) error {
 	return row.Scan(
