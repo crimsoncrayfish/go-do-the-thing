@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
-	"go-do-the-thing/src/database/repos"
+	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/helpers/security"
@@ -15,11 +15,11 @@ import (
 
 type AuthenticationMiddleware struct {
 	JwtHandler security.JwtHandler
-	UsersRepo  repos.UsersRepo
+	UsersRepo  users_repo.UsersRepo
 	Logger     slog.Logger
 }
 
-func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo repos.UsersRepo) AuthenticationMiddleware {
+func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo users_repo.UsersRepo) AuthenticationMiddleware {
 	return AuthenticationMiddleware{
 		Logger:     slog.NewLogger("Auth"),
 		UsersRepo:  usersRepo,

@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go-do-the-thing/src/helpers/constants"
 	"strings"
 	"time"
@@ -22,6 +23,7 @@ func SqLiteNow() *SqLiteTime {
 }
 
 func (t *SqLiteTime) Scan(v interface{}) {
+	fmt.Println("what went wrong?")
 	if v.(int64) == 0 {
 		return
 	}

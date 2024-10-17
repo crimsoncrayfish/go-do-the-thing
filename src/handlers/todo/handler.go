@@ -32,8 +32,8 @@ func SetupTodoHandler(
 	usersRepo users_repo.UsersRepo,
 	router *http.ServeMux,
 	mw_stack middleware.Middleware,
-) error {
-	logger := slog.NewLogger("Tasks")
+) {
+	logger := slog.NewLogger("TasksHandler")
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
@@ -49,8 +49,6 @@ func SetupTodoHandler(
 	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemUI)))
 	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItemUI)))
 	router.Handle("GET /error", mw_stack(http.HandlerFunc(todoHandler.testError)))
-
-	return nil
 }
 
 type idResponse struct {

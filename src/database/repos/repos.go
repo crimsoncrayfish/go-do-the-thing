@@ -7,8 +7,6 @@ import (
 	roles_repo "go-do-the-thing/src/database/repos/roles"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 )
 
 type RepoContainer struct {
@@ -30,9 +28,6 @@ type RepoContainer struct {
 }
 
 func NewContainer(connection database.DatabaseConnection) *RepoContainer {
-	logger := slog.NewLogger("whaaaaat?")
-	assert.IsTrue(false, logger, "Something happened?")
-
 	//tagsRepo := tags_repo.InitRepo(connection)
 	rolesRepo := roles_repo.InitRepo(connection)
 

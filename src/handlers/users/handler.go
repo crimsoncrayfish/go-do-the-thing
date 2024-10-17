@@ -32,8 +32,8 @@ func SetupUserHandler(
 	mw middleware.Middleware,
 	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
-) error {
-	logger := slog.NewLogger("Users")
+) {
+	logger := slog.NewLogger("UsersHandler")
 	logger.Info("Setting up users")
 
 	handler := &Handler{
@@ -47,8 +47,6 @@ func SetupUserHandler(
 	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.LoginUI)))
 	router.Handle("POST /register", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
-
-	return nil
 }
 
 var emptyAuthCookie = http.Cookie{Name: "token", Value: "", SameSite: http.SameSiteDefaultMode}
