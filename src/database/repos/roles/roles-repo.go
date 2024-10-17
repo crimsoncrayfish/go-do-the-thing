@@ -28,7 +28,7 @@ func InitRepo(database database.DatabaseConnection) *RolesRepo {
 const createRolesTable = `CREATE TABLE IF NOT EXISTS roles (
 	[id] INTEGER PRIMARY KEY,
    	[name] TEXT DEFAULT '' NOT NULL,
-   	[Description] TEXT DEFAULT '' NOT NULL,
+   	[Description] TEXT DEFAULT '' NOT NULL
 );`
 const seedRolesTable = `INSERT OR IGNORE INTO roles (id, name, description) VALUES
 	(1, 'Big boss', 'Project Administrator.'),

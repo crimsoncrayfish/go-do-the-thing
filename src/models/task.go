@@ -2,7 +2,6 @@ package models
 
 import (
 	"go-do-the-thing/src/database"
-	"time"
 )
 
 type Task struct {
@@ -44,8 +43,7 @@ func (t *Task) IsValid() (bool, map[string]string) {
 	errs := make(map[string]string)
 	isValid := true
 
-	now := time.Now()
-	if t.DueDate.Before(now) {
+	if t.DueDate.Before(database.SqLiteNow()) {
 		isValid = false
 		errs["due_date"] = "Due date is before now"
 	}

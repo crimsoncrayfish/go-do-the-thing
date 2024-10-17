@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	"go-do-the-thing/src/handlers/home"
+	"go-do-the-thing/src/handlers/project"
 	"go-do-the-thing/src/handlers/todo"
 	"go-do-the-thing/src/handlers/users"
 	"go-do-the-thing/src/helpers/security"
@@ -61,17 +62,10 @@ func main() {
 	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
-	err = users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, middleware_full, middleware_no_auth, jwtHandler)
-	if err != nil {
-		logger.Error(err, "Failed to initialize users")
-		panic(err)
-	}
+	users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, middleware_full, middleware_no_auth, jwtHandler)
+	project.SetupProjectHandler(*reposContainer.GetProjectsRepo(), *reposContainer.GetProjectUsersRepo(), *reposContainer.GetRolesRepo(), router, middleware_full)
+	todo.SetupTodoHandler(*reposContainer.GetTasksRepo(), *reposContainer.GetUsersRepo(), router, middleware_full)
 
-	err = todo.SetupTodoHandler(*reposContainer.GetTasksRepo(), *reposContainer.GetUsersRepo(), router, middleware_full)
-	if err != nil {
-		logger.Error(err, "Failed to initialize todo")
-		panic(err)
-	}
 	home.SetupHomeHandler(router, middleware_full)
 	setupStaticContent(router)
 

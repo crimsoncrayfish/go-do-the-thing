@@ -39,7 +39,7 @@ const createProjectsTable = `CREATE TABLE IF NOT EXISTS projects (
 	[is_deleted] INT,
 	FOREIGN KEY (owner) REFERENCES users(id),
 	FOREIGN KEY (created_by) REFERENCES users(id),
-	FOREIGN KEY (modified_by) REFERENCES users(id),
+	FOREIGN KEY (modified_by) REFERENCES users(id)
 );`
 
 func scanFromRow(row *sql.Row, item *models.Project) error {
