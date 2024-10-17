@@ -39,11 +39,8 @@ func main() {
 	faviconLocation = workingDir + "/static/img/todo.ico"
 	logger.Info("Setting up TODO items")
 
-	dbConnection, err := database.Init("todo")
-	if err != nil {
-		logger.Error(err, "could not initialize the db")
-		panic(err)
-	}
+	dbConnection := database.Init("todo")
+	defer dbConnection.Connection.Close()
 
 	jwtHandler, err := security.NewJwtHandler(workingDir + "/keys/")
 	if err != nil {
@@ -52,10 +49,7 @@ func main() {
 	}
 
 	reposContainer := repos.NewContainer(dbConnection)
-	if err != nil {
-		logger.Error(err, "could not initialise repositories")
-		panic(err)
-	}
+
 	authMiddleware := middleware.NewAuthenticationMiddleware(jwtHandler, *reposContainer.GetUsersRepo())
 	loggingMW := middleware.NewLoggingMiddleWare()
 	rateLimeter := middleware.NewRateLimiter()

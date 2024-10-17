@@ -1,9 +1,9 @@
 package database
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go-do-the-thing/src/helpers/constants"
 	"strings"
 	"time"
@@ -22,13 +22,17 @@ func SqLiteNow() *SqLiteTime {
 	return &SqLiteTime{&now}
 }
 
-func (t *SqLiteTime) Scan(v interface{}) {
-	fmt.Println("what went wrong?")
-	if v.(int64) == 0 {
-		return
+func (t *SqLiteTime) Scan(v interface{}) error {
+	if v.(int64) < 0 {
+		return nil
 	}
 	vt := time.Unix(v.(int64), 0)
 	*t = SqLiteTime{&vt}
+	return nil
+}
+
+func (t *SqLiteTime) Value() (driver.Value, error) {
+	return t.Time.Unix(), nil
 }
 
 func (t *SqLiteTime) Format(formatString string) (string, error) {
