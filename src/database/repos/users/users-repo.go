@@ -27,7 +27,7 @@ const createTable = `CREATE TABLE IF NOT EXISTS users (
    	[email] TEXT UNIQUE,
    	[full_name] TEXT DEFAULT "",
     [session_id] TEXT DEFAULT "",
-	[session_start_time] INT DEFAULT "",
+	[session_start_time] INT DEFAULT 0,
     [password_hash] TEXT DEFAULT "",
 	[is_deleted] INTEGER DEFAULT 0,
 	[is_admin] INTEGER DEFAULT 0,
