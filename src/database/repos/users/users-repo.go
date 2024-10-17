@@ -63,7 +63,7 @@ func scanUsersFromRows(rows *sql.Rows, user *models.User) error {
 const insertUser = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES (?, ?, ?, ?)`
 
 func (r *UsersRepo) Create(user models.User) (int64, error) {
-	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().Unix())
+	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow())
 	if err != nil {
 		return 0, err
 	}
@@ -97,7 +97,7 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 const updateUserSession = `UPDATE users SET [session_id] = ?, [session_start_time] = ? WHERE id = ?`
 
 func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *database.SqLiteTime) error {
-	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime.Unix(), userId)
+	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime, userId)
 	if err != nil {
 		return err
 	}

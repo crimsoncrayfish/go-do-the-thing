@@ -192,9 +192,9 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.AssignedTo,
 		item.DueDate,
 		item.CreatedBy,
-		database.SqLiteNow().Unix(),
+		database.SqLiteNow(),
 		item.ModifiedBy,
-		database.SqLiteNow().Unix(),
+		database.SqLiteNow(),
 		item.Project,
 	)
 	if err != nil {
@@ -215,7 +215,7 @@ const updateItem = `
 	WHERE id = ?`
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
-	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.Unix(), item.Project, item.Id)
+	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate, item.Project, item.Id)
 	return err
 }
 
@@ -229,21 +229,21 @@ const updateItemStatus = `
 	WHERE id = ?`
 
 func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime, status, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(updateItemStatus, status, completeDate.Unix(), modifiedBy, database.SqLiteNow().Unix(), id)
+	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, database.SqLiteNow(), id)
 	return err
 }
 
 const deleteItem = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
 
-func (r *TasksRepo) DeleteItem(id, modifiedBy int64, modifiedDate *database.SqLiteTime) (err error) {
-	_, err = r.database.Exec(deleteItem, modifiedBy, modifiedDate.Unix(), id)
+func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
+	_, err = r.database.Exec(deleteItem, modifiedBy, database.SqLiteNow(), id)
 	return err
 }
 
-const restoreItem = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
+const restoreItem = `UPDATE items SET [is_deleted] = 0, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
 
-func (r *TasksRepo) RestoreItem(id int64) (err error) {
-	_, err = r.database.Exec(restoreItem, id)
+func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
+	_, err = r.database.Exec(restoreItem, modifiedBy, database.SqLiteNow(), id)
 	return err
 }
 
