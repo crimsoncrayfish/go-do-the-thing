@@ -6,7 +6,6 @@ import (
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
-	"time"
 )
 
 type ProjectsRepo struct {
@@ -135,8 +134,8 @@ const deleteProject = `
 	SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ?
 	WHERE id = ?`
 
-func (r *ProjectsRepo) DeleteProject(id int64) error {
-	_, err := r.database.Exec(deleteProject, id)
+func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
+	_, err := r.database.Exec(deleteProject, id, currentUser, database.SqLiteNow())
 	return err
 }
 
@@ -180,7 +179,7 @@ func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) 
 		project.StartDate,
 		project.DueDate,
 		currentUser,
-		time.Now(),
+		database.SqLiteNow(),
 		project.IsComplete,
 	)
 	return err
