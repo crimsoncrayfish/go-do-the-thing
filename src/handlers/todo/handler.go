@@ -480,7 +480,7 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	err = h.repo.DeleteItem(id, currentUserId, database.SqLiteNow())
+	err = h.repo.DeleteItem(id, currentUserId)
 	if err != nil {
 		assert.NoError(err, h.logger, "failed to delete todo item")
 		return

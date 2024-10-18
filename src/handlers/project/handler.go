@@ -4,6 +4,8 @@ import (
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	roles_repo "go-do-the-thing/src/database/repos/roles"
+	templ_project "go-do-the-thing/src/handlers/project/templ"
+	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -31,9 +33,25 @@ func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRep
 		logger:           logger,
 	}
 
+	router.Handle("GET /projects", mw_stack(http.HandlerFunc(projectsHandler.getProjects)))
 	router.Handle("GET /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.getProject)))
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	assert.IsTrue(false, h.logger, "Not implemented")
+}
+
+func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
+	// NOTE: Auth check
+	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+
+	pl := make([]models.Project, 0)
+	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
+
+	if err := templ_project.ProjectListWithBody(navbar, pl).Render(r.Context(), w); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		assert.NoError(err, h.logger, "Failed to render template for formData")
+	}
+	return
 }
