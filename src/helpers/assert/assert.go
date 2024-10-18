@@ -13,11 +13,12 @@ func NoError(err error, logger slog.Logger, msg string, params ...any) {
 	panic(err)
 }
 
-func IsTrue(isTrue bool, logger slog.Logger, msg string, params ...any) {
+func IsTrue(isTrue bool, msg string, params ...any) {
 	if isTrue {
 		return
 	}
 	err := errors.New("unexpected situation")
+	logger := slog.NewLogger("Panic at the disco")
 	logger.Error(err, msg, params...)
 	panic(err)
 }

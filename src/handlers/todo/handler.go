@@ -279,7 +279,7 @@ type ItemPageModel struct {
 
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
@@ -317,17 +317,16 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskView := models.TaskToViewModel(task, assignedUser, createdBy)
-	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskItem(taskView, navbar, formData, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskItem(taskView, activeScreens, formData, tagOptions).Render(r.Context(), w); err != nil {
 			// TODO: some user feedback here?
 			h.logger.Error(err, "Failed to execute template for the item page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskItemWithBody(taskView, navbar, formData, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskItemWithBody(taskView, activeScreens, formData, tagOptions).Render(r.Context(), w); err != nil {
 			// TODO: some user feedback here?
 			h.logger.Error(err, "Failed to execute template for the item page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -359,7 +358,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	assert.IsTrue(task.AssignedTo == currentUserId, h.logger, "for now you can only update tasks assigned to you. %d tried to update task %d thats owned by %d", currentUserId, task.Id, task.AssignedTo)
+	assert.IsTrue(task.AssignedTo == currentUserId, "for now you can only update tasks assigned to you. %d tried to update task %d thats owned by %d", currentUserId, task.Id, task.AssignedTo)
 
 	// NOTE: Take action
 	task.ToggleStatus(currentUserId)
@@ -412,7 +411,7 @@ type ListModel struct {
 
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	currentUserId, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
 	// NOTE: Take action
@@ -446,17 +445,16 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskList(navbar, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskList(activeScreens, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
 			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskListWithBody(navbar, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
 			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
