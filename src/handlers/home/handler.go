@@ -37,12 +37,10 @@ type Screens struct {
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	navbar := activeScreens.NavBar.SetUser(currentUserName, currentUserEmail)
-
-	if err := home_templ.Index(navbar).Render(r.Context(), w); err != nil {
+	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,12 +49,10 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
-	navbar := activeScreens.NavBar.SetUser(currentUserName, currentUserEmail)
-
-	if err := home_templ.Index(navbar).Render(r.Context(), w); err != nil {
+	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

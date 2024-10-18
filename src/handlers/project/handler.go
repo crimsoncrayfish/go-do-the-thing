@@ -38,18 +38,17 @@ func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRep
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
-	assert.IsTrue(false, h.logger, "Not implemented")
+	assert.IsTrue(false, "Not implemented")
 }
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	_, currentUserEmail, currentUserName, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
 
 	pl := make([]models.Project, 0)
-	navbar := activeScreens.SetUser(currentUserName, currentUserEmail)
 
-	if err := templ_project.ProjectListWithBody(navbar, pl).Render(r.Context(), w); err != nil {
+	if err := templ_project.ProjectListWithBody(activeScreens, pl).Render(r.Context(), w); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		assert.NoError(err, h.logger, "Failed to render template for formData")
 	}

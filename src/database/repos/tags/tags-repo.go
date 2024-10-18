@@ -15,7 +15,7 @@ type TagsRepo struct {
 // NOTE: Depends on: []
 func InitRepo(database database.DatabaseConnection) *TagsRepo {
 	logger := slog.NewLogger("tags repo")
-	assert.IsTrue(false, logger, "not implemented exception")
+	assert.IsTrue(false, "not implemented exception")
 	_, err := database.Exec(createTagsTable)
 	assert.NoError(err, logger, "Failed to create Tags table")
 	return &TagsRepo{
