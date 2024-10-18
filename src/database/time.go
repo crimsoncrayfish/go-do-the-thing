@@ -33,7 +33,7 @@ func (t *SqLiteTime) Scan(v interface{}) error {
 
 func (t *SqLiteTime) Value() (driver.Value, error) {
 	if t.Time == nil {
-		return 0, nil
+		return int64(0), nil
 	}
 	return t.Time.Unix(), nil
 }

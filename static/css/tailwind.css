@@ -1289,8 +1289,8 @@ video {
   text-decoration-line: underline;
 }
 
-.hover\:translate-z-\[40px\]:hover {
-  --tw-translate-z: 40px;
+.hover\:translate-z-\[15px\]:hover {
+  --tw-translate-z: 15px;
   transform:  translate3d(var(--tw-translate-x), var(--tw-translate-y), var(--tw-translate-z)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 

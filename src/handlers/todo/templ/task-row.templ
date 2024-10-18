@@ -9,7 +9,7 @@ templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskRow(task models.TaskView) {
-<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform hover:translate-z-[40px] cursor-pointer text-primary-900 dark:text-primary-50
+<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform hover:translate-z-[15px] cursor-pointer text-primary-900 dark:text-primary-50
         odd:bg-primary-100 odd:dark:bg-primary-900
         even:bg-primary-200 even:dark:bg-primary-800
         hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700 ">
@@ -19,7 +19,7 @@ templ TaskRow(task models.TaskView) {
 
 templ TaskRowOOB(task models.TaskView) {
 <tbody id="task-rows" hx-swap-oob="afterbegin">
-	<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform hover:translate-z-[40px] cursor-pointer text-primary-900 dark:text-primary-50
+	<tr id={ fmt.Sprintf("task-row-%d", task.Id) } class="item-row transition-transform hover:translate-z-[15px] cursor-pointer text-primary-900 dark:text-primary-50
         odd:bg-primary-100 odd:dark:bg-primary-900
         even:bg-primary-200 even:dark:bg-primary-800
         hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700 ">

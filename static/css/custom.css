@@ -14,27 +14,27 @@
 }
 
 .item-list .item-row:hover+* {
-  transform: translateZ(20px) rotateX(-20deg);
-}
-
-.item-list .item-row:hover+*+* {
   transform: translateZ(10px) rotateX(-10deg);
 }
 
-.item-list .item-row:hover+*+*+* {
+.item-list .item-row:hover+*+* {
   transform: translateZ(5px) rotateX(-5deg);
 }
 
-.item-list .item-row:has(+*:hover) {
-  transform: translateZ(20px) rotateX(20deg);
+.item-list .item-row:hover+*+*+* {
+  transform: translateZ(2px) rotateX(-2deg);
 }
 
-.item-list .item-row:has(+*+*:hover) {
+.item-list .item-row:has(+*:hover) {
   transform: translateZ(10px) rotateX(10deg);
 }
 
-.item-list .item-row:has(+*+*+*:hover) {
+.item-list .item-row:has(+*+*:hover) {
   transform: translateZ(5px) rotateX(5deg);
+}
+
+.item-list .item-row:has(+*+*+*:hover) {
+  transform: translateZ(2px) rotateX(2deg);
 }
 
 
