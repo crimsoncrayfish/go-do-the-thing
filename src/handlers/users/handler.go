@@ -26,6 +26,8 @@ type Handler struct {
 	logger   slog.Logger
 }
 
+var source = assert.Source{"UsersHandler"}
+
 func SetupUserHandler(
 	userRepo users_repo.UsersRepo,
 	router *http.ServeMux,
@@ -33,7 +35,7 @@ func SetupUserHandler(
 	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
 ) {
-	logger := slog.NewLogger("UsersHandler")
+	logger := slog.NewLogger(source.Name)
 	logger.Info("Setting up users")
 
 	handler := &Handler{
@@ -68,7 +70,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, h.logger, "Failed to render template for formData")
+			assert.NoError(err, source, "Failed to render template for formData")
 		}
 		http.SetCookie(w, &emptyAuthCookie)
 		return
@@ -154,7 +156,7 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	// NOTE: confirm logged in
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	if err := h.repo.UpdateSession(currentUserId, "", &database.SqLiteTime{}); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)

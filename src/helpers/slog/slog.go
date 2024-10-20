@@ -12,7 +12,6 @@ type Logger struct {
 
 func NewLogger(name string) Logger {
 	return Logger{Name: name}
-
 }
 
 const colorRed = "\033[0;31m"

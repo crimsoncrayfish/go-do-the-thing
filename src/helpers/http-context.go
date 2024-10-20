@@ -37,13 +37,13 @@ func GetUserFromContext(r *http.Request) (int64, string, string, error) {
 
 func GetNameFromContext(ctx context.Context) string {
 	context, ok := ctx.Value(constants.AuthContext).(HttpContext)
-	assert.IsTrue(ok, "Failed to get the user name from the context. Context not set")
+	assert.IsTrue(ok, assert.Source{"HttpContext"}, "Failed to get the user name from the context. Context not set")
 	return context.Get(constants.AuthUserName)
 }
 
 func GetEmailFromContext(ctx context.Context) string {
 	context, ok := ctx.Value(constants.AuthContext).(HttpContext)
-	assert.IsTrue(ok, "Failed to get the user name from the context. Context not set")
+	assert.IsTrue(ok, assert.Source{"HttpContext"}, "Failed to get the user name from the context. Context not set")
 	return context.Get(constants.AuthUserEmail)
 }
 

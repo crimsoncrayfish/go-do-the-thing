@@ -27,13 +27,15 @@ type Handler struct {
 
 var activeScreens models.NavBarObject
 
+var source = assert.Source{"TasksHandler"}
+
 func SetupTodoHandler(
 	tasksRepo tasks_repo.TasksRepo,
 	usersRepo users_repo.UsersRepo,
 	router *http.ServeMux,
 	mw_stack middleware.Middleware,
 ) {
-	logger := slog.NewLogger("TasksHandler")
+	logger := slog.NewLogger(source.Name)
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
@@ -61,7 +63,7 @@ var defaultForm = fm.NewDefaultTaskForm()
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
 	form := fm.NewTaskForm()
@@ -86,7 +88,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_todo.TaskFormContent("Create", form, tagOptions).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, h.logger, "Failed to render template for formData")
+			assert.NoError(err, source, "Failed to render template for formData")
 		}
 		return
 	}
@@ -109,7 +111,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		h.logger.Info("invalid data")
 		if err := templ_todo.TaskFormContent("Create", form, tagOptions).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, h.logger, "Failed to render template for formData")
+			assert.NoError(err, source, "Failed to render template for formData")
 			// TODO: better error handling. Honestly i might as well panic here
 		}
 		return
@@ -121,14 +123,14 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to insert task")
 		form.Errors["Task"] = "failed to create task"
 		if err := templ_todo.TaskFormContent("Create", form, tagOptions).Render(r.Context(), w); err != nil {
-			assert.NoError(err, h.logger, "failed to notify create failure for task")
+			assert.NoError(err, source, "failed to notify create failure for task")
 			// TODO: what should happen if the fetch fails after create
 		}
 		return
 	}
 	task, err = h.repo.GetItem(id)
 	if err != nil {
-		assert.NoError(err, h.logger, "failed to get newly inserted task")
+		assert.NoError(err, source, "failed to get newly inserted task")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
@@ -136,7 +138,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Success zone
 	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
 	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
-		assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+		assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
@@ -146,25 +148,25 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	} else {
 		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen if the fetch fails after create
 			return
 		}
 	}
 	taskListItem := models.TaskToViewModel(task, assignedToUser, createdBy)
 	if err := templ_todo.TaskRowOOB(taskListItem).Render(r.Context(), w); err != nil {
-		assert.NoError(err, h.logger, "failed to render new task row with id %d", task.Id)
+		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
 	if err := templ_todo.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
 		//if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		assert.NoError(err, h.logger, "failed to render no data row")
+		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
 	if err := templ_todo.TaskFormContent("Create", defaultForm, tagOptions).Render(r.Context(), w); err != nil {
-		assert.NoError(err, h.logger, "failed to render the task form after creation")
+		assert.NoError(err, source, "failed to render the task form after creation")
 		// TODO: what should happen if rendering fails
 		return
 	}
@@ -177,7 +179,7 @@ type NoItemRowData struct {
 func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -205,7 +207,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	if err != nil || len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_todo.TaskFormContent("Update", form, tagOptions).Render(r.Context(), w); err != nil {
-			assert.NoError(err, h.logger, "failed to render task form")
+			assert.NoError(err, source, "failed to render task form")
 			return
 		}
 		return
@@ -214,7 +216,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Get task from the db and only update relevant fields
 	assignedToUser, err := h.usersRepo.GetUserById(currentUserId)
 	if ok := h.handleUserIdNotFound(err, currentUserId); !ok {
-		assert.NoError(err, h.logger, "how did we get here when i cant read the current user from the db")
+		assert.NoError(err, source, "how did we get here when i cant read the current user from the db")
 		return
 	}
 	item := models.Task{
@@ -233,7 +235,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to update task")
 		form.Errors["Task"] = "failed to update task"
 		if err := templ_todo.TaskFormContent("Update", form, tagOptions).Render(r.Context(), w); err != nil {
-			assert.NoError(err, h.logger, "failed to notify create failure for task")
+			assert.NoError(err, source, "failed to notify create failure for task")
 			// TODO: what should happen if the fetch fails after create
 		}
 		return
@@ -241,7 +243,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Success zone
 	task, err := h.repo.GetItem(id)
 	if err != nil {
-		assert.NoError(err, h.logger, "failed to get updated task")
+		assert.NoError(err, source, "failed to get updated task")
 		// TODO: what should happen if the fetch fails after update
 		return
 	}
@@ -251,7 +253,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	} else {
 		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen to the row if an error occurs while updating?
 			return
 		}
@@ -259,14 +261,14 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 
 	model := models.TaskToViewModel(task, assignedToUser, createdBy)
 	if err := templ_todo.TaskItemContentOOB(model).Render(r.Context(), w); err != nil {
-		assert.NoError(err, h.logger, "failed to render new task row with id %d", task.Id)
+		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
 
 	formData := formDataFromItemNoValidation(item, currentUserEmail)
 	if err := templ_todo.TaskFormContent("Update", formData, tagOptions).Render(r.Context(), w); err != nil {
-		assert.NoError(err, h.logger, "failed to render form content after update")
+		assert.NoError(err, source, "failed to render form content after update")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
@@ -280,7 +282,7 @@ type ItemPageModel struct {
 func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -300,7 +302,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Take action
 	assignedUser, err := h.usersRepo.GetUserById(task.AssignedTo)
-	assert.NoError(err, h.logger, "this user should exist since they are assigned to a task: %d", task.AssignedTo)
+	assert.NoError(err, source, "this user should exist since they are assigned to a task: %d", task.AssignedTo)
 	formData := formDataFromItemNoValidation(task, assignedUser.Email)
 
 	// NOTE: Success zone
@@ -310,7 +312,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	} else {
 		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen to the row if an error occurs while updating?
 			return
 		}
@@ -339,7 +341,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -358,7 +360,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	assert.IsTrue(task.AssignedTo == currentUserId, "for now you can only update tasks assigned to you. %d tried to update task %d thats owned by %d", currentUserId, task.Id, task.AssignedTo)
+	assert.IsTrue(task.AssignedTo == currentUserId, source, "for now you can only update tasks assigned to you. %d tried to update task %d thats owned by %d", currentUserId, task.Id, task.AssignedTo)
 
 	// NOTE: Take action
 	task.ToggleStatus(currentUserId)
@@ -379,7 +381,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	}
 	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
 	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
-		assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+		assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 		// TODO: what should happen to the row if an error occurs while updating?
 		return
 	}
@@ -389,7 +391,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 	} else {
 		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
 		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
+			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
 			// TODO: what should happen to the row if an error occurs while updating?
 			return
 		}
@@ -412,7 +414,7 @@ type ListModel struct {
 func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	// NOTE: Take action
 	tasks, err := h.repo.GetItemsForUser(currentUserId)
@@ -433,12 +435,12 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 
 		if _, exists := users[task.AssignedTo]; !exists {
 			user, err := h.usersRepo.GetUserById(task.AssignedTo)
-			assert.NoError(err, h.logger, "how does a task with an assigned user id of %d even exist?", task.AssignedTo)
+			assert.NoError(err, source, "how does a task with an assigned user id of %d even exist?", task.AssignedTo)
 			users[task.AssignedTo] = user
 		}
 		if _, exists := users[task.CreatedBy]; !exists {
 			user, err := h.usersRepo.GetUserById(task.CreatedBy)
-			assert.NoError(err, h.logger, "how does a task with an created by user id of %d even exist?", task.CreatedBy)
+			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.CreatedBy)
 			users[task.CreatedBy] = user
 		}
 		tasksList = append(tasksList, models.TaskToViewModel(task, users[task.AssignedTo], users[task.CreatedBy]))
@@ -467,7 +469,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -480,20 +482,20 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Take action
 	err = h.repo.DeleteItem(id, currentUserId)
 	if err != nil {
-		assert.NoError(err, h.logger, "failed to delete todo item")
+		assert.NoError(err, source, "failed to delete todo item")
 		return
 	}
 
 	// NOTE: Success zone
 	hasData, err := h.repo.GetItemsCount(currentUserId)
 	if err != nil {
-		assert.NoError(err, h.logger, "failed to update ui")
+		assert.NoError(err, source, "failed to update ui")
 		return
 	}
 
 	if err := templ_todo.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
 		//if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		assert.NoError(err, h.logger, "failed to render no data row")
+		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
@@ -501,7 +503,7 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) testError(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 }
 
 func formDataFromItemNoValidation(task models.Task, assignedUser string) fm.TaskForm {
@@ -530,8 +532,7 @@ func (h *Handler) handleUserNotFound(err error, userEmail string) bool {
 	if errors.Is(err, sql.ErrNoRows) {
 		h.logger.Error(err, "the entered email address does not corrispond to an existing user: %s", userEmail)
 	} else {
-		h.logger.Error(err, "some error occured reading from the db while querying for %s", userEmail)
-		assert.NoError(err, h.logger, "some error occurred. probably fialed to read from the db while checking user %s", userEmail)
+		assert.NoError(err, source, "some error occurred. probably fialed to read from the db while checking user %s", userEmail)
 	}
 	return false
 }
@@ -542,8 +543,7 @@ func (h *Handler) handleUserIdNotFound(err error, userId int64) bool {
 	if errors.Is(err, sql.ErrNoRows) {
 		h.logger.Error(err, "the entered email address does not corrispond to an existing user: %d", userId)
 	} else {
-		h.logger.Error(err, "some error occured reading from the db while querying for %d", userId)
-		assert.NoError(err, h.logger, "some error occurred. probably fialed to read from the db while checking user %d", userId)
+		assert.NoError(err, source, "some error occurred. probably fialed to read from the db while checking user %d", userId)
 	}
 	return false
 }

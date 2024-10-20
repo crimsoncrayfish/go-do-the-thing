@@ -37,6 +37,14 @@ Ensure ZIG is installed on the pc
 ## Generate Public/Private key example
 ```cmd
 ssh-keygen -t rsa -b 4096
+
+--For JWTs (i.e. in keys/)
+openssl genpkey -algorithm RSA -out private.key -outform PEM -pkeyopt rsa_keygen_bits:2048
+openssl rsa -pubout -in private.key -out public.key
+
+--FOR HTTPS
+openssl genpkey -algorithm RSA -out private_key.pem -outform PEM -pkeyopt rsa_keygen_bits:2048
+openssl req -new -x509 -key private_key.pem -out certificate.pem -days 365
 ```
 
 ## HTMX is wierd

@@ -5,6 +5,7 @@
 /pkg
 *.crt
 *.key
+*.pem
 *.exe
 /keys
 go.work.sum
