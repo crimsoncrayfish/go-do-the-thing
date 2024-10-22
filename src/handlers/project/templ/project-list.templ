@@ -1,23 +1,50 @@
 package templ_project
 
 import (
-m "go-do-the-thing/src/models"
-ts "go-do-the-thing/src/shared/templ"
+	m "go-do-the-thing/src/models"
+	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ ProjectListWithBody(navbar m.NavBarObject, projects []m.Project) {
-<!DOCTYPE html>
-<html lang="en">
-@ts.Header()
-
-<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-	@ProjectList(navbar, projects)
-</body>
-
-</html>
+templ ProjectListWithBody(navbar m.NavBarObject, projects []m.ProjectUI) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@ts.Header()
+		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
+			@ProjectList(navbar, projects)
+		</body>
+	</html>
 }
 
-templ ProjectList(navbar m.NavBarObject, projects []m.Project) {
-@ts.NavBar(navbar)
-<div class="px-1 lg:px-[10%] w-full text-primary-900 dark:text-primary-50"></div>
+templ ProjectList(navbar m.NavBarObject, projects []m.ProjectUI) {
+	@ts.NavBar(navbar)
+	<div class="px-1 lg:px-[10%] w-full text-primary-900 dark:text-primary-50">
+		<div class="relative items-center overflow-x-auto ">
+			<table
+				class="w-[90%] mb-2 mx-auto bg-primary-900 text-sm text-left rtl:text-right text-primary-50 dark:text-primary-400"
+			>
+				<thead
+					class="text-xs text-primary-700 uppercase bg-primary-50 dark:bg-primary-700 dark:text-primary-400"
+				>
+					<tr>
+						<th scope="col" class="px-6 py-3">
+							<p class="hidden lg:block">Status</p>
+						</th>
+						<th scope="col" class="columns-2xl px-6 py-3">Task</th>
+						<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
+						<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
+						<th scope="col" class="columns-lg hidden xl:table-cell px-6 py-3">Tag</th>
+						<th scope="col" class="px-6 py-3">
+							<p class="hidden lg:block">Actions</p>
+						</th>
+					</tr>
+				</thead>
+				<tbody id="project-rows" class="project-list">
+					for _, project:= range projects {
+						@ProjectRow(project)
+					}
+				</tbody>
+			</table>
+			@ts.NoDataRow(true)
+		</div>
+	</div>
 }

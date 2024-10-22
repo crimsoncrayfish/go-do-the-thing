@@ -1,0 +1,25 @@
+package templ_shared
+
+templ NoDataRow(hidden bool) {
+	<div
+		id="no-data-row"
+		class={ templ.KV("hidden", hidden)," p-4 w-[90%] mx-auto","border-b",
+	"dark:border-primary-700 bg-primary-100",
+	"dark:bg-primary-800" }
+	>
+		No data found
+	</div>
+}
+
+templ NoDataRowOOB(hidden bool) {
+	<div
+		id="no-data-row"
+		hx-swap-oob="true"
+		hx-select="#no-data-row"
+		class={ "p-4 border-b mx-auto w-[90%] dark:border-primary-700 bg-primary-100 dark:bg-primary-800" ,
+	templ.KV( "hidden" , hidden) }
+	>
+		No data
+		found
+	</div>
+}
