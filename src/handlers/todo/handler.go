@@ -13,6 +13,7 @@ import (
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	fm "go-do-the-thing/src/models/forms"
+	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 	"sort"
 	"strconv"
@@ -57,7 +58,6 @@ type idResponse struct {
 	Id int64 `json:"id" json:"id"`
 }
 
-var tagOptions = []string{"Project 1", "Project 2", "Personal"}
 var defaultForm = fm.NewDefaultTaskForm()
 
 func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil || len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		if err := templ_todo.TaskFormContent("Create", form, tagOptions).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			assert.NoError(err, source, "Failed to render template for formData")
 		}
@@ -109,7 +109,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	form, isValid := formDataFromItem(task, currentUserEmail)
 	if !isValid {
 		h.logger.Info("invalid data")
-		if err := templ_todo.TaskFormContent("Create", form, tagOptions).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			assert.NoError(err, source, "Failed to render template for formData")
 			// TODO: better error handling. Honestly i might as well panic here
@@ -122,7 +122,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error(err, "failed to insert task")
 		form.Errors["Task"] = "failed to create task"
-		if err := templ_todo.TaskFormContent("Create", form, tagOptions).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
 			assert.NoError(err, source, "failed to notify create failure for task")
 			// TODO: what should happen if the fetch fails after create
 		}
@@ -159,13 +159,13 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	if err := templ_todo.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
+	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
 		//if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	if err := templ_todo.TaskFormContent("Create", defaultForm, tagOptions).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskFormContent("Create", defaultForm).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render the task form after creation")
 		// TODO: what should happen if rendering fails
 		return
@@ -206,7 +206,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil || len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		if err := templ_todo.TaskFormContent("Update", form, tagOptions).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent("Update", form).Render(r.Context(), w); err != nil {
 			assert.NoError(err, source, "failed to render task form")
 			return
 		}
@@ -234,7 +234,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	if err = h.repo.UpdateItem(item); err != nil {
 		h.logger.Error(err, "failed to update task")
 		form.Errors["Task"] = "failed to update task"
-		if err := templ_todo.TaskFormContent("Update", form, tagOptions).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent("Update", form).Render(r.Context(), w); err != nil {
 			assert.NoError(err, source, "failed to notify create failure for task")
 			// TODO: what should happen if the fetch fails after create
 		}
@@ -267,7 +267,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formData := formDataFromItemNoValidation(item, currentUserEmail)
-	if err := templ_todo.TaskFormContent("Update", formData, tagOptions).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskFormContent("Update", formData).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render form content after update")
 		// TODO: what should happen if the fetch fails after create
 		return
@@ -321,14 +321,14 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	taskView := models.TaskToViewModel(task, assignedUser, createdBy)
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskItem(taskView, activeScreens, formData, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskItem(taskView, activeScreens, formData).Render(r.Context(), w); err != nil {
 			// TODO: some user feedback here?
 			h.logger.Error(err, "Failed to execute template for the item page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskItemWithBody(taskView, activeScreens, formData, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskItemWithBody(taskView, activeScreens, formData).Render(r.Context(), w); err != nil {
 			// TODO: some user feedback here?
 			h.logger.Error(err, "Failed to execute template for the item page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -449,14 +449,14 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Success zone
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskList(activeScreens, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskList(activeScreens, defaultForm, tasksList).Render(r.Context(), w); err != nil {
 			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasksList, tagOptions).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasksList).Render(r.Context(), w); err != nil {
 			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -493,7 +493,7 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_todo.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
+	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
 		//if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create

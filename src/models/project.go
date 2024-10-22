@@ -19,16 +19,16 @@ type Project struct {
 	IsDeleted    bool
 }
 
-type ProjectUI struct {
+type ProjectView struct {
 	Id           int
 	Name         string
 	Description  string
-	Owner        User
+	Owner        UserView
 	StartDate    *database.SqLiteTime
 	DueDate      *database.SqLiteTime
-	CreatedBy    User
+	CreatedBy    UserView
 	CreatedDate  *database.SqLiteTime
-	ModifiedBy   User
+	ModifiedBy   UserView
 	ModifiedDate *database.SqLiteTime
 	IsComplete   bool
 	IsDeleted    bool

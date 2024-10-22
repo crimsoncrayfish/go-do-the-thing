@@ -17,3 +17,9 @@ type User struct {
 	IsAdmin          bool                 `json:"is_admin,omitempty"`
 	CreateDate       *database.SqLiteTime `json:"create_date"`
 }
+
+type UserView struct {
+	Id       int64  `json:"id,omitempty"`
+	Email    string `json:"email,omitempty"`
+	FullName string `json:"full_name,omitmepty"`
+}

@@ -10,6 +10,7 @@ import (
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
+	"go-do-the-thing/src/models/forms"
 	"net/http"
 )
 
@@ -48,9 +49,11 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
 
-	pl := make([]models.Project, 0)
+	pl := make([]models.ProjectView, 0)
 
-	if err := templ_project.ProjectListWithBody(activeScreens, pl).Render(r.Context(), w); err != nil {
+	form := form_models.NewDefaultProjectForm()
+
+	if err := templ_project.ProjectListWithBody(activeScreens, form, pl).Render(r.Context(), w); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		assert.NoError(err, source, "Failed to render template for formData")
 	}
