@@ -8,17 +8,17 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, tagOptions []string) {
+templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@ts.Header()
 		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-			@TaskItem(task, navbar, formdata, tagOptions)
+			@TaskItem(task, navbar, formdata)
 		</body>
 	</html>
 }
 
-templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, tagOptions []string) {
+templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
 	@ts.NavBar(navbar)
 	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
 		<div class="flex w-full justify-between items-center">
@@ -64,7 +64,7 @@ templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.Tas
 							@ts.SvgClose()
 						</button>
 					</div>
-					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, tagOptions)
+					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata)
 				</div>
 			</div>
 		</div>
@@ -98,12 +98,6 @@ templ taskItemContent(task models.TaskView) {
 									Completed on: { task.CompletedDate.String() }
 								</div>
 							}
-						</div>
-						<div class="pt-2 sm:pt-0 flex items-center">
-							@ts.SvgTag()
-							<div class="mx-4">
-								<p>TODO: My tags here</p>
-							</div>
 						</div>
 					</div>
 				</div>

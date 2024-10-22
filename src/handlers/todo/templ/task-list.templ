@@ -6,17 +6,17 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, tagOptions []string) {
+templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@ts.Header()
 		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-			@TaskList(navbar, formdata, tasks, tagOptions)
+			@TaskList(navbar, formdata, tasks)
 		</body>
 	</html>
 }
 
-templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, tagOptions []string) {
+templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView) {
 	@ts.NavBar(navbar)
 	<div class="px-1 lg:px-[10%] w-full text-primary-900 dark:text-primary-50">
 		<div class="w-[90%] mx-auto pt-5 px-5 py-5 flex items-center justify-between">
@@ -54,7 +54,7 @@ templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, 
 							@ts.SvgClose()
 						</button>
 					</div>
-					@TaskForm("item", "Create", formdata, tagOptions)
+					@TaskForm("item", "Create", formdata)
 				</div>
 			</div>
 		</div>
@@ -72,7 +72,6 @@ templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView, 
 						<th scope="col" class="columns-2xl px-6 py-3">Task</th>
 						<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
 						<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
-						<th scope="col" class="columns-lg hidden xl:table-cell px-6 py-3">Tag</th>
 						<th scope="col" class="px-6 py-3">
 							<p class="hidden lg:block">Actions</p>
 						</th>
