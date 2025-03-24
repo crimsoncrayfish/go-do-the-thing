@@ -15,63 +15,6 @@ templ Header() {
 	<link rel="stylesheet" href="/static/css/custom.css" />
 	<link rel="icon" type="image/x-icon" href="/static/img/todo.ico" />
 	<script src="/static/js/htmx.js"></script>
-	<script>
-		htmx.config.useTemplateFragments = true;
-		htmx.config.allowNestedOobSwaps = true;
-		document.addEventListener("DOMContentLoaded", (_) => {
-			document.body.addEventListener('htmx:beforeSwap', function (evt) {
-				if (evt.detail.xhr.status === 422) {
-					evt.detail.shouldSwap = true;
-					evt.detail.isError = false;
-				}
-				if (evt.detail.xhr.status === 500) {
-					evt.detail.shouldSwap = true;
-					evt.detail.isError = false;
-				}
-			});
-			document.body.addEventListener('htmx:configRequest', function (evt) {
-				evt.detail.headers['accept'] = 'text/html'
-				evt.detail.headers['authorization'] = getAuthToken(); // add a new parameter into the mix
-			});
-		})
-
-		function getAuthToken() {
-			return "bearer placeholder token"
-		}
-
-		function toggleClassForId(className, elementId) {
-			const elem = document.getElementById(elementId)
-			if (elem.classList.contains(className)) {
-				elem.classList.remove(className);
-				return;
-			}
-			elem.classList.add(className);
-		}
-
-		function swapClassForId(class1Name, class2Name, elementId) {
-			const elem = document.getElementById(elementId)
-			if (elem.classList.contains(class1Name)) {
-				elem.classList.remove(class1Name);
-				elem.classList.add(class2Name);
-				return;
-			}
-
-			elem.classList.add(class1Name);
-			elem.classList.remove(class2Name);
-		}
-
-		if ('dark-mode' in localStorage) {
-			if (localStorage.getItem('dark-mode') === 'true') {
-				document.querySelector('html').classList.add('dark');
-			} else {
-				document.querySelector('html').classList.remove('dark');
-			}
-		} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-			document.querySelector('html').classList.add('dark');
-		} else {
-			document.querySelector('html').classList.remove('dark');
-		}
-
-	</script>
+	<script src="/static/js/functions.js"></script>
 </head>
 }

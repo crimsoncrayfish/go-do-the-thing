@@ -60,7 +60,7 @@ func readKeys(keysLocation string, logger slog.Logger) ([]*rsa.PrivateKey, error
 func readKey(keyLocation string, logger slog.Logger) (*rsa.PrivateKey, error) {
 	privateKeyName := "private.key"
 	privateKeyFile, err := os.ReadFile(keyLocation + privateKeyName)
-	logger.Info("Reading file at " + keyLocation + privateKeyName)
+	logger.Info("Reading file at %s", keyLocation+privateKeyName)
 	if err != nil {
 		logger.Error(err, "Could not read private key at location %s", keyLocation+privateKeyName)
 		return nil, err

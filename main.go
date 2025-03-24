@@ -83,7 +83,7 @@ func main() {
 
 	logger.Info("Start server")
 
-	if err := server.ListenAndServeTLS("public.key", "private.key"); err != nil &&
+	if err := server.ListenAndServeTLS("server.crt", "server.key"); err != nil &&
 		!errors.Is(err, http.ErrServerClosed) {
 		logger.Info("Something went wrong")
 		panic(err)

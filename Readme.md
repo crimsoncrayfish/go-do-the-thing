@@ -32,8 +32,17 @@ go env -w CC="zig cc"
 Ensure ZIG is installed on the pc
 
 ### Generate Public/Private key example
+
 ```cmd
-ssh-keygen -t rsa -b 4096
+choco install openssl
+
+#for tokens
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out private.key
+openssl rsa -pubout -in private.key -out public.key
+
+#for https:
+openssl genrsa -out server.key 2048
+openssl req -new -x509 -key server.key -out server.crt -days 365
 ```
 
 ### HTMX is wierd
