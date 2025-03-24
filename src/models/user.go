@@ -23,3 +23,11 @@ type UserView struct {
 	Email    string `json:"email,omitempty"`
 	FullName string `json:"full_name,omitmepty"`
 }
+
+func UserToViewModel(user User) UserView {
+	return UserView{
+		Id:       user.Id,
+		Email:    user.Email,
+		FullName: user.FullName,
+	}
+}

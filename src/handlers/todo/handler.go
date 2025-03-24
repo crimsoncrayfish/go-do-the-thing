@@ -28,7 +28,7 @@ type Handler struct {
 
 var activeScreens models.NavBarObject
 
-var source = assert.Source{"TasksHandler"}
+var source = assert.Source{Name: "TasksHandler"}
 
 func SetupTodoHandler(
 	tasksRepo tasks_repo.TasksRepo,

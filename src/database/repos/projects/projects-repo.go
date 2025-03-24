@@ -11,7 +11,7 @@ type ProjectsRepo struct {
 	database database.DatabaseConnection
 }
 
-var repoName = assert.Source{"ProjectsRepo"}
+var repoName = assert.Source{Name: "ProjectsRepo"}
 
 // NOTE: Depends on: [../project-users/project-users-repo.go, ../users/users-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
@@ -171,8 +171,9 @@ const insertProject = `
 	([name],[description],[owner],[start_date],[due_date],[created_by],[create_date],[is_complete])
 	VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
 
-func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) (err error) {
-	_, err = r.database.Exec(updateProject,
+func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) (id int64, err error) {
+	result, err := r.database.Exec(
+		insertProject,
 		project.Name,
 		project.Description,
 		project.Owner,
@@ -182,5 +183,9 @@ func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) 
 		database.SqLiteNow(),
 		project.IsComplete,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }

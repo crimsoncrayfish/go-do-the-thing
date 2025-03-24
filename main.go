@@ -17,7 +17,7 @@ import (
 	"os"
 )
 
-//go:generate npm run build
+//go:generate npm run build && templ generate
 
 //go:embed static
 var static embed.FS

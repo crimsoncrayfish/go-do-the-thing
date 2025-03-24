@@ -8,12 +8,12 @@ type Project struct {
 	Id           int
 	Name         string
 	Description  string
-	Owner        int
+	Owner        int64
 	StartDate    *database.SqLiteTime
 	DueDate      *database.SqLiteTime
-	CreatedBy    int
+	CreatedBy    int64
 	CreatedDate  *database.SqLiteTime
-	ModifiedBy   int
+	ModifiedBy   int64
 	ModifiedDate *database.SqLiteTime
 	IsComplete   bool
 	IsDeleted    bool
@@ -32,6 +32,17 @@ type ProjectView struct {
 	ModifiedDate *database.SqLiteTime
 	IsComplete   bool
 	IsDeleted    bool
+}
+
+func ProjectToViewModel(project Project, createdBy User) ProjectView {
+	return ProjectView{
+		Id:          project.Id,
+		Name:        project.Name,
+		Description: project.Description,
+		CreatedDate: project.CreatedDate,
+		CreatedBy:   UserToViewModel(createdBy),
+		DueDate:     project.DueDate,
+	}
 }
 
 type ProjectTag struct {
