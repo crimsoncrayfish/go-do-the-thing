@@ -3,6 +3,8 @@ package repos
 import (
 	"database/sql"
 	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
@@ -13,10 +15,9 @@ type TasksRepo struct {
 const TasksRepoName = "items"
 
 func InitTasksRepo(database database.DatabaseConnection) (*TasksRepo, error) {
+	logger := slog.NewLogger(TasksRepoName)
 	_, err := database.Exec(createTasksTable)
-	if err != nil {
-		return &TasksRepo{}, err
-	}
+	assert.NoError(err, logger, "Failed to create Tasks table")
 
 	return &TasksRepo{database}, nil
 }
@@ -27,6 +28,7 @@ const (
    	[name] TEXT DEFAULT '' NOT NULL,
    	[description] TEXT,
 	[assigned_to] INTEGER,
+	[project_id] INTEGER,
 	[status] INTEGER DEFAULT 0,
 	[complete_date] TEXT DEFAULT '' NOT NULL,	
     [due_date] TEXT,
@@ -34,20 +36,25 @@ const (
     [created_date] TEXT,
     [modified_by] INTEGER,
     [modified_date] TEXT,
-	[tag] TEXT DEFAULT '' NOT NULL,
 	[is_deleted] INTEGER DEFAULT 0,
 	FOREIGN KEY (assigned_to) REFERENCES users(id),
 	FOREIGN KEY (created_by) REFERENCES users(id),
 	FOREIGN KEY (modified_by) REFERENCES users(id)
+	FOREIGN KEY (project_id) REFERENCES projects(id)
 );`
-	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date]  FROM items WHERE is_deleted=0"
-	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
-	getItem                = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [tag], [complete_date] FROM items WHERE id = ?"
+	// TODO: implement task tags
+	createTaskTagsTable = `CREATE TABLE IF NOT EXISTS project_tags (
+	[project_id] INTEGER,
+	[tag_id] INTEGER,
+);`
+	getItemsNotDeleted     = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date]  FROM items WHERE is_deleted=0"
+	getItemsByAssignedUser = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date] FROM items WHERE [is_deleted] = 0 AND [assigned_to] = ?"
+	getItem                = "SELECT [Id], [name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [is_deleted], [project_id], [complete_date] FROM items WHERE id = ?"
 
 	countItems       = "SELECT COUNT(*) FROM items WHERE is_deleted=0"
-	insertItem       = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [tag]) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	insertItem       = `INSERT INTO items ([name], [description], [status], [assigned_to], [due_date], [created_by], [created_date], [modified_by], [modified_date], [project_id]) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	updateItemStatus = `UPDATE items SET [status] = ?, [complete_date] = ?, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
-	updateItem       = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [tag] = ? WHERE id = ?`
+	updateItem       = `UPDATE items SET [name] = ?, [description] = ?, [assigned_to] = ?, [due_date] = ?, [project_id] = ? WHERE id = ?`
 	deleteItem       = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
 	restoreItem      = `UPDATE items SET [is_deleted] = 0 WHERE id = ?`
 )
@@ -65,7 +72,7 @@ func scanTaskFromRow(row *sql.Row, item *models.Task) error {
 		&item.ModifiedBy,
 		&item.ModifiedDate,
 		&item.IsDeleted,
-		&item.Tag,
+		&item.Project,
 		&item.CompleteDate,
 	)
 }
@@ -83,7 +90,7 @@ func scanTaskFromRows(rows *sql.Rows, item *models.Task) error {
 		&item.ModifiedBy,
 		&item.ModifiedDate,
 		&item.IsDeleted,
-		&item.Tag,
+		&item.Project,
 		&item.CompleteDate,
 	)
 }
@@ -151,7 +158,7 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		database.SqLiteNow().String(),
 		item.ModifiedBy,
 		database.SqLiteNow().String(),
-		item.Tag,
+		item.Project,
 	)
 	if err != nil {
 		return 0, err
@@ -161,7 +168,7 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 }
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
-	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Tag, item.Id)
+	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate.String(), item.Project, item.Id)
 	if err != nil {
 		return err
 	}

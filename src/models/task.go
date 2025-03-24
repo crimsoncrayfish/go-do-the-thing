@@ -18,7 +18,7 @@ type Task struct {
 	ModifiedBy   int64                `json:"modified_by"`
 	ModifiedDate *database.SqLiteTime `json:"modified_date"`
 	IsDeleted    bool                 `json:"is_deleted"`
-	Tag          string               `json:"tag,omitempty"`
+	Project      int64                `json:"project_id"`
 }
 
 type ItemStatus int
@@ -63,7 +63,7 @@ type TaskView struct {
 	DueDate       *database.SqLiteTime
 	CreatedDate   *database.SqLiteTime
 	CreatedBy     string
-	Tag           string
+	Project       int64
 }
 
 func TaskToViewModel(task Task, assignedTo, createdBy User) TaskView {
@@ -77,6 +77,6 @@ func TaskToViewModel(task Task, assignedTo, createdBy User) TaskView {
 		CreatedDate:   task.CreatedDate,
 		CreatedBy:     createdBy.FullName,
 		DueDate:       task.DueDate,
-		Tag:           task.Tag,
+		Project:       task.Project,
 	}
 }
