@@ -63,7 +63,7 @@ openssl req -new -x509 -key server.key -out server.crt -days 365
 - [x] Logout
 - [ ] improve task editing security
 - [ ] Admin controls to enable users
-- [ ] Containerize this so i can dev on Windows
+- [x] Containerize this so i can dev on Windows
 - [ ] Projects for task grouping
 - [ ] Time logging on tasks
 - [ ] Export to csv
