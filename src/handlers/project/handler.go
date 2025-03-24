@@ -47,6 +47,7 @@ func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRep
 
 	router.Handle("GET /projects", mw_stack(http.HandlerFunc(projectsHandler.getProjects)))
 	router.Handle("POST /project", mw_stack(http.HandlerFunc(projectsHandler.createProjectUI)))
+
 	router.Handle("GET /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.getProject)))
 }
 
@@ -69,6 +70,7 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 	return
 }
+
 func (h *Handler) createProjectUI(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)

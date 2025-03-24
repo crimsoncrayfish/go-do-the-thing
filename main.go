@@ -66,7 +66,6 @@ func main() {
 	}
 
 	logger.Info("Start server")
-
 	if err := server.ListenAndServeTLS("server.crt", "server.key"); err != nil &&
 		!errors.Is(err, http.ErrServerClosed) {
 		logger.Info("Something went wrong")
