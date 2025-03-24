@@ -3,19 +3,19 @@ package project_tags_repo
 import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 )
 
 type ProjectTagsRepo struct {
 	database database.DatabaseConnection
 }
 
+var repoName = assert.Source{"ProjectTagsRepo"}
+
 // NOTE: Depends on: [./tags-repo.go, ./projects-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectTagsRepo {
-	logger := slog.NewLogger("project tags repo")
-	assert.IsTrue(false, "not implemented exception")
+	assert.IsTrue(false, repoName, "not implemented exception")
 	_, err := database.Exec(createProjectTagsTable)
-	assert.NoError(err, logger, "Failed to create Project Tags table")
+	assert.NoError(err, repoName, "Failed to create Project Tags table")
 	return &ProjectTagsRepo{
 		database: database,
 	}

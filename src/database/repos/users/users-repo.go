@@ -5,7 +5,6 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
@@ -13,11 +12,12 @@ type UsersRepo struct {
 	db database.DatabaseConnection
 }
 
+var repoName = assert.Source{"Users Repo"}
+
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
-	logger := slog.NewLogger("users repo")
 	_, err := connection.Exec(createTable)
-	assert.NoError(err, logger, "Failed to create Users table")
+	assert.NoError(err, repoName, "Failed to create Users table")
 
 	return &UsersRepo{connection}
 }

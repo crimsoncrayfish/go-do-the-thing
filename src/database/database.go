@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -14,12 +13,12 @@ type DatabaseConnection struct {
 	Connection *sql.DB
 }
 
-func Init(name string) DatabaseConnection {
-	logger := slog.NewLogger("database")
+var source = assert.Source{"Database"}
 
+func Init(name string) DatabaseConnection {
 	dbname := "./" + name + ".db"
 	db, err := sql.Open("sqlite3", dbname)
-	assert.NoError(err, logger, "failed to start the database")
+	assert.NoError(err, source, "failed to start the database")
 
 	return DatabaseConnection{db}
 }

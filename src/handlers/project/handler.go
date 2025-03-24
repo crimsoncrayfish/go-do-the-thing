@@ -22,8 +22,10 @@ type Handler struct {
 
 var activeScreens models.NavBarObject
 
+var source = assert.Source{"ProjectsHandler"}
+
 func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRepo project_users_repo.ProjectUsersRepo, rolesRepo roles_repo.RolesRepo, router *http.ServeMux, mw_stack middleware.Middleware) {
-	logger := slog.NewLogger("ProjectsHandler")
+	logger := slog.NewLogger(source.Name)
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsProjects: true}}
 	projectsHandler := &Handler{
@@ -38,19 +40,19 @@ func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRep
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
-	assert.IsTrue(false, "Not implemented")
+	assert.IsTrue(false, source, "Not implemented")
 }
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	pl := make([]models.Project, 0)
 
 	if err := templ_project.ProjectListWithBody(activeScreens, pl).Render(r.Context(), w); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		assert.NoError(err, h.logger, "Failed to render template for formData")
+		assert.NoError(err, source, "Failed to render template for formData")
 	}
 	return
 }

@@ -29,24 +29,20 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	logger := slog.NewLogger("Main")
-	router := http.NewServeMux()
 	workingDir, err := os.Getwd()
 	if err != nil {
 		logger.Error(err, "could not get working dir")
 		panic(err)
 	}
 	logger.Info("Running project in dir %s", workingDir)
-	faviconLocation = workingDir + "/static/img/todo.ico"
-	logger.Info("Setting up TODO items")
+	jwtHandler := security.NewJwtHandler(workingDir + "/keys/")
 
+	router := http.NewServeMux()
+	faviconLocation = workingDir + "/static/img/todo.ico"
+
+	logger.Info("Setting Up Database")
 	dbConnection := database.Init("todo")
 	defer dbConnection.Connection.Close()
-
-	jwtHandler, err := security.NewJwtHandler(workingDir + "/keys/")
-	if err != nil {
-		logger.Error(err, "could not setup jwt handler")
-		panic(err)
-	}
 
 	reposContainer := repos.NewContainer(dbConnection)
 
@@ -65,7 +61,7 @@ func main() {
 
 	//This is for https
 	server := http.Server{
-		Addr:    ":8079",
+		Addr:    ":8080",
 		Handler: router,
 	}
 

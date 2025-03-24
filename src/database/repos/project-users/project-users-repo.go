@@ -4,24 +4,22 @@ import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
 type ProjectUsersRepo struct {
-	logger   slog.Logger
 	database database.DatabaseConnection
 }
 
+var repoName = assert.Source{"Project Users Repo"}
+
 // NOTE: Depends on: [./users-repo.go, ./projects-repo.go, ../roles/roles-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {
-	logger := slog.NewLogger("project users repo")
 	_, err := database.Exec(createProjectUsersTable)
-	assert.NoError(err, logger, "Failed to create ProjectUsers table")
+	assert.NoError(err, repoName, "Failed to create ProjectUsers table")
 
 	return &ProjectUsersRepo{
 		database: database,
-		logger:   logger,
 	}
 }
 

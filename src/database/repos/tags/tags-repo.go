@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
@@ -12,12 +11,13 @@ type TagsRepo struct {
 	database database.DatabaseConnection
 }
 
+var repoName = assert.Source{"Tags Repo"}
+
 // NOTE: Depends on: []
 func InitRepo(database database.DatabaseConnection) *TagsRepo {
-	logger := slog.NewLogger("tags repo")
-	assert.IsTrue(false, "not implemented exception")
+	assert.IsTrue(false, repoName, "not implemented exception")
 	_, err := database.Exec(createTagsTable)
-	assert.NoError(err, logger, "Failed to create Tags table")
+	assert.NoError(err, repoName, "Failed to create Tags table")
 	return &TagsRepo{
 		database: database,
 	}

@@ -16,8 +16,10 @@ type HomeHandler struct {
 
 var activeScreens Screens
 
+var source = assert.Source{"HomeHandler"}
+
 func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
-	logger := slog.NewLogger("Home")
+	logger := slog.NewLogger(source.Name)
 	logger.Info("Setting up the Home screen")
 	activeScreens = Screens{
 		models.NavBarObject{
@@ -38,7 +40,7 @@ type Screens struct {
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
@@ -50,7 +52,7 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")

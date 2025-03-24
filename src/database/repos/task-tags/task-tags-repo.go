@@ -3,20 +3,20 @@ package task_tags_repo
 import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 )
 
 type TaskTagsRepo struct {
 	database database.DatabaseConnection
 }
 
+var repoName = assert.Source{"Tasks Tags Repo"}
+
 // NOTE: Depends on: [./tags-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TaskTagsRepo {
-	logger := slog.NewLogger("tasks tags repo")
-	assert.IsTrue(false, "not implemented exception")
+	assert.IsTrue(false, repoName, "not implemented exception")
 
 	_, err := database.Exec(createTaskTagsTable)
-	assert.NoError(err, logger, "Failed to create Task Tags table")
+	assert.NoError(err, repoName, "Failed to create Task Tags table")
 	return &TaskTagsRepo{
 		database: database,
 	}

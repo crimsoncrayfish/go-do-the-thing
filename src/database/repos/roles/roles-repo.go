@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
@@ -12,14 +11,15 @@ type RolesRepo struct {
 	database database.DatabaseConnection
 }
 
+var repoName = assert.Source{"Roles Repo"}
+
 // NOTE: Depends on: []
 // READONLY REPO
 func InitRepo(database database.DatabaseConnection) *RolesRepo {
-	logger := slog.NewLogger("roles repo")
 	_, err := database.Exec(createRolesTable)
-	assert.NoError(err, logger, "Failed to create Roles table")
+	assert.NoError(err, repoName, "Failed to create Roles table")
 	_, err = database.Exec(seedRolesTable)
-	assert.NoError(err, logger, "Failed to seed Roles table")
+	assert.NoError(err, repoName, "Failed to seed Roles table")
 	return &RolesRepo{
 		database: database,
 	}

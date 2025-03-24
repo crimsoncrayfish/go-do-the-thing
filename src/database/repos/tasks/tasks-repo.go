@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
@@ -12,11 +11,12 @@ type TasksRepo struct {
 	database database.DatabaseConnection
 }
 
+var repoName = assert.Source{"Tasks Repo"}
+
 // NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TasksRepo {
-	logger := slog.NewLogger("tasks repo")
 	_, err := database.Exec(createTasksTable)
-	assert.NoError(err, logger, "Failed to create Tasks table")
+	assert.NoError(err, repoName, "Failed to create Tasks table")
 
 	return &TasksRepo{database}
 }
