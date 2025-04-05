@@ -11,7 +11,7 @@ type ProjectUsersRepo struct {
 	database database.DatabaseConnection
 }
 
-var repoName = assert.Source{"Project Users Repo"}
+var repoName = "Project Users Repo"
 
 // NOTE: Depends on: [./users-repo.go, ./projects-repo.go, ../roles/roles-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {

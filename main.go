@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"errors"
-
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	"go-do-the-thing/src/handlers/home"
@@ -53,13 +52,13 @@ func main() {
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
 	users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, middleware_full, middleware_no_auth, jwtHandler)
-	project.SetupProjectHandler(*reposContainer.GetProjectsRepo(), *reposContainer.GetProjectUsersRepo(), *reposContainer.GetRolesRepo(), router, middleware_full)
+	project.SetupProjectHandler(*reposContainer.GetProjectsRepo(), *reposContainer.GetProjectUsersRepo(), *reposContainer.GetRolesRepo(), *reposContainer.GetUsersRepo(), router, middleware_full)
 	todo.SetupTodoHandler(*reposContainer.GetTasksRepo(), *reposContainer.GetUsersRepo(), router, middleware_full)
 
 	home.SetupHomeHandler(router, middleware_full)
 	setupStaticContent(router)
 
-	//This is for https
+	// This is for https
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: router,

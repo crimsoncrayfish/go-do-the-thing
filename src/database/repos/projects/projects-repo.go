@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
 type ProjectsRepo struct {
 	database database.DatabaseConnection
+	logger   slog.Logger
 }
 
-var repoName = assert.Source{Name: "ProjectsRepo"}
+var repoName = "ProjectsRepo"
 
 // NOTE: Depends on: [../project-users/project-users-repo.go, ../users/users-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
@@ -20,6 +22,7 @@ func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
 
 	return &ProjectsRepo{
 		database: database,
+		logger:   slog.NewLogger(repoName),
 	}
 }
 
@@ -77,13 +80,13 @@ func scanFromRows(rows *sql.Rows, item *models.Project) error {
 
 const getProjectsByUser = `
 	SELECT 
-		[id],[name],[description],[owner],[start_date],[due_date],[created_by],[create_date],[modified_by],[modified_date],[is_complete],[is_deleted] 
+		projects.[id],projects.[name],projects.[description],projects.[owner],projects.[start_date],projects.[due_date],projects.[created_by],projects.[created_date],projects.[modified_by],projects.[modified_date],projects.[is_complete],projects.[is_deleted] 
 	FROM projects 
 	JOIN project_users
 		ON projects.id = project_users.project_id
 	WHERE project_users.user_id = ?`
 
-func (r *ProjectsRepo) GetProjects(user_id int) ([]models.Project, error) {
+func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 	rows, err := r.database.Query(getProjectsByUser, user_id)
 	if err != nil {
 		return nil, err
@@ -111,13 +114,13 @@ func (r *ProjectsRepo) GetProjects(user_id int) ([]models.Project, error) {
 
 const getProject = `
 	SELECT 
-		[id],[name],[description],[owner],[start_date],[due_date],[created_by],[create_date],[modified_by],[modified_date],[is_complete],[is_deleted]
+		[id],[name],[description],[owner],[start_date],[due_date],[created_by],[created_date],[modified_by],[modified_date],[is_complete],[is_deleted]
 	FROM projects
 	JOIN project_users
 		ON projects.id = project_users.project_id
 	WHERE 
-		project.id = ? AND
-		project_user.user_id = ?`
+		projects.id = ? AND
+		project_users.user_id = ?`
 
 func (r *ProjectsRepo) GetProject(projectId, userId int64) (models.Project, error) {
 	row := r.database.QueryRow(getProject, projectId, userId)
@@ -168,10 +171,24 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 
 const insertProject = `
 	INSERT INTO projects 
-	([name],[description],[owner],[start_date],[due_date],[created_by],[create_date],[is_complete])
-	VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+	(
+		[name],
+		[description],
+		[owner],
+		[start_date],
+		[due_date],
+		[created_by],
+		[created_date],
+		[modified_by],
+		[modified_date],
+		[is_complete],
+		[is_deleted]
+	)
+	VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 
 func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) (id int64, err error) {
+	project.AssertHealthyNew()
+	assert.NotEqual(currentUser, 0, repoName, "currentUser")
 	result, err := r.database.Exec(
 		insertProject,
 		project.Name,
@@ -181,11 +198,16 @@ func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) 
 		project.DueDate,
 		currentUser,
 		database.SqLiteNow(),
+		currentUser,
+		database.SqLiteNow(),
 		project.IsComplete,
+		false,
 	)
 	if err != nil {
 		return 0, err
 	}
+	id, err = result.LastInsertId()
+	assert.NotEqual(id, 0, repoName, "New Id")
 
-	return result.LastInsertId()
+	return id, err
 }

@@ -11,7 +11,7 @@ type RolesRepo struct {
 	database database.DatabaseConnection
 }
 
-var repoName = assert.Source{"Roles Repo"}
+var repoName = "Roles Repo"
 
 // NOTE: Depends on: []
 // READONLY REPO
@@ -30,6 +30,7 @@ const createRolesTable = `CREATE TABLE IF NOT EXISTS roles (
    	[name] TEXT DEFAULT '' NOT NULL,
    	[Description] TEXT DEFAULT '' NOT NULL
 );`
+
 const seedRolesTable = `INSERT OR IGNORE INTO roles (id, name, description) VALUES
 	(1, 'Big boss', 'Project Administrator.'),
 	(2, 'Little boss', 'Can create, assign and complete tasks as well as add/remove users from the project.'),

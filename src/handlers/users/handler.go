@@ -26,7 +26,7 @@ type Handler struct {
 	logger   slog.Logger
 }
 
-var source = assert.Source{"UsersHandler"}
+var source = "UsersHandler"
 
 func SetupUserHandler(
 	userRepo users_repo.UsersRepo,
@@ -35,7 +35,7 @@ func SetupUserHandler(
 	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
 ) {
-	logger := slog.NewLogger(source.Name)
+	logger := slog.NewLogger(source)
 	logger.Info("Setting up users")
 
 	handler := &Handler{
@@ -76,7 +76,6 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user, err := h.repo.GetUserByEmail(email)
-
 	if err != nil {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts

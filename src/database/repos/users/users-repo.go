@@ -5,21 +5,25 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
 type UsersRepo struct {
-	db database.DatabaseConnection
+	db     database.DatabaseConnection
+	logger slog.Logger
 }
 
-var repoName = assert.Source{"Users Repo"}
+var repoName = "Users Repo"
 
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
 	_, err := connection.Exec(createTable)
+
 	assert.NoError(err, repoName, "Failed to create Users table")
 
-	return &UsersRepo{connection}
+	logger := slog.NewLogger(repoName)
+	return &UsersRepo{db: connection, logger: logger}
 }
 
 const createTable = `CREATE TABLE IF NOT EXISTS users (
@@ -157,6 +161,8 @@ const getUser = "SELECT [id], [email], [full_name], [session_id], [session_start
 
 func (r *UsersRepo) GetUserById(id int64) (models.User, error) {
 	row := r.db.QueryRow(getUser, id)
+	assert.NoError(row.Err(), repoName, "There was an error fetching the users")
+
 	temp := models.User{}
 	err := scanUserFromRow(row, &temp)
 	if err != nil {

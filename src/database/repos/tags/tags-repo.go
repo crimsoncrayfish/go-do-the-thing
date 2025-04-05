@@ -11,7 +11,7 @@ type TagsRepo struct {
 	database database.DatabaseConnection
 }
 
-var repoName = assert.Source{"Tags Repo"}
+var repoName = "Tags Repo"
 
 // NOTE: Depends on: []
 func InitRepo(database database.DatabaseConnection) *TagsRepo {

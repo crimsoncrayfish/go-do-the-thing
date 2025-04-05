@@ -11,7 +11,7 @@ type TasksRepo struct {
 	database database.DatabaseConnection
 }
 
-var repoName = assert.Source{"Tasks Repo"}
+var repoName = "Tasks Repo"
 
 // NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TasksRepo {
@@ -40,8 +40,6 @@ const createTasksTable = `CREATE TABLE IF NOT EXISTS items (
 	FOREIGN KEY (modified_by) REFERENCES users(id),
 	FOREIGN KEY (project_id) REFERENCES projects(id)
 );`
-
-const ()
 
 func scanFromRow(row *sql.Row, item *models.Task) error {
 	return row.Scan(

@@ -26,8 +26,10 @@ type Handler struct {
 	logger    slog.Logger
 }
 
-var activeScreens models.NavBarObject
-var source = assert.Source{Name: "TasksHandler"}
+var (
+	activeScreens models.NavBarObject
+	source        = "TasksHandler"
+)
 
 func SetupTodoHandler(
 	tasksRepo tasks_repo.TasksRepo,
@@ -35,7 +37,7 @@ func SetupTodoHandler(
 	router *http.ServeMux,
 	mw_stack middleware.Middleware,
 ) {
-	logger := slog.NewLogger(source.Name)
+	logger := slog.NewLogger(source)
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
@@ -159,7 +161,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
-		//if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
+		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
@@ -334,7 +336,6 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 }
 
 func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
@@ -462,7 +463,6 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 }
 
 func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
@@ -493,7 +493,7 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
-		//if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
+		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
@@ -535,6 +535,7 @@ func (h *Handler) handleUserNotFound(err error, userEmail string) bool {
 	}
 	return false
 }
+
 func (h *Handler) handleUserIdNotFound(err error, userId int64) bool {
 	if err == nil {
 		return true

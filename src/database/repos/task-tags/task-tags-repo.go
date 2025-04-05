@@ -9,7 +9,7 @@ type TaskTagsRepo struct {
 	database database.DatabaseConnection
 }
 
-var repoName = assert.Source{"Tasks Tags Repo"}
+var repoName = "Tasks Tags Repo"
 
 // NOTE: Depends on: [./tags-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TaskTagsRepo {

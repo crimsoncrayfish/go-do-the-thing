@@ -17,10 +17,10 @@ type SecretKeyProvider struct {
 	logger  slog.Logger
 }
 
-var source = assert.Source{"KeyProvider"}
+var source = "KeyProvider"
 
 func newKeyProvider(keysLocation string) *SecretKeyProvider {
-	logger := slog.NewLogger(source.Name)
+	logger := slog.NewLogger(source)
 
 	keys := make(map[string]*rsa.PrivateKey)
 	kids := make([]string, 10)

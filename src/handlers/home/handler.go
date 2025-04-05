@@ -16,10 +16,10 @@ type HomeHandler struct {
 
 var activeScreens Screens
 
-var source = assert.Source{"HomeHandler"}
+var source = "HomeHandler"
 
 func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
-	logger := slog.NewLogger(source.Name)
+	logger := slog.NewLogger(source)
 	logger.Info("Setting up the Home screen")
 	activeScreens = Screens{
 		models.NavBarObject{
