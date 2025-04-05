@@ -37,7 +37,6 @@
   transform: translateZ(2px) rotateX(2deg);
 }
 
-
 .logo-container {
   transform-style: preserve-3d;
   transform: perspective(1000px);
@@ -56,10 +55,4 @@
 
 .logo-container .logo {
   transform: rotateX(calc(-15deg* (var(--y) - 0.5))) rotateY(calc(15deg* (var(--x) - 0.5)));
-}
-
-.logo-container:hover {
-  .logo {
-    transform: translateZ(80px);
-  }
 }
