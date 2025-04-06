@@ -17,6 +17,7 @@ import (
 	form_models "go-do-the-thing/src/models/forms"
 	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -51,10 +52,47 @@ func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRep
 	router.Handle("POST /project", mw_stack(http.HandlerFunc(projectsHandler.createProjectUI)))
 
 	router.Handle("GET /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.getProject)))
+	router.Handle("DELETE /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.deleteProject)))
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	assert.IsTrue(false, source, "Not implemented")
+}
+
+func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
+	// NOTE: Auth check
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, source, "user auth failed unsuccessfully")
+
+	// NOTE: Collect data
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		h.logger.Error(err, "failed to parse id from path")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	h.logger.Debug("testing something, id: %d, user: %d", id, currentUserId)
+	// NOTE: Take action
+	err = h.ProjectRepo.DeleteProject(id, currentUserId)
+	if err != nil {
+		assert.NoError(err, source, "failed to delete project")
+		return
+	}
+
+	// NOTE: Success zone
+	hasData, err := h.ProjectRepo.GetProjectCount(currentUserId)
+	if err != nil {
+		assert.NoError(err, source, "failed to update ui")
+		return
+	}
+
+	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
+		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
+		assert.NoError(err, source, "failed to render no data row")
+		// TODO: what should happen if the fetch fails after create
+		return
+	}
 }
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {

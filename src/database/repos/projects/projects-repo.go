@@ -84,7 +84,8 @@ const getProjectsByUser = `
 	FROM projects 
 	JOIN project_users
 		ON projects.id = project_users.project_id
-	WHERE project_users.user_id = ?`
+	WHERE project_users.user_id = ?
+	AND projects.is_deleted = 0`
 
 func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 	rows, err := r.database.Query(getProjectsByUser, user_id)
@@ -138,8 +139,20 @@ const deleteProject = `
 	WHERE id = ?`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
-	_, err := r.database.Exec(deleteProject, id, currentUser, database.SqLiteNow())
+	_, err := r.database.Exec(deleteProject, currentUser, database.SqLiteNow(), id)
 	return err
+}
+
+const getProjectCount = `SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?`
+
+func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err error) {
+	row := r.database.QueryRow(getProjectCount, currentUser)
+	var temp int64
+	err = row.Scan(&temp)
+	if err != nil {
+		return 0, err
+	}
+	return temp, nil
 }
 
 const updateProject = `
