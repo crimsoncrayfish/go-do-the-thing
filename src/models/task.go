@@ -63,17 +63,17 @@ type TaskView struct {
 	Project       int64
 }
 
-func TaskToViewModel(task Task, assignedTo, createdBy User) TaskView {
+func (t *Task) ToViewModel(assignedTo, createdBy User) TaskView {
 	return TaskView{
-		Id:            task.Id,
-		Name:          task.Name,
-		Description:   task.Description,
+		Id:            t.Id,
+		Name:          t.Name,
+		Description:   t.Description,
 		AssignedTo:    assignedTo.FullName,
-		Status:        task.Status,
-		CompletedDate: task.CompleteDate,
-		CreatedDate:   task.CreatedDate,
+		Status:        t.Status,
+		CompletedDate: t.CompleteDate,
+		CreatedDate:   t.CreatedDate,
 		CreatedBy:     createdBy.FullName,
-		DueDate:       task.DueDate,
-		Project:       task.Project,
+		DueDate:       t.DueDate,
+		Project:       t.Project,
 	}
 }

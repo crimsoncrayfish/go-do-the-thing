@@ -23,10 +23,10 @@ import (
 
 type Handler struct {
 	logger           slog.Logger
-	ProjectRepo      projects_repo.ProjectsRepo
-	UsersRepo        users_repo.UsersRepo
-	ProjectUsersRepo project_users_repo.ProjectUsersRepo
-	RolesRepo        roles_repo.RolesRepo
+	projectRepo      projects_repo.ProjectsRepo
+	usersRepo        users_repo.UsersRepo
+	projectUsersRepo project_users_repo.ProjectUsersRepo
+	rolesRepo        roles_repo.RolesRepo
 }
 
 var activeScreens models.NavBarObject
@@ -41,22 +41,87 @@ func SetupProjectHandler(projectRepo projects_repo.ProjectsRepo, projectUsersRep
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsProjects: true}}
 	projectsHandler := &Handler{
-		ProjectRepo:      projectRepo,
-		ProjectUsersRepo: projectUsersRepo,
-		UsersRepo:        usersRepo,
-		RolesRepo:        rolesRepo,
+		projectRepo:      projectRepo,
+		projectUsersRepo: projectUsersRepo,
+		usersRepo:        usersRepo,
+		rolesRepo:        rolesRepo,
 		logger:           logger,
 	}
 
 	router.Handle("GET /projects", mw_stack(http.HandlerFunc(projectsHandler.getProjects)))
-	router.Handle("POST /project", mw_stack(http.HandlerFunc(projectsHandler.createProjectUI)))
+	router.Handle("POST /project", mw_stack(http.HandlerFunc(projectsHandler.createProject)))
 
 	router.Handle("GET /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.getProject)))
 	router.Handle("DELETE /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.deleteProject)))
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
-	assert.IsTrue(false, source, "Not implemented")
+	// NOTE: Auth check
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, source, "user auth failed unsuccessfully")
+
+	// NOTE: Collect data
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		h.logger.Error(err, "failed to parse id from path")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	project, err := h.projectRepo.GetProject(id, currentUserId)
+	if err != nil {
+		assert.NoError(err, source, "failed to delete project")
+		return
+	}
+	// NOTE: Take action
+	owner, err := h.usersRepo.GetUserById(project.Owner)
+	assert.NoError(err, source, "this user should exist since they own project: %d", project.Owner)
+	formData := formDataFromProject(project, owner.Email)
+
+	// NOTE: Success zone
+	var createdBy models.User
+	// TODO: Create a layer between the repos and the handler to enrich an object and handle all this validation
+	if project.CreatedBy == project.Owner {
+		createdBy = owner
+	} else {
+		createdBy, err = h.usersRepo.GetUserById(project.CreatedBy)
+		if ok := h.handleUserIdNotFound(err, project.CreatedBy); !ok {
+			assert.NoError(err, source, "how does a project with an created by user id of %d even exist?", project.CreatedBy)
+			return
+		}
+	}
+	var modifiedBy models.User
+	// TODO: Create a layer between the repos and the handler to enrich an object and handle all this validation
+	switch project.ModifiedBy {
+	case project.Owner:
+		modifiedBy = owner
+	case project.CreatedBy:
+		modifiedBy = createdBy
+	default:
+		modifiedBy, err = h.usersRepo.GetUserById(project.ModifiedBy)
+		if ok := h.handleUserIdNotFound(err, project.ModifiedBy); !ok {
+			assert.NoError(err, source, "how does a project with an modified by user id of %d even exist?", project.ModifiedBy)
+			return
+		}
+	}
+
+	projectView := project.ToViewModel(owner, createdBy, modifiedBy)
+	contentType := r.Header.Get("accept")
+	if contentType == "text/html" {
+		if err = templ_project.ProjectView(projectView, activeScreens, formData).Render(r.Context(), w); err != nil {
+			// TODO: some user feedback here?
+			h.logger.Error(err, "Failed to execute template for the project page")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err = templ_project.ProjectWithBody(projectView, activeScreens, formData).Render(r.Context(), w); err != nil {
+			// TODO: some user feedback here?
+			h.logger.Error(err, "Failed to execute template for the project page")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
@@ -72,16 +137,15 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Debug("testing something, id: %d, user: %d", id, currentUserId)
 	// NOTE: Take action
-	err = h.ProjectRepo.DeleteProject(id, currentUserId)
+	err = h.projectRepo.DeleteProject(id, currentUserId)
 	if err != nil {
 		assert.NoError(err, source, "failed to delete project")
 		return
 	}
 
 	// NOTE: Success zone
-	hasData, err := h.ProjectRepo.GetProjectCount(currentUserId)
+	hasData, err := h.projectRepo.GetProjectCount(currentUserId)
 	if err != nil {
 		assert.NoError(err, source, "failed to update ui")
 		return
@@ -100,7 +164,7 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	id, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
 
-	pl, err := h.ProjectRepo.GetProjects(id)
+	pl, err := h.projectRepo.GetProjects(id)
 	assert.NoError(err, source, "failed to get projects")
 
 	form := form_models.NewDefaultProjectForm()
@@ -113,7 +177,7 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) createProjectUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -166,7 +230,7 @@ func (h *Handler) createProjectUI(w http.ResponseWriter, r *http.Request) {
 	form = formDataFromProject(project, currentUserEmail)
 
 	// NOTE: Take action
-	id, err := h.ProjectRepo.InsertProject(currentUserId, project)
+	id, err := h.projectRepo.InsertProject(currentUserId, project)
 	if err != nil {
 		h.logger.Error(err, "failed to insert project")
 		form.Errors["Project"] = "failed to create project"
@@ -176,7 +240,7 @@ func (h *Handler) createProjectUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	err = h.ProjectUsersRepo.Insert(id, currentUserId, 0)
+	err = h.projectUsersRepo.Insert(id, currentUserId, 0)
 	if err != nil {
 		h.logger.Error(err, "failed to insert project user")
 		form.Errors["ProjectUser"] = "failed to create project user link"
@@ -187,7 +251,7 @@ func (h *Handler) createProjectUI(w http.ResponseWriter, r *http.Request) {
 		assert.IsTrue(false, "InsertProject", "There is now an unlinked project with id %d intended for user %s", id, currentUserEmail)
 		return
 	}
-	project, err = h.ProjectRepo.GetProject(id, currentUserId)
+	project, err = h.projectRepo.GetProject(id, currentUserId)
 	if err != nil {
 		assert.NoError(err, source, "failed to get newly inserted project")
 		// TODO: what should happen if the fetch fails after create
@@ -196,19 +260,19 @@ func (h *Handler) createProjectUI(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Success zone
 
-	owner, err := h.UsersRepo.GetUserById(project.ModifiedBy)
+	owner, err := h.usersRepo.GetUserById(project.ModifiedBy)
 	if ok := h.handleUserIdNotFound(err, project.ModifiedBy); !ok {
 		assert.NoError(err, source, "how does a project with an owner user id of %d even exist?", project.CreatedBy)
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	createdByUser, err := h.UsersRepo.GetUserById(project.CreatedBy)
+	createdByUser, err := h.usersRepo.GetUserById(project.CreatedBy)
 	if ok := h.handleUserIdNotFound(err, project.CreatedBy); !ok {
 		assert.NoError(err, source, "how does a project with an created by user id of %d even exist?", project.CreatedBy)
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	modifiedByUser, err := h.UsersRepo.GetUserById(project.ModifiedBy)
+	modifiedByUser, err := h.usersRepo.GetUserById(project.ModifiedBy)
 	if ok := h.handleUserIdNotFound(err, project.ModifiedBy); !ok {
 		assert.NoError(err, source, "how does a project with an modified by user id of %d even exist?", project.CreatedBy)
 		// TODO: what should happen if the fetch fails after create
@@ -258,7 +322,7 @@ func (h *Handler) projectsToViewModels(projects []models.Project) ([]models.Proj
 	projectViews := make([]models.ProjectView, len(projects))
 
 	for i, project := range projects {
-		owner, err := h.UsersRepo.GetUserById(project.Owner)
+		owner, err := h.usersRepo.GetUserById(project.Owner)
 		assert.NoError(err, source, "Failed to get owner user")
 
 		// Fetch the CreatedBy user
@@ -266,7 +330,7 @@ func (h *Handler) projectsToViewModels(projects []models.Project) ([]models.Proj
 		if project.Owner == project.CreatedBy {
 			createdBy = owner
 		} else {
-			createdBy, err = h.UsersRepo.GetUserById(project.CreatedBy)
+			createdBy, err = h.usersRepo.GetUserById(project.CreatedBy)
 			assert.NoError(err, source, "Failed to get created by user")
 		}
 
@@ -277,7 +341,7 @@ func (h *Handler) projectsToViewModels(projects []models.Project) ([]models.Proj
 		case project.CreatedBy:
 			modifiedBy = createdBy
 		default:
-			modifiedBy, err = h.UsersRepo.GetUserById(project.ModifiedBy)
+			modifiedBy, err = h.usersRepo.GetUserById(project.ModifiedBy)
 			assert.NoError(err, source, "failed to get modified by user")
 		}
 

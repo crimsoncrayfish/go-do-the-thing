@@ -77,7 +77,7 @@ templ ProjectList(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.P
 						</th>
 					</tr>
 				</thead>
-				<tbody id="project-rows" class="project-list">
+				<tbody id="project-rows" class="item-list">
 					for _, project:= range projects {
 						@ProjectRow(project)
 					}

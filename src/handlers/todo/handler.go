@@ -46,13 +46,12 @@ func SetupTodoHandler(
 		logger:    logger,
 	}
 
-	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItemUI)))
-	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.listItemsUI)))
-	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemStatusUI)))
-	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItemUI)))
-	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemUI)))
-	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItemUI)))
-	router.Handle("GET /error", mw_stack(http.HandlerFunc(todoHandler.testError)))
+	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItem)))
+	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.listItems)))
+	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemStatus)))
+	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItem)))
+	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItem)))
+	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItem)))
 }
 
 type idResponse struct {
@@ -61,7 +60,7 @@ type idResponse struct {
 
 var defaultForm = fm.NewDefaultTaskForm()
 
-func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -154,7 +153,7 @@ func (h *Handler) createItemUI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	taskListItem := models.TaskToViewModel(task, assignedToUser, createdBy)
+	taskListItem := task.ToViewModel(assignedToUser, createdBy)
 	if err := templ_todo.TaskRowOOB(taskListItem).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
 		// TODO: what should happen if the fetch fails after create
@@ -177,7 +176,7 @@ type NoItemRowData struct {
 	HideNoData bool
 }
 
-func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -260,7 +259,7 @@ func (h *Handler) updateItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	model := models.TaskToViewModel(task, assignedToUser, createdBy)
+	model := task.ToViewModel(assignedToUser, createdBy)
 	if err := templ_todo.TaskItemContentOOB(model).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
 		// TODO: what should happen if the fetch fails after create
@@ -280,7 +279,7 @@ type ItemPageModel struct {
 	NavBar models.NavBarObject
 }
 
-func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	_, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -319,7 +318,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	taskView := models.TaskToViewModel(task, assignedUser, createdBy)
+	taskView := task.ToViewModel(assignedUser, createdBy)
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
 		if err = templ_todo.TaskItem(taskView, activeScreens, formData).Render(r.Context(), w); err != nil {
@@ -338,7 +337,7 @@ func (h *Handler) getItemUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -396,7 +395,7 @@ func (h *Handler) updateItemStatusUI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	taskListItem := models.TaskToViewModel(task, assignedToUser, createdBy)
+	taskListItem := task.ToViewModel(assignedToUser, createdBy)
 	if err = templ_todo.TaskRowContent(taskListItem).Render(r.Context(), w); err != nil {
 		// TODO: what to do here
 		h.logger.Error(err, "failed to render task list item")
@@ -411,7 +410,7 @@ type ListModel struct {
 	FormData fm.TaskForm
 }
 
-func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -443,7 +442,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.CreatedBy)
 			users[task.CreatedBy] = user
 		}
-		tasksList = append(tasksList, models.TaskToViewModel(task, users[task.AssignedTo], users[task.CreatedBy]))
+		tasksList = append(tasksList, task.ToViewModel(users[task.AssignedTo], users[task.CreatedBy]))
 	}
 
 	// NOTE: Success zone
@@ -465,7 +464,7 @@ func (h *Handler) listItemsUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
@@ -498,11 +497,6 @@ func (h *Handler) deleteItemUI(w http.ResponseWriter, r *http.Request) {
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-}
-
-func (h *Handler) testError(w http.ResponseWriter, r *http.Request) {
-	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, source, "user auth failed unsuccessfully")
 }
 
 func formDataFromItemNoValidation(task models.Task, assignedUser string) fm.TaskForm {
