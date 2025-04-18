@@ -15,6 +15,12 @@ document.addEventListener("DOMContentLoaded", (_) => {
     evt.detail.headers["accept"] = "text/html";
     evt.detail.headers["authorization"] = getAuthToken(); // add a new parameter into the mix
   });
+  document.addEventListener("htmx:beforeRequest", function (_) {
+    toggleLoader(false);
+  });
+  document.addEventListener("htmx:afterRequest", function (_) {
+    toggleLoader(true);
+  });
 });
 
 function getAuthToken() {
