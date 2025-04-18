@@ -29,6 +29,16 @@ function toggleClassForId(className, elementId) {
   }
   elem.classList.add(className);
 }
+function toggleClassForIdExact(className, elementId, on) {
+  const elem = document.getElementById(elementId);
+  if (elem.classList.contains(className) && !on) {
+    elem.classList.remove(className);
+    return;
+  }
+  if (!elem.classList.contains(className) && on) {
+    elem.classList.add(className);
+  }
+}
 
 function swapClassForId(class1Name, class2Name, elementId) {
   const elem = document.getElementById(elementId);

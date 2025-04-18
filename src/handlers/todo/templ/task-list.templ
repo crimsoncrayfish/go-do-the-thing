@@ -18,6 +18,7 @@ templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.Ta
 
 templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []m.TaskView) {
 	@ts.NavBar(navbar)
+	@ts.Loader()
 	<div class="px-1 lg:px-[10%] w-full text-primary-900 dark:text-primary-50">
 		<div class="w-[90%] mx-auto pt-5 px-5 py-5 flex items-center justify-between">
 			<p class="text-xl text-primary-900 dark:text-primary-50">TODO: Items</p>

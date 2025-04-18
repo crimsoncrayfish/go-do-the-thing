@@ -11,7 +11,7 @@ import (
 templ TaskRow(task models.TaskView) {
 	<tr
 		id={ fmt.Sprintf("task-row-%d", task.Id) }
-		class="item-row transition-transform hover:translate-z-[15px] cursor-pointer text-primary-900 dark:text-primary-50
+		class="item-row transition-transform cursor-pointer text-primary-900 dark:text-primary-50
         odd:bg-primary-100 odd:dark:bg-primary-900
         even:bg-primary-200 even:dark:bg-primary-800
         hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700 "
@@ -24,7 +24,7 @@ templ TaskRowOOB(task models.TaskView) {
 	<tbody id="task-rows" hx-swap-oob="afterbegin">
 		<tr
 			id={ fmt.Sprintf("task-row-%d", task.Id) }
-			class="item-row transition-transform hover:translate-z-[15px] cursor-pointer text-primary-900 dark:text-primary-50
+			class="item-row transition-transform cursor-pointer text-primary-900 dark:text-primary-50
         odd:bg-primary-100 odd:dark:bg-primary-900
         even:bg-primary-200 even:dark:bg-primary-800
         hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700 "
@@ -86,7 +86,8 @@ templ TaskRowContent(task models.TaskView) {
 			class="text-error"
 			hx-swap="outerHTML swap:0.5s"
 			hx-target="closest tr"
-			hx-on--after-request={ fmt.Sprintf("toggleClassForId('-translate-x-full','task-row-%d')", task.Id) }
+			hx-on--after-request={ fmt.Sprintf("toggleClassForId('item-row-stay-hover','task-row-%d');toggleClassForId('item-row-swiped','task-row-%d');",
+		task.Id, task.Id) }
 			hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
 		>
 			@templ_shared.SvgBin()

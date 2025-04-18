@@ -20,6 +20,7 @@ templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdat
 
 templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
 	@ts.NavBar(navbar)
+	@ts.Loader()
 	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
 		<div class="flex w-full justify-between items-center">
 			<div class="flex items-center">

@@ -6,11 +6,23 @@
 .item-list .item-row {
   z-index: 1;
   position: relative;
-  transition: .5s;
+  transition: .8s;
 }
 
 .item-list.item-row {
   z-index: 1000;
+}
+
+.item-list .item-row:hover {
+  transform: translateZ(15px)
+}
+
+.item-list .item-row-stay-hover {
+  transform: translateZ(15px) !important
+}
+
+.item-list .item-row-swiped {
+  transform: translateX(-100vw) !important
 }
 
 .item-list .item-row:hover+* {
