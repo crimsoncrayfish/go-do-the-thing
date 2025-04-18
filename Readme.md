@@ -1,6 +1,6 @@
 # A todo app to explore GO, HTMX and Tailwind
 
-https://github.com/user-attachments/assets/b715124b-781f-4186-9f55-823a0be1f7bf
+https://github.com/user-attachments/assets/0d0cfb7e-ada8-4a50-a080-3283770a717a
 
 [DB MODEL](https://excalidraw.com/#json=tO3xfZeEypuPXJLOuvVhP,FDrih2vpGQ-GoU_99JWUVA)
 
