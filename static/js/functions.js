@@ -15,6 +15,12 @@ document.addEventListener("DOMContentLoaded", (_) => {
     evt.detail.headers["accept"] = "text/html";
     evt.detail.headers["authorization"] = getAuthToken(); // add a new parameter into the mix
   });
+  document.addEventListener("htmx:beforeRequest", function (_) {
+    toggleLoader(false);
+  });
+  document.addEventListener("htmx:afterRequest", function (_) {
+    toggleLoader(true);
+  });
 });
 
 function getAuthToken() {
@@ -28,6 +34,16 @@ function toggleClassForId(className, elementId) {
     return;
   }
   elem.classList.add(className);
+}
+function toggleClassForIdExact(className, elementId, on) {
+  const elem = document.getElementById(elementId);
+  if (elem.classList.contains(className) && !on) {
+    elem.classList.remove(className);
+    return;
+  }
+  if (!elem.classList.contains(className) && on) {
+    elem.classList.add(className);
+  }
 }
 
 function swapClassForId(class1Name, class2Name, elementId) {

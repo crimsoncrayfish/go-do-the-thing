@@ -1,0 +1,86 @@
+package templ_project
+
+import (
+"fmt"
+"go-do-the-thing/src/database"
+"go-do-the-thing/src/helpers/constants"
+"go-do-the-thing/src/models"
+ts "go-do-the-thing/src/shared/templ"
+)
+
+templ ProjectRow(project models.ProjectView) {
+<tr id={ fmt.Sprintf("project-row-%d", project.Id) } class="item-row transition-transform hover:translate-z-[15px] cursor-pointer text-primary-900 dark:text-primary-50
+        odd:bg-primary-100 odd:dark:bg-primary-900
+        even:bg-primary-200 even:dark:bg-primary-800
+        hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700">
+	@ProjectRowContent(project)
+</tr>
+}
+
+templ ProjectRowOOB(project models.ProjectView) {
+<tbody id="project-rows" hx-swap-oob="afterbegin">
+	<tr id={ fmt.Sprintf("project-row-%d", project.Id) } class="item-row transition-transform hover:translate-z-[15px] cursor-pointer text-primary-900 dark:text-primary-50
+        odd:bg-primary-100 odd:dark:bg-primary-900
+        even:bg-primary-200 even:dark:bg-primary-800
+        hover:bg-primary-300 hover:dark:bg-primary-700 border-b dark:border-primary-700">
+		@ProjectRowContent(project)
+	</tr>
+</tbody>
+}
+
+templ ProjectRowContent(project models.ProjectView) {
+<td class="pl-5 w-0 mx-auto">
+	<div hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/project/%d", project.Id) }
+		hx-replace-url="true">
+		@statusIcon(project)
+	</div>
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/project/%d", project.Id) } hx-replace-url="true"
+	class="px-6 py-4 font-medium text-xl">
+	if project.Name != "" {
+	{ project.Name }
+	} else {
+	{ project.Description }
+	}
+	<dl class="text-sm">
+		if project.Name != "" {
+		<dt class="sr-only">Description</dt>
+		<dd class="font-light text-wrap">{ project.Description }</dd>
+		}
+		<dt class="sr-only lg:hidden">Owner</dt>
+		<dd class="font-light lg:hidden">{ project.Owner.FullName }</dd>
+		<dt class="sr-only md:hidden">Due date</dt>
+		if project.DueDate.Time != nil {
+		<dd class="font-light md:hidden">
+			{ project.DueDate.Format(constants.DateFormat) }
+		</dd>
+		}
+	</dl>
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/project/%d", project.Id) } hx-replace-url="true"
+	class="hidden md:table-cell px-6 py-4">
+	{ project.DueDate.Format(constants.DateFormat) }
+</td>
+<td hx-swap="outerHTML" hx-target="body" hx-get={ fmt.Sprintf("/project/%d", project.Id) } hx-replace-url="true"
+	class="hidden lg:table-cell px-6 py-4">
+	{ project.Owner.FullName }
+</td>
+<td class="px-6 py-4">
+	<button class="text-error" hx-swap="outerHTML swap:0.5s" hx-target="closest tr" hx-on--after-request={
+		fmt.Sprintf("toggleClassForId('-translate-x-full','project-row-%d')", project.Id) } hx-delete={
+		fmt.Sprintf("/project/%d", project.Id) }>
+		@ts.SvgBin()
+	</button>
+</td>
+}
+
+templ statusIcon(project models.ProjectView) {
+<div if project.IsComplete { class="text-action-400" } else if project.DueDate.Before(database.SqLiteNow()) {
+	class="text-error" } else { class="text-warn" }>
+	if project.IsComplete {
+	@ts.SvgCheck()
+	} else {
+	@ts.SvgWait()
+	}
+</div>
+}

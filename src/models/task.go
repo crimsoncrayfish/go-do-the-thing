@@ -2,7 +2,6 @@ package models
 
 import (
 	"go-do-the-thing/src/database"
-	"time"
 )
 
 type Task struct {
@@ -18,7 +17,7 @@ type Task struct {
 	ModifiedBy   int64                `json:"modified_by"`
 	ModifiedDate *database.SqLiteTime `json:"modified_date"`
 	IsDeleted    bool                 `json:"is_deleted"`
-	Tag          string               `json:"tag,omitempty"`
+	Project      int64                `json:"project_id"`
 }
 
 type ItemStatus int
@@ -33,8 +32,7 @@ func (t *Task) ToggleStatus(modifiedBy int64) {
 	t.ModifiedDate = database.SqLiteNow()
 	if t.Status == Scheduled {
 		t.Status = Completed
-		now := time.Now()
-		t.CompleteDate = &database.SqLiteTime{Time: &now}
+		t.CompleteDate = database.SqLiteNow()
 	} else {
 		t.Status = Scheduled
 		t.CompleteDate = &database.SqLiteTime{}
@@ -45,8 +43,7 @@ func (t *Task) IsValid() (bool, map[string]string) {
 	errs := make(map[string]string)
 	isValid := true
 
-	now := time.Now()
-	if t.DueDate.Before(now) {
+	if t.DueDate.Before(database.SqLiteNow()) {
 		isValid = false
 		errs["due_date"] = "Due date is before now"
 	}
@@ -63,20 +60,20 @@ type TaskView struct {
 	DueDate       *database.SqLiteTime
 	CreatedDate   *database.SqLiteTime
 	CreatedBy     string
-	Tag           string
+	Project       int64
 }
 
-func TaskToViewModel(task Task, assignedTo, createdBy User) TaskView {
+func (t *Task) ToViewModel(assignedTo, createdBy User) TaskView {
 	return TaskView{
-		Id:            task.Id,
-		Name:          task.Name,
-		Description:   task.Description,
+		Id:            t.Id,
+		Name:          t.Name,
+		Description:   t.Description,
 		AssignedTo:    assignedTo.FullName,
-		Status:        task.Status,
-		CompletedDate: task.CompleteDate,
-		CreatedDate:   task.CreatedDate,
+		Status:        t.Status,
+		CompletedDate: t.CompleteDate,
+		CreatedDate:   t.CreatedDate,
 		CreatedBy:     createdBy.FullName,
-		DueDate:       task.DueDate,
-		Tag:           task.Tag,
+		DueDate:       t.DueDate,
+		Project:       t.Project,
 	}
 }

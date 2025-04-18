@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/database/repos"
+	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers"
@@ -22,18 +22,20 @@ import (
 
 type Handler struct {
 	security security.JwtHandler
-	repo     repos.UsersRepo
+	repo     users_repo.UsersRepo
 	logger   slog.Logger
 }
 
+var source = "UsersHandler"
+
 func SetupUserHandler(
-	userRepo repos.UsersRepo,
+	userRepo users_repo.UsersRepo,
 	router *http.ServeMux,
 	mw middleware.Middleware,
 	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
-) error {
-	logger := slog.NewLogger("Users")
+) {
+	logger := slog.NewLogger(source)
 	logger.Info("Setting up users")
 
 	handler := &Handler{
@@ -47,8 +49,6 @@ func SetupUserHandler(
 	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.LoginUI)))
 	router.Handle("POST /register", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
-
-	return nil
 }
 
 var emptyAuthCookie = http.Cookie{Name: "token", Value: "", SameSite: http.SameSiteDefaultMode}
@@ -70,13 +70,12 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, h.logger, "Failed to render template for formData")
+			assert.NoError(err, source, "Failed to render template for formData")
 		}
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
 	user, err := h.repo.GetUserByEmail(email)
-
 	if err != nil {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
@@ -156,7 +155,7 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	// NOTE: confirm logged in
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, h.logger, "user auth failed unsuccessfully")
+	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	if err := h.repo.UpdateSession(currentUserId, "", &database.SqLiteTime{}); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)

@@ -4,7 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
+	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"os"
 
@@ -17,16 +17,16 @@ type SecretKeyProvider struct {
 	logger  slog.Logger
 }
 
-func newKeyProvider(keysLocation string) (*SecretKeyProvider, error) {
-	logger := slog.NewLogger("KeyProvider")
+var source = "KeyProvider"
+
+func newKeyProvider(keysLocation string) *SecretKeyProvider {
+	logger := slog.NewLogger(source)
 
 	keys := make(map[string]*rsa.PrivateKey)
 	kids := make([]string, 10)
 
-	keysList, err := readKeys(keysLocation, logger)
-	if err != nil {
-		return nil, err
-	}
+	keysList := readKeys(keysLocation, logger)
+
 	for i, key := range keysList {
 		kid := uuid.New().String()
 		keys[kid] = key
@@ -37,7 +37,7 @@ func newKeyProvider(keysLocation string) (*SecretKeyProvider, error) {
 		keyList: keys,
 		kidList: kids,
 		logger:  logger,
-	}, nil
+	}
 }
 
 func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
@@ -45,79 +45,49 @@ func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
 	return skp.keyList[skp.kidList[0]]
 }
 
-func readKeys(keysLocation string, logger slog.Logger) ([]*rsa.PrivateKey, error) {
+func readKeys(keysLocation string, logger slog.Logger) []*rsa.PrivateKey {
 	keys := make([]*rsa.PrivateKey, 10)
 	// TODO: add code to read from mulitple locations for multiple rotating keys
-	key, err := readKey(keysLocation, logger)
-	if err != nil {
-		return nil, err
-	}
+	key := readKey(keysLocation, logger)
 
 	keys[0] = key
-	return keys, nil
+	return keys
 }
 
-func readKey(keyLocation string, logger slog.Logger) (*rsa.PrivateKey, error) {
+func readKey(keyLocation string, logger slog.Logger) *rsa.PrivateKey {
 	privateKeyName := "private.key"
+	logger.Info("Reading file at $s$s", keyLocation, privateKeyName)
+
 	privateKeyFile, err := os.ReadFile(keyLocation + privateKeyName)
-	logger.Info("Reading file at %s", keyLocation+privateKeyName)
-	if err != nil {
-		logger.Error(err, "Could not read private key at location %s", keyLocation+privateKeyName)
-		return nil, err
-	}
+	assert.NoError(err, source, "Could not read private key at location %s", keyLocation+privateKeyName)
+
 	privatePem, _ := pem.Decode(privateKeyFile)
-	if privatePem == nil {
-		err := errors.New("failed to decode private key file")
+	assert.IsTrue(privatePem != nil, source,
+		"Failed to decode private key file content for file at %s",
+		keyLocation+privateKeyName)
 
-		logger.Error(err,
-			"Failed to decode private key file content for file at %s",
-			keyLocation+privateKeyName,
-		)
-		return nil, err
-	}
 	privateKeyAny, err := x509.ParsePKCS8PrivateKey(privatePem.Bytes)
-	if err != nil {
-		logger.Error(err, "Could not parse private key file. Content potentially malformed")
-		return nil, err
-	}
-	privateKey, ok := privateKeyAny.(*rsa.PrivateKey)
-	if !ok {
-		err := errors.New("Incorrect key type")
+	assert.NoError(err, source, "Could not parse private key file. Content potentially malformed")
 
-		logger.Error(err, "The private key at location '%s' is not an RSA private key", keyLocation+privateKeyName)
-		return nil, err
-	}
+	privateKey, ok := privateKeyAny.(*rsa.PrivateKey)
+	assert.IsTrue(ok, source, "The private key at location '%s' is not an RSA private key", keyLocation+privateKeyName)
 
 	publicKeyName := "public.key"
 	publicKeyFile, err := os.ReadFile(keyLocation + publicKeyName)
-	if err != nil {
-		logger.Error(err, "Could not read public key at location %s", keyLocation+privateKeyName)
-		return nil, err
-	}
+	assert.NoError(err, source, "Could not read public key at location %s", keyLocation+privateKeyName)
+
 	publicKeyPem, _ := pem.Decode(publicKeyFile)
-	if publicKeyPem == nil {
-		err := errors.New("failed to decode public key file")
+	assert.IsTrue(publicKeyPem != nil, source,
+		"Failed to decode public key file content for file at %s",
+		keyLocation+publicKeyName)
 
-		logger.Error(err,
-			"Failed to decode public key file content for file at %s",
-			keyLocation+publicKeyName,
-		)
-		return nil, err
-	}
 	certificate, err := x509.ParsePKIXPublicKey(publicKeyPem.Bytes)
-	if err != nil {
-		logger.Error(err, "Could not parse public key. Content potentially malformed")
-		return nil, err
-	}
+	assert.NoError(err, source, "Could not parse public key. Content potentially malformed")
+
 	publicKey, ok := certificate.(*rsa.PublicKey)
-	if !ok {
-		err := errors.New("public key was not rsa public key")
-
-		logger.Error(err, "Public key was not an RSA public key")
-		return nil, err
-	}
-
+	assert.IsTrue(ok, source, "Public key was not an RSA public key")
 	privateKey.PublicKey = *publicKey
 
-	return privateKey, nil
+	logger.Info("Successfully read keys")
+	return privateKey
 }

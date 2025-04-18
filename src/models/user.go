@@ -1,6 +1,8 @@
 package models
 
-import "go-do-the-thing/src/database"
+import (
+	"go-do-the-thing/src/database"
+)
 
 type User struct {
 	Id               int64                `json:"id,omitempty"`
@@ -14,4 +16,18 @@ type User struct {
 	IsDeleted        bool                 `json:"is_deleted,omitempty"`
 	IsAdmin          bool                 `json:"is_admin,omitempty"`
 	CreateDate       *database.SqLiteTime `json:"create_date"`
+}
+
+type UserView struct {
+	Id       int64  `json:"id,omitempty"`
+	Email    string `json:"email,omitempty"`
+	FullName string `json:"full_name,omitmepty"`
+}
+
+func (u *User) ToViewModel() UserView {
+	return UserView{
+		Id:       u.Id,
+		Email:    u.Email,
+		FullName: u.FullName,
+	}
 }

@@ -1,51 +1,42 @@
-package repos
+package users_repo
 
 import (
 	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
 
 type UsersRepo struct {
-	db database.DatabaseConnection
+	db     database.DatabaseConnection
+	logger slog.Logger
 }
 
-func InitUsersRepo(connection database.DatabaseConnection) (*UsersRepo, error) {
-	//do db migration
+var repoName = "Users Repo"
+
+// NOTE: Depends on: [none]
+func InitRepo(connection database.DatabaseConnection) *UsersRepo {
 	_, err := connection.Exec(createTable)
-	if err != nil {
-		return &UsersRepo{}, err
-	}
-	return &UsersRepo{connection}, nil
+
+	assert.NoError(err, repoName, "Failed to create Users table")
+
+	logger := slog.NewLogger(repoName)
+	return &UsersRepo{db: connection, logger: logger}
 }
 
-const (
-	createTable = `CREATE TABLE IF NOT EXISTS users (
+const createTable = `CREATE TABLE IF NOT EXISTS users (
 	[id] INTEGER PRIMARY KEY,
    	[email] TEXT UNIQUE,
    	[full_name] TEXT DEFAULT "",
     [session_id] TEXT DEFAULT "",
-	[session_start_time] TEXT DEFAULT "",
+	[session_start_time] INT DEFAULT 0,
     [password_hash] TEXT DEFAULT "",
 	[is_deleted] INTEGER DEFAULT 0,
 	[is_admin] INTEGER DEFAULT 0,
-	[create_date] TEXT
+	[create_date] INT
 );`
-	getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
-	countUsers            = "SELECT COUNT(*) FROM users WHERE is_deleted=0"
-	getUser               = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE id = ?"
-	getUserByEmail        = `SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE email = ?`
-	insertUser            = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES (?, ?, ?, ?)`
-	updateUserDetails     = `UPDATE users SET [full_name] = ? WHERE id = ?`
-	updateUserSession     = `UPDATE users SET [session_id] = ?, [session_start_time] = ? WHERE id = ?`
-	updateUserPassword    = `UPDATE users SET [password_hash] = ? WHERE id = ?`
-	updateUserIsAdmin     = `UPDATE users SET [is_admin] = ? WHERE id = ?`
-	getUserPassword       = `SELECT [password_hash] FROM [users] WHERE id = ?`
-	deleteUser            = `UPDATE users SET [is_deleted] = 1 WHERE id = ?`
-	restoreUsers          = `UPDATE users SET [is_deleted] = 0 WHERE id = ?`
-	logoutUser            = `UPDATE users SET [session_id] = "", [session_start_time] = "" WHERE id = ?`
-)
 
 func scanUserFromRow(row *sql.Row, user *models.User) error {
 	return row.Scan(
@@ -73,8 +64,10 @@ func scanUsersFromRows(rows *sql.Rows, user *models.User) error {
 	)
 }
 
+const insertUser = `INSERT INTO users ([email], [full_name], [password_hash], [create_date]) VALUES (?, ?, ?, ?)`
+
 func (r *UsersRepo) Create(user models.User) (int64, error) {
-	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow().String())
+	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow())
 	if err != nil {
 		return 0, err
 	}
@@ -85,6 +78,8 @@ func (r *UsersRepo) Create(user models.User) (int64, error) {
 	return insertedId, nil
 }
 
+const updateUserDetails = `UPDATE users SET [full_name] = ? WHERE id = ?`
+
 func (r *UsersRepo) UpdateDetails(user models.User) error {
 	_, err := r.db.Exec(updateUserDetails, user.FullName, user.Id)
 	if err != nil {
@@ -92,6 +87,8 @@ func (r *UsersRepo) UpdateDetails(user models.User) error {
 	}
 	return nil
 }
+
+const updateUserPassword = `UPDATE users SET [password_hash] = ? WHERE id = ?`
 
 func (r *UsersRepo) UpdatePassword(user models.User) error {
 	_, err := r.db.Exec(updateUserPassword, user.PasswordHash, user.Id)
@@ -101,13 +98,17 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 	return nil
 }
 
+const updateUserSession = `UPDATE users SET [session_id] = ?, [session_start_time] = ? WHERE id = ?`
+
 func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *database.SqLiteTime) error {
-	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime.String(), userId)
+	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime, userId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
+const updateUserIsAdmin = `UPDATE users SET [is_admin] = ? WHERE id = ?`
 
 func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
 	_, err := r.db.Exec(updateUserIsAdmin, helpers.Btoi(user.IsAdmin), user.Id)
@@ -117,6 +118,8 @@ func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
 	return nil
 }
 
+const deleteUser = `UPDATE users SET [is_deleted] = 1 WHERE id = ?`
+
 func (r *UsersRepo) Delete(user models.User) error {
 	_, err := r.db.Exec(deleteUser, user.Id)
 	if err != nil {
@@ -124,6 +127,8 @@ func (r *UsersRepo) Delete(user models.User) error {
 	}
 	return nil
 }
+
+const getUserByEmail = `SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE email = ?`
 
 func (r *UsersRepo) GetUserByEmail(name string) (models.User, error) {
 	row := r.db.QueryRow(getUserByEmail, name)
@@ -138,6 +143,8 @@ func (r *UsersRepo) GetUserByEmail(name string) (models.User, error) {
 	return temp, nil
 }
 
+const getUserPassword = `SELECT [password_hash] FROM [users] WHERE id = ?`
+
 func (r *UsersRepo) GetUserPassword(id int64) (string, error) {
 	row := r.db.QueryRow(getUserPassword, id)
 	var password string
@@ -150,8 +157,12 @@ func (r *UsersRepo) GetUserPassword(id int64) (string, error) {
 	return password, nil
 }
 
+const getUser = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_admin], [is_deleted], [create_date] FROM users WHERE id = ?"
+
 func (r *UsersRepo) GetUserById(id int64) (models.User, error) {
 	row := r.db.QueryRow(getUser, id)
+	assert.NoError(row.Err(), repoName, "There was an error fetching the users")
+
 	temp := models.User{}
 	err := scanUserFromRow(row, &temp)
 	if err != nil {
@@ -159,6 +170,8 @@ func (r *UsersRepo) GetUserById(id int64) (models.User, error) {
 	}
 	return temp, nil
 }
+
+const getAllUsersNotDeleted = "SELECT [id], [email], [full_name], [session_id], [session_start_time], [is_deleted],[is_admin], [create_date] FROM users WHERE is_deleted=0"
 
 func (r *UsersRepo) GetUsers() ([]models.User, error) {
 	rows, err := r.db.Query(getAllUsersNotDeleted)
@@ -182,6 +195,8 @@ func (r *UsersRepo) GetUsers() ([]models.User, error) {
 	}
 	return users, nil
 }
+
+const logoutUser = `UPDATE users SET [session_id] = "", [session_start_time] = "" WHERE id = ?`
 
 func (r *UsersRepo) Logout(userId int64) error {
 	_, err := r.db.Exec(logoutUser, userId)

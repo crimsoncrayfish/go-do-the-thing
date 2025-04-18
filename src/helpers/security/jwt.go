@@ -16,15 +16,13 @@ type JwtHandler struct {
 	logger slog.Logger
 }
 
-func NewJwtHandler(keysLocation string) (JwtHandler, error) {
-	keyProvider, err := newKeyProvider(keysLocation)
-	if err != nil {
-		return JwtHandler{}, err
-	}
+func NewJwtHandler(keysLocation string) JwtHandler {
+	keyProvider := newKeyProvider(keysLocation)
+
 	return JwtHandler{
 		SecretKeyProvider: keyProvider,
 		logger:            slog.NewLogger("JWT Handler"),
-	}, nil
+	}
 }
 
 func (s *JwtHandler) NewToken(userId, session string, expiry time.Time) (string, error) {

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"go-do-the-thing/src/helpers/constants"
@@ -12,22 +13,29 @@ type SqLiteTime struct {
 	*time.Time
 }
 
+func NewSqliteTime(time time.Time) *SqLiteTime {
+	return &SqLiteTime{&time}
+}
+
 func SqLiteNow() *SqLiteTime {
 	now := time.Now()
 	return &SqLiteTime{&now}
 }
 
 func (t *SqLiteTime) Scan(v interface{}) error {
-	if v.(string) == "" {
+	if v.(int64) < 0 {
 		return nil
 	}
-	vt, err := time.Parse(constants.DateTimeFormat, v.(string))
-	if err != nil {
-		return err
-	}
+	vt := time.Unix(v.(int64), 0)
 	*t = SqLiteTime{&vt}
-
 	return nil
+}
+
+func (t *SqLiteTime) Value() (driver.Value, error) {
+	if t.Time == nil {
+		return int64(0), nil
+	}
+	return t.Time.Unix(), nil
 }
 
 func (t *SqLiteTime) Format(formatString string) (string, error) {
@@ -72,11 +80,22 @@ func (t *SqLiteTime) String() string {
 	return t.Time.Format(constants.DateTimeFormat)
 }
 
+func (t *SqLiteTime) Unix() int64 {
+	if t.Time == nil {
+		return 0
+	}
+	return t.Time.Unix()
+}
+
 func (t *SqLiteTime) StringF(format string) string {
 	if t.Time == nil {
 		return ""
 	}
 	return t.Time.Format(format)
+}
+
+func (t *SqLiteTime) Before(other *SqLiteTime) bool {
+	return t.Time.Before(*other.Time)
 }
 
 func (t *SqLiteTime) BeforeNow() (bool, error) {
