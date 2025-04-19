@@ -213,7 +213,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user, _ := h.repo.GetUserByEmail(email) // TODO: what to do with this err message
-	if (models.User{}) != user {
+	if user != nil {
 		h.logger.Info("Registration failure. Email %s already in use", email)
 		form.SetError("Email", "Email already in use")
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -237,7 +237,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user = models.User{
+	user = &models.User{
 		Email:        email,
 		FullName:     name,
 		PasswordHash: passwordHash,
@@ -245,6 +245,16 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		IsAdmin:      false,
 	}
 	_, err = h.repo.Create(user)
+	if err != nil {
+		h.logger.Error(err, "Failed to create user")
+		form.SetError("Create", "Failed to create users due to a server error")
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
+			h.logger.Error(err, "failed to render signup form")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
 	h.logger.Info("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email

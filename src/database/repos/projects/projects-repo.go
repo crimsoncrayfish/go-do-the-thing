@@ -2,6 +2,7 @@ package projects_repo
 
 import (
 	"database/sql"
+	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
@@ -90,10 +91,13 @@ const getProjectsByUser = `
 func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 	rows, err := r.database.Query(getProjectsByUser, user_id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get project list, query failed: %w", err)
 	}
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
+		if err != nil {
+			err = fmt.Errorf("failed to close rows object: %w", err)
+		}
 	}(rows)
 
 	items := make([]models.Project, 0)
@@ -102,13 +106,13 @@ func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 
 		err = scanFromRows(rows, &item)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get project list, scan failed: %w", err)
 		}
 		items = append(items, item)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get project list, row error: %w", err)
 	}
 	return items, nil
 }
@@ -120,15 +124,14 @@ const getProject = `
 	JOIN project_users
 		ON projects.id = project_users.project_id
 	WHERE 
-		projects.id = ? AND
-		project_users.user_id = ?`
+		projects.id = ?`
 
-func (r *ProjectsRepo) GetProject(projectId, userId int64) (models.Project, error) {
-	row := r.database.QueryRow(getProject, projectId, userId)
-	temp := models.Project{}
-	err := scanFromRow(row, &temp)
+func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
+	row := r.database.QueryRow(getProject, projectId)
+	temp := &models.Project{}
+	err := scanFromRow(row, temp)
 	if err != nil {
-		return models.Project{}, err
+		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
 	return temp, nil
 }
@@ -140,7 +143,10 @@ const deleteProject = `
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
 	_, err := r.database.Exec(deleteProject, currentUser, database.SqLiteNow(), id)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update project: %w", err)
+	}
+	return nil
 }
 
 const getProjectCount = `SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?`
@@ -150,7 +156,7 @@ func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err erro
 	var temp int64
 	err = row.Scan(&temp)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get project count: %w", err)
 	}
 	return temp, nil
 }
@@ -179,7 +185,10 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 		project.ModifiedDate,
 		project.IsComplete,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update project: %w", err)
+	}
+	return nil
 }
 
 const insertProject = `
@@ -199,9 +208,10 @@ const insertProject = `
 	)
 	VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 
-func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) (id int64, err error) {
+func (r *ProjectsRepo) Insert(currentUser int64, project models.Project) (id int64, err error) {
 	project.AssertHealthyNew()
 	assert.NotEqual(currentUser, 0, repoName, "currentUser")
+
 	result, err := r.database.Exec(
 		insertProject,
 		project.Name,
@@ -217,10 +227,13 @@ func (r *ProjectsRepo) InsertProject(currentUser int64, project models.Project) 
 		false,
 	)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create new project: %w", err)
 	}
-	id, err = result.LastInsertId()
-	assert.NotEqual(id, 0, repoName, "New Id")
 
-	return id, err
+	id, err = result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to create new project: %w", err)
+	}
+
+	return id, nil
 }

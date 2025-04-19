@@ -63,7 +63,7 @@ type TaskView struct {
 	Project       int64
 }
 
-func (t *Task) ToViewModel(assignedTo, createdBy User) TaskView {
+func (t *Task) ToViewModel(assignedTo, createdBy *User) TaskView {
 	return TaskView{
 		Id:            t.Id,
 		Name:          t.Name,

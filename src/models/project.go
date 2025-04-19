@@ -58,7 +58,7 @@ type ProjectView struct {
 	IsDeleted    bool
 }
 
-func (p *Project) ToViewModel(owner, createdBy, modifiedBy User) ProjectView {
+func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {
 	return ProjectView{
 		Id:           p.Id,
 		Name:         p.Name,

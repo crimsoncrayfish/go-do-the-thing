@@ -55,7 +55,7 @@ func SetupTodoHandler(
 }
 
 type idResponse struct {
-	Id int64 `json:"id" json:"id"`
+	Id int64 `json:"id"`
 }
 
 var defaultForm = fm.NewDefaultTaskForm()
@@ -142,7 +142,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	var createdBy models.User
+	var createdBy *models.User
 	if task.CreatedBy == task.AssignedTo {
 		createdBy = assignedToUser
 	} else {
@@ -247,7 +247,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		// TODO: what should happen if the fetch fails after update
 		return
 	}
-	var createdBy models.User
+	var createdBy *models.User
 	if task.CreatedBy == task.AssignedTo {
 		createdBy = assignedToUser
 	} else {
@@ -306,7 +306,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	formData := formDataFromItemNoValidation(task, assignedUser.Email)
 
 	// NOTE: Success zone
-	var createdBy models.User
+	var createdBy *models.User
 	if task.CreatedBy == task.AssignedTo {
 		createdBy = assignedUser
 	} else {
@@ -384,7 +384,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 		// TODO: what should happen to the row if an error occurs while updating?
 		return
 	}
-	var createdBy models.User
+	var createdBy *models.User
 	if task.CreatedBy == task.AssignedTo {
 		createdBy = assignedToUser
 	} else {
@@ -428,7 +428,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		return tasks[i].DueDate.Before(tasks[j].DueDate)
 	})
 
-	users := make(map[int64]models.User)
+	users := make(map[int64]*models.User)
 	var tasksList []models.TaskView
 	for _, task := range tasks {
 
@@ -516,18 +516,6 @@ func formDataFromItem(task models.Task, assignedUser string) (fm.TaskForm, bool)
 		formData.Errors = errs
 	}
 	return formData, isValid
-}
-
-func (h *Handler) handleUserNotFound(err error, userEmail string) bool {
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		h.logger.Error(err, "the entered email address does not corrispond to an existing user: %s", userEmail)
-	} else {
-		assert.NoError(err, source, "some error occurred. probably fialed to read from the db while checking user %s", userEmail)
-	}
-	return false
 }
 
 func (h *Handler) handleUserIdNotFound(err error, userId int64) bool {
