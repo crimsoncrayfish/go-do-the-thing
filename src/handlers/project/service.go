@@ -1,8 +1,6 @@
 package project
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"go-do-the-thing/src/database"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
@@ -10,6 +8,7 @@ import (
 	roles_repo "go-do-the-thing/src/database/repos/roles"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
@@ -43,7 +42,10 @@ func (s ProjectService) GetProjectView(id int64, currentUserId int64) (*models.P
 
 	// NOTE: Success zone
 	projectView, err := s.projectToViewModel(*project)
-
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
 	return projectView, nil
 }
 
@@ -114,48 +116,47 @@ func (s ProjectService) getProjectForUser(id int64, currentUserId int64) (*model
 	return project, nil
 }
 
-func (s *ProjectService) handleUserIdNotFound(err error, userId int64) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		s.logger.Error(err, "the email address does not corrispond to an existing user: %d", userId)
-	}
-	return fmt.Errorf("invalid user error: %w", err)
-}
-
-func (s *ProjectService) projectListToViewModels(projects []models.Project) ([]models.ProjectView, error) {
-	projectViews := make([]models.ProjectView, len(projects))
+func (s *ProjectService) projectListToViewModels(projects []models.Project) (projectViews []models.ProjectView, err error) {
+	projectViews = make([]models.ProjectView, len(projects))
 	users := make(map[int64]*models.User)
 
 	for i, project := range projects {
+		var owner *models.User
+
 		owner, ok := users[project.Owner]
 		if !ok {
-			owner, err := s.usersRepo.GetUserById(project.Owner)
+			owner, err = s.usersRepo.GetUserById(project.Owner)
 			if err != nil {
 				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			users[project.Owner] = owner
 		}
-		createdBy, ok := users[project.CreatedBy]
+		assert.NotNil(owner, serviceSource, fmt.Sprintf("project owner cant be nil - owner id %d", project.Owner))
+
+		var createdBy *models.User
+		createdBy, ok = users[project.CreatedBy]
 		if !ok {
-			createdBy, err := s.usersRepo.GetUserById(project.CreatedBy)
+			createdBy, err = s.usersRepo.GetUserById(project.CreatedBy)
 			if err != nil {
 				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			users[project.CreatedBy] = createdBy
 		}
-		modifiedBy, ok := users[project.ModifiedBy]
+		assert.NotNil(createdBy, serviceSource, fmt.Sprintf("project creator cant be nil - creator id %d", project.CreatedBy))
+
+		var modifiedBy *models.User
+		modifiedBy, ok = users[project.ModifiedBy]
 		if !ok {
-			modifiedBy, err := s.usersRepo.GetUserById(project.ModifiedBy)
+			modifiedBy, err = s.usersRepo.GetUserById(project.ModifiedBy)
 			if err != nil {
 				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			users[project.ModifiedBy] = modifiedBy
 		}
+		assert.NotNil(createdBy, serviceSource, fmt.Sprintf("project creator cant be nil - modifier id %d", project.ModifiedBy))
 
 		// Convert to ViewModel
 		projectViews[i] = project.ToViewModel(owner, createdBy, modifiedBy)

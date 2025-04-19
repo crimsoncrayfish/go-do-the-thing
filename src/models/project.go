@@ -2,6 +2,7 @@ package models
 
 import (
 	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 )
 
@@ -59,6 +60,11 @@ type ProjectView struct {
 }
 
 func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {
+	assert.NotNil(p, helpers.PrevCallerName(2), "project cant be nil")
+	assert.NotNil(owner, helpers.PrevCallerName(2), "project owner cant be nil")
+	assert.NotNil(createdBy, helpers.PrevCallerName(2), "project creator cant be nil")
+	assert.NotNil(modifiedBy, helpers.PrevCallerName(2), "project modifier cant be nil")
+
 	return ProjectView{
 		Id:           p.Id,
 		Name:         p.Name,
