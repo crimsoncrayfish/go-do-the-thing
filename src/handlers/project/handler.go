@@ -14,12 +14,13 @@ import (
 	templ_project "go-do-the-thing/src/handlers/project/templ"
 
 	form_models "go-do-the-thing/src/models/forms"
+	projectServices "go-do-the-thing/src/services/project"
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 type Handler struct {
 	logger  slog.Logger
-	service ProjectService
+	service projectServices.ProjectService
 }
 
 var activeScreens models.NavBarObject
@@ -29,7 +30,7 @@ var (
 	defaultForm   = form_models.NewDefaultProjectForm()
 )
 
-func SetupProjectHandler(service ProjectService, router *http.ServeMux, mw_stack middleware.Middleware) {
+func SetupProjectHandler(service projectServices.ProjectService, router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger(handlerSource)
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsProjects: true}}
