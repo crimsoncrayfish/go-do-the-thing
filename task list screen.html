@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-primary: #1a1b26;
+            --color-secondary: #24283b;
+            --color-accent: #bb9af7;
+            --color-success: #9ece6a;
+            --color-danger: #f7768e;
+            --color-warning: #e0af68;
+            --color-text: #a9b1d6;
+            --color-border: #414868;
+        }
+
+        .theme-transition {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Add custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-accent);
+        }
+
+        #themeMenu {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        themes: {
+                            // Dark Themes
+                            'midnight': {
+                                primary: '#1a1b26',
+                                secondary: '#24283b',
+                                accent: '#bb9af7',
+                                success: '#9ece6a',
+                                danger: '#f7768e',
+                                warning: '#e0af68',
+                                text: '#a9b1d6',
+                                border: '#414868',
+                            },
+                            'forest': {
+                                primary: '#1B2F21',
+                                secondary: '#2A453F',
+                                accent: '#7EA172',
+                                success: '#95B46A',
+                                danger: '#D35D6E',
+                                warning: '#F5B461',
+                                text: '#D8E4D8',
+                                border: '#435E52',
+                            },
+                            'ocean': {
+                                primary: '#0F172A',
+                                secondary: '#1E293B',
+                                accent: '#38BDF8',
+                                success: '#34D399',
+                                danger: '#FB7185',
+                                warning: '#FBBF24',
+                                text: '#94A3B8',
+                                border: '#334155',
+                            },
+                            'purple': {
+                                primary: '#2D1B69',
+                                secondary: '#392B7D',
+                                accent: '#B197FC',
+                                success: '#85A0FF',
+                                danger: '#FF6B8B',
+                                warning: '#FFB86C',
+                                text: '#D5CCF7',
+                                border: '#4B3B8E',
+                            },
+                            // Light Themes
+                            'cotton': {
+                                primary: '#F8F9FA',
+                                secondary: '#E9ECEF',
+                                accent: '#748FFC',
+                                success: '#51CF66',
+                                danger: '#FF6B6B',
+                                warning: '#FFD43B',
+                                text: '#495057',
+                                border: '#DEE2E6',
+                            },
+                            'sakura': {
+                                primary: '#FDF2F8',
+                                secondary: '#FCE7F3',
+                                accent: '#EC4899',
+                                success: '#34D399',
+                                danger: '#F43F5E',
+                                warning: '#FBBF24',
+                                text: '#831843',
+                                border: '#F9A8D4',
+                            },
+                            'mint': {
+                                primary: '#F0FDF4',
+                                secondary: '#DCFCE7',
+                                accent: '#10B981',
+                                success: '#059669',
+                                danger: '#DC2626',
+                                warning: '#D97706',
+                                text: '#065F46',
+                                border: '#6EE7B7',
+                            },
+                            'lavender': {
+                                primary: '#F5F3FF',
+                                secondary: '#EDE9FE',
+                                accent: '#8B5CF6',
+                                success: '#7C3AED',
+                                danger: '#E11D48',
+                                warning: '#D97706',
+                                text: '#5B21B6',
+                                border: '#C4B5FD',
+                            },
+                        }
+                    },
+                    zIndex: {
+                        '50': 50,
+                    },
+                    fontFamily: {
+                        fira: ["Fira Code", "monospace"],
+                    },
+                },
+            },
+        };
+
+        // Theme switching and timer functions remain the same
+        let timerInterval;
+        let startTime;
+
+        function setTheme(themeName) {
+            const root = document.documentElement;
+            const theme = tailwind.config.theme.extend.colors.themes[themeName];
+
+            // Update CSS variables
+            root.style.setProperty('--color-primary', theme.primary);
+            root.style.setProperty('--color-secondary', theme.secondary);
+            root.style.setProperty('--color-accent', theme.accent);
+            root.style.setProperty('--color-success', theme.success);
+            root.style.setProperty('--color-danger', theme.danger);
+            root.style.setProperty('--color-warning', theme.warning);
+            root.style.setProperty('--color-text', theme.text);
+            root.style.setProperty('--color-border', theme.border);
+
+            // Update body background and text color
+            document.body.style.backgroundColor = theme.primary;
+            document.body.style.color = theme.text;
+        }
+        function toggleNewTaskForm() {
+            const form = document.getElementById("newTaskForm");
+            form.classList.toggle("hidden");
+        }
+
+        function dismissError() {
+            const errorDiv = document.getElementById("error-message");
+            errorDiv.classList.add("hidden");
+        }
+
+        function toggleError() {
+            const errorDiv = document.getElementById("error-message");
+            errorDiv.classList.toggle("hidden");
+        }
+
+
+        function toggleMoreOptions() {
+            const menu = document.getElementById('moreOptionsMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('moreOptionsMenu');
+            const button = event.target.closest('button');
+
+            if (!button || !button.matches('[onclick="toggleMoreOptions()"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+        function startTimer() {
+            // Calculate initial offset (2 hours, 36 minutes in milliseconds)
+            const initialHours = 2;
+            const initialMinutes = 36;
+            const initialOffset =
+                (initialHours * 60 * 60 + initialMinutes * 60) * 1000;
+
+            // Set the startTime as current time minus the initial offset.
+            startTime = new Date().getTime() - initialOffset;
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - startTime;
+
+            const seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
+            const minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+            const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
+
+            const formattedTime = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            document.getElementById("timer").innerText = formattedTime;
+            document.getElementById("sticky-timer").innerText = formattedTime;
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function pad(number) {
+            return number < 10 ? "0" + number : number;
+        }
+
+        function toggleClassForId(className, elementId) {
+            const element = document.getElementById(elementId);
+            if (elementId === 'sidebar-container') {
+                const overlay = document.getElementById('sidebar-overlay');
+                overlay.classList.toggle('hidden');
+            }
+            element.classList.toggle(className);
+        }
+
+        window.onload = startTimer;
+    </script>
+</head>
+
+<body class="theme-transition font-fira bg-[var(--color-primary)] text-[var(--color-text)]">
+    <header
+        class="top-0 z-10 flex justify-between items-center w-full bg-[var(--color-secondary)] border-b border-[var(--color-border)] px-4 py-3">
+        <!-- Left - Menu Button -->
+        <button onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
+            class="text-[var(--color-text)] hover:opacity-80 transition-opacity">
+            <span class="sr-only">Navigation</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5">
+                </path>
+            </svg>
+        </button>
+
+        <!-- Center - Logo and Title -->
+        <div class="flex cursor-pointer items-center mx-auto">
+            <a class="flex items-center gap-3" hx-get="/home" hx-target="body">
+                <!-- Your SVG path data -->
+                <svg class="h-8 px-5" viewBox="0 0 33 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M2.49998 12L3.49998 11L4.49998 12L5.49998 11L6.49998 12L7.49998 11L8.49998 12L9.49998 11L10.5 12L11.5 11L12.5 12L13.5 11L14.5 12L15.5 11L16.5 12L17.5 11L18.5 12L19.5 11L20.5 12L21.5 11L22.5 12L23.5 11L24.5 12L25.5 11L26.5 12L27.5 11L28.5 12L29.5 11L30.5 12V12.5L29.5 11.5L28.5 12.5L27.5 11.5L26.5 12.5L25.5 11.5L24.5 12.5L23.5 11.5L22.5 12.5L21.5 11.5L20.5 12.5L19.5 11.5L18.5 12.5L17.5 11.5L16.5 12.5L15.5 11.5L14.5 12.5L13.5 11.5L12.5 12.5L11.5 11.5L10.5 12.5L9.49998 11.5L8.49998 12.5L7.49998 11.5L6.49998 12.5L5.49998 11.5L4.49998 12.5L3.49998 11.5L2.49998 12.5V12Z"
+                        fill="currentColor"></path>
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M33 10V13.5C33 14.328 32.328 15 31.5 15H1.5C0.671 15 0 14.328 0 13.5V10V5V1.5C0 0.672 0.671 0 1.5 0H31.5C32.328 0 33 0.672 33 1.5V5V10ZM1.5 14C1.224 14 1 13.776 1 13.5V10V5V1.5C1 1.224 1.224 1 1.5 1H31.5C31.776 1 32 1.224 32 1.5V5V10V13.5C32 13.776 31.776 14 31.5 14H1.5Z"
+                        fill="currentColor"></path>
+                    <path d="M30 7H31V7.99295L30 8V7Z" fill="currentColor"></path>
+                    <path d="M31 5H30V4H31V5Z" fill="currentColor"></path>
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M25.2 2.01423C23.0022 2.01231 22.3 3.01058 22.3 5.99994C22.3 8.98929 23.2666 9.98575 25.2 9.98585C27.1333 9.98575 28.1 8.98919 28.1 5.99983C28.1 3.01047 27.3977 2.01232 25.2 2.01423ZM24.2333 5.99994C24.2333 5.00348 24.2333 4.00703 25.2 4.00703C26.1666 4.00703 26.1666 5.00338 26.1666 5.99983C26.1666 6.99628 26.1666 7.99284 25.2 7.99284C24.2333 7.99284 24.2333 6.99639 24.2333 5.99994Z"
+                        fill="currentColor"></path>
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M15.5333 2.01409V9.98571C18.4333 9.98596 21.3333 10.4549 21.3333 6.00002C21.3333 1.54519 18.4333 2.01434 15.5333 2.01409ZM17.4666 7.99293V4.00712C18.9399 4.0737 19.4242 4.44814 19.4 6.00002C19.4437 7.54306 19.0038 7.96353 17.4666 7.99293Z"
+                        fill="currentColor"></path>
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M11.6666 2.01455C9.4689 2.01263 8.76664 3.01089 8.76664 6.00025C8.76664 8.98961 9.73331 9.98606 11.6666 9.98617C13.6 9.98606 14.5666 8.98951 14.5666 6.00015C14.5666 3.01079 13.8644 2.01263 11.6666 2.01455ZM10.7 6.00025C10.7 5.0038 10.7 4.00735 11.6666 4.00735C12.6333 4.00735 12.6333 5.0037 12.6333 6.00015C12.6333 6.9966 12.6333 7.99316 11.6666 7.99316C10.7 7.99316 10.7 6.9967 10.7 6.00025Z"
+                        fill="currentColor"></path>
+                    <path
+                        d="M7.79998 3.99154V2.01423H1.99998V3.99154L3.93331 4.00714V9.98585H5.86664V4.00714L7.79998 3.99154Z"
+                        fill="currentColor"></path>
+                </svg>
+                <p class="hidden md:block text-xl font-semibold text-[var(--color-text)]">
+                    Think of a heading
+                </p>
+            </a>
+        </div>
+
+        <!-- Right - Profile Menu -->
+        <div class="relative">
+            <button onclick="toggleClassForId('hidden', 'profile-menu')"
+                class="flex items-center gap-3 text-[var(--color-text)] hover:opacity-80 transition-opacity">
+                <span>Marco</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="h-8 w-8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z">
+                    </path>
+                </svg>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="profile-menu" class="hidden absolute z-50 right-0 mt-2">
+                <div class="bg-[var(--color-secondary)] rounded-xl border border-[var(--color-border)] shadow-lg w-48">
+                    <div class="px-4 py-3 border-b border-[var(--color-border)]">
+                        <div class="text-[var(--color-text)]">Marco</div>
+                        <div class="text-sm text-[var(--color-text)]/70 truncate">test@test.test</div>
+                    </div>
+                    <ul class="py-2">
+                        <li>
+                            <a href="#"
+                                class="block px-4 py-2 text-[var(--color-text)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                                Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#"
+                                class="block px-4 py-2 text-[var(--color-text)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="py-2 border-t border-[var(--color-border)]">
+                        <a hx-post="/logout"
+                            class="block px-4 py-2 text-[var(--color-text)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                            Sign out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Sidebar Menu -->
+    <div id="sidebar-container"
+        class="fixed top-0 left-0 h-full w-80 bg-[var(--color-secondary)] border-r border-[var(--color-border)] shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out z-20">
+
+        <!-- Sidebar Header -->
+        <div class="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-5 h-5 text-[var(--color-text)]">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+                </svg>
+                <h2 class="text-lg font-semibold text-[var(--color-text)]">Theme Options</h2>
+            </div>
+            <button onclick="toggleClassForId('-translate-x-full', 'sidebar-container')"
+                class="text-[var(--color-text)] hover:opacity-80 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Sidebar Content -->
+        <div class="p-4 space-y-6">
+            <!-- Dark Themes -->
+            <div>
+                <h3 class="text-sm font-medium text-[var(--color-text)] mb-2">Dark Themes</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <button onclick="setTheme('midnight')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#1a1b26] text-white border border-[#414868] hover:opacity-80">
+                        <span>Midnight</span>
+                    </button>
+                    <button onclick="setTheme('forest')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#1B2F21] text-white border border-[#435E52] hover:opacity-80">
+                        <span>Forest</span>
+                    </button>
+                    <button onclick="setTheme('ocean')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#0F172A] text-white border border-[#334155] hover:opacity-80">
+                        <span>Ocean</span>
+                    </button>
+                    <button onclick="setTheme('purple')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#2D1B69] text-white border border-[#4B3B8E] hover:opacity-80">
+                        <span>Purple</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Light Themes -->
+            <div>
+                <h3 class="text-sm font-medium text-[var(--color-text)] mb-2">Light Themes</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <button onclick="setTheme('cotton')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#F8F9FA] text-[#495057] border border-[#DEE2E6] hover:opacity-80">
+                        <span>Cotton</span>
+                    </button>
+                    <button onclick="setTheme('sakura')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#FDF2F8] text-[#831843] border border-[#F9A8D4] hover:opacity-80">
+                        <span>Sakura</span>
+                    </button>
+                    <button onclick="setTheme('mint')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#F0FDF4] text-[#065F46] border border-[#6EE7B7] hover:opacity-80">
+                        <span>Mint</span>
+                    </button>
+                    <button onclick="setTheme('lavender')"
+                        class="theme-transition flex items-center justify-between px-4 py-2 rounded-lg bg-[#F5F3FF] text-[#5B21B6] border border-[#C4B5FD] hover:opacity-80">
+                        <span>Lavender</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="sidebar-overlay" onclick="toggleClassForId('-translate-x-full', 'sidebar-container');
+             toggleClassForId('hidden', 'sidebar-overlay')" class="fixed inset-0 bg-black/50 hidden z-10">
+    </div>
+    
+    <!-- Sticky Task Bar -->
+    <div id="sticky-task-bar"
+        class="theme-transition fixed top-0 left-0 w-full bg-[var(--color-accent)] text-[var(--color-primary)] p-4 z-50 shadow-lg hidden flex justify-between items-center">
+        <button id="pause-button" class="btn-warning p-2 rounded-full hover:opacity-80" aria-label="Pause Task">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"
+                class="h-6 w-6">
+                <path d="M9 5v14h6V5H9z" fill="currentColor" opacity="0.3" />
+                <path d="M7 19h4V5H7v14zm6-14v14h4V5h-4z" />
+            </svg>
+        </button>
+        <div class="overflow-hidden whitespace-nowrap text-ellipsis px-4 flex-1">
+            <span id="sticky-timer" class="mr-2 font-bold">02:45:30</span>
+            <span id="sticky-task-name" class="font-medium">Design System Implementation</span>
+        </div>
+        <a href="#currentTask" aria-label="View Task" class="p-2 rounded-full hover:opacity-80">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"
+                class="h-6 w-6">
+                <path
+                    d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+            </svg>
+        </a>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- Error Message -->
+        <div id="error-message"
+            class="theme-transition bg-[var(--color-danger)] border border-[var(--color-danger)] text-white px-6 py-4 rounded-xl relative mb-6 hidden"
+            role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline ml-2">
+                A server error occurred. Please try again later.
+            </span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <button onclick="dismissError()" class="p-1 rounded-full hover:opacity-80">
+                    <svg class="fill-current h-6 w-6 text-white" role="button" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20">
+                        <title>Close</title>
+                        <path
+                            d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" />
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center">
+                <span class="text-2xl font-bold mr-2">Todo:</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="toggleError()"
+                    class="theme-transition bg-[var(--color-danger)] hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] focus:ring-opacity-50">
+                    Show Error
+                </button>
+                <button onclick="toggleNewTaskForm()"
+                    class="theme-transition bg-[var(--color-success)] hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"
+                        fill="currentColor" class="mr-2">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                    <span>New Task</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Current Task -->
+        <div id="currentTask"
+            class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 mb-6 border border-[var(--color-border)] shadow-lg ring-2 ring-[var(--color-primary)]/20">
+            <div class="grid grid-cols-3 gap-6 items-center">
+                <!-- Task Information -->
+                <div class="col-span-3 md:col-span-2 text-center md:text-left">
+                    <div class="font-bold text-xl mb-2">
+                        Design System Implementation
+                    </div>
+                    <div class="text-[var(--color-text)] text-sm mb-2">Time Elapsed</div>
+                    <div id="timer" class="text-2xl sm:text-3xl font-semibold">02:36:13</div>
+                </div>
+                <!-- Buttons container -->
+                <div class="col-span-3 md:col-span-1">
+                    <!-- Option 1: Add a subtle background container -->
+                    <div
+                        class="flex flex-row justify-center md:justify-end gap-3 p-3 bg-[var(--color-primary)]/5 rounded-lg">
+                        <button onclick="confirm('Are you sure you want to complete this task?')"
+                            aria-label="Complete Task" class="flex items-center justify-center gap-2 border-2 border-[var(--color-success)] bg-transparent hover:bg-[var(--color-success)] text-[var(--color-success)] hover:text-white rounded-full font-medium transition-all
+                    w-12 h-12 sm:w-auto sm:h-auto sm:px-6 sm:py-2">
+                            <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="hidden sm:inline">Complete</span>
+                        </button>
+
+                        <button aria-label="Pause Task" class="flex items-center justify-center gap-2 bg-[var(--color-warning)] hover:opacity-80 text-[var(--color-primary)] rounded-full font-medium transition-all
+                    w-12 h-12 sm:w-auto sm:h-auto sm:px-6 sm:py-2">
+                            <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+                            </svg>
+                            <span class="hidden sm:inline">Pause</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Task Form -->
+        <form id="newTaskForm"
+            class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 mb-6 border border-[var(--color-border)] shadow-lg hidden">
+            <div class="space-y-4">
+                <div>
+                    <label for="name" class="block text-[var(--color-text)] text-sm font-bold mb-2">Name</label>
+                    <input type="text" id="name"
+                        class="theme-transition bg-[var(--color-primary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-sm border border-[var(--color-border)]" />
+                </div>
+
+                <div>
+                    <label for="description"
+                        class="block text-[var(--color-text)] text-sm font-bold mb-2">Description</label>
+                    <textarea id="description" rows="3"
+                        class="theme-transition bg-[var(--color-primary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-sm border border-[var(--color-border)]"></textarea>
+                </div>
+
+                <div>
+                    <label for="dueDate" class="block text-[var(--color-text)] text-sm font-bold mb-2">Due Date</label>
+                    <input type="date" id="dueDate"
+                        class="theme-transition bg-[var(--color-primary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-sm border border-[var(--color-border)]" />
+                </div>
+
+                <div>
+                    <label for="project" class="block text-[var(--color-text)] text-sm font-bold mb-2">Project</label>
+                    <select id="project"
+                        class="theme-transition bg-[var(--color-primary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-sm border border-[var(--color-border)]">
+                        <option>Project A</option>
+                        <option>Project B</option>
+                        <option>Project C</option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                    class="theme-transition bg-[var(--color-accent)] hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50">
+                    Create Task
+                </button>
+            </div>
+        </form>
+        <!-- Search Bar and Filters -->
+        <div class="mb-6">
+            <input type="text" placeholder="Search tasks..."
+                class="theme-transition bg-[var(--color-secondary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-md border border-[var(--color-border)] mb-4" />
+
+            <!-- Tag Filters -->
+            <div class="flex flex-wrap gap-2">
+                <button
+                    class="theme-transition bg-[var(--color-secondary)] hover:opacity-80 text-[var(--color-text)] text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 border border-[var(--color-border)] shadow-md">
+                    All
+                </button>
+                <button
+                    class="theme-transition bg-[var(--color-secondary)] hover:opacity-80 text-[var(--color-text)] text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 border border-[var(--color-border)] shadow-md">
+                    Completed
+                </button>
+                <button
+                    class="theme-transition bg-[var(--color-secondary)] hover:opacity-80 text-[var(--color-text)] text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 border border-[var(--color-border)] shadow-md">
+                    Incomplete
+                </button>
+                <button
+                    class="theme-transition bg-[var(--color-secondary)] hover:opacity-80 text-[var(--color-text)] text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 border border-[var(--color-border)] shadow-md">
+                    Overdue
+                </button>
+            </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="space-y-4">
+            <!-- In Progress Task -->
+            <div
+                class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 border border-[var(--color-border)] shadow-lg">
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="hidden sm:flex col-span-1 items-center justify-center">
+                        <button
+                            class="theme-transition bg-transparent hover:bg-[var(--color-success)] text-[var(--color-success)] hover:text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center w-10 h-10 border border-[var(--color-success)]"
+                            aria-label="Mark as Complete">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="col-span-12 sm:col-span-9">
+                        <div class="flex flex-col sm:flex-row items-start justify-between mb-3">
+                            <span
+                                class="bg-[var(--color-accent)] text-[var(--color-primary)] text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+                                In Progress
+                            </span>
+                            <span class="text-sm text-[var(--color-text)]">Due: Apr 25, 2025</span>
+                        </div>
+                        <div class="font-bold text-lg mb-2">Design System Implementation</div>
+                        <div class="text-[var(--color-text)] text-sm mb-4">
+                            Create a comprehensive design system for the new product launch including components...
+                        </div>
+                        <div class="text-sm text-[var(--color-text)]">02:45:30</div>
+                    </div>
+
+                    <div
+                        class="col-span-12 sm:col-span-2 flex items-center justify-start sm:justify-center lg:justify-end h-full pl-2 gap-2 sm:flex-col lg:flex-row">
+                        <button
+                            class="theme-transition bg-[var(--color-danger)] hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Stop Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"
+                                fill="currentColor">
+                                <path d="M6 6h12v12H6V6z" />
+                            </svg>
+                        </button>
+
+                        <button
+                            class="theme-transition bg-[var(--color-primary)] hover:opacity-80 text-[var(--color-text)] font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-text)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Backlog Task -->
+            <div
+                class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 border border-[var(--color-border)] shadow-lg">
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="hidden sm:flex col-span-1 items-center justify-center">
+                        <button
+                            class="theme-transition bg-transparent hover:bg-[var(--color-success)] text-[var(--color-success)] hover:text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center w-10 h-10 border border-[var(--color-success)]"
+                            aria-label="Mark as Complete">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="col-span-12 sm:col-span-9">
+                        <div class="flex flex-col sm:flex-row items-start justify-between mb-3">
+                            <span
+                                class="bg-[var(--color-secondary)] text-[var(--color-text)] border border-[var(--color-border)] text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+                                Backlog
+                            </span>
+                            <span class="text-sm text-[var(--color-text)]">Due: Apr 28, 2025</span>
+                        </div>
+                        <div class="font-bold text-lg mb-2">User Research Analysis</div>
+                        <div class="text-[var(--color-text)] text-sm mb-4">
+                            Analyze user research data and create insights report...
+                        </div>
+                        <div class="text-sm text-[var(--color-text)]">00:00:00</div>
+                    </div>
+
+                    <div
+                        class="col-span-12 sm:col-span-2 flex items-center justify-start sm:justify-center lg:justify-end h-full pl-2 gap-2 sm:flex-col lg:flex-row">
+                        <button
+                            class="theme-transition bg-[var(--color-success)] hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Start Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653z" />
+                            </svg>
+                        </button>
+
+                        <button
+                            class="theme-transition bg-[var(--color-primary)] hover:opacity-80 text-[var(--color-text)] font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-text)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backlog Task 2-->
+            <div
+                class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 border border-[var(--color-border)] shadow-lg">
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="hidden sm:flex col-span-1 items-center justify-center">
+                        <button
+                            class="theme-transition bg-transparent hover:bg-[var(--color-success)] text-[var(--color-success)] hover:text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center w-10 h-10 border border-[var(--color-success)]"
+                            aria-label="Mark as Complete">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="col-span-12 sm:col-span-9">
+                        <div class="flex flex-col sm:flex-row items-start justify-between mb-3">
+                            <span
+                                class="bg-[var(--color-secondary)] text-[var(--color-text)] border border-[var(--color-border)] text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+                                Another Backlog
+                            </span>
+                            <span class="text-sm text-[var(--color-text)]">Due: Apr 28, 2025</span>
+                        </div>
+                        <div class="font-bold text-lg mb-2">New Year's Resolutions</div>
+                        <div class="text-[var(--color-text)] text-sm mb-4">
+                            Do that thing you said you were going to do when the new year started
+                        </div>
+                        <div class="text-sm text-[var(--color-text)]">-01:00:00</div>
+                    </div>
+
+                    <div
+                        class="col-span-12 sm:col-span-2 flex items-center justify-start sm:justify-center lg:justify-end h-full pl-2 gap-2 sm:flex-col lg:flex-row">
+                        <button
+                            class="theme-transition bg-[var(--color-success)] hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Start Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653z" />
+                            </svg>
+                        </button>
+
+                        <button
+                            class="theme-transition bg-[var(--color-primary)] hover:opacity-80 text-[var(--color-text)] font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-text)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Overdue Task -->
+            <div
+                class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 border border-[var(--color-danger)] shadow-lg">
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="hidden sm:flex col-span-1 items-center justify-center">
+                        <button
+                            class="theme-transition bg-transparent hover:bg-[var(--color-success)] text-[var(--color-success)] hover:text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center w-10 h-10 border border-[var(--color-success)]"
+                            aria-label="Mark as Complete">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="col-span-12 sm:col-span-9">
+                        <div class="flex flex-col sm:flex-row items-start justify-between mb-3">
+                            <span
+                                class="bg-[var(--color-danger)] text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+                                Overdue
+                            </span>
+                            <span class="text-[var(--color-danger)] text-sm font-medium">Due: Apr 15, 2025</span>
+                        </div>
+                        <div class="font-bold text-lg mb-2">Catch up with work</div>
+                        <div class="text-[var(--color-text)] text-sm mb-4">
+                            Complete all the work
+                        </div>
+                        <div class="text-sm text-[var(--color-text)]">00:00:00</div>
+                    </div>
+
+                    <div
+                        class="col-span-12 sm:col-span-2 flex items-center justify-start sm:justify-center lg:justify-end h-full pl-2 gap-2 sm:flex-col lg:flex-row">
+                        <button
+                            class="theme-transition bg-[var(--color-success)] hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Start Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653z" />
+                            </svg>
+                        </button>
+
+                        <button
+                            class="theme-transition bg-[var(--color-primary)] hover:opacity-80 text-[var(--color-text)] font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-text)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Completed Task -->
+            <div
+                class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 border border-[var(--color-border)] shadow-lg opacity-50">
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="hidden sm:flex col-span-1 items-center justify-center">
+                        <button
+                            class="theme-transition bg-[var(--color-success)] text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center w-10 h-10"
+                            aria-label="Task Completed" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="col-span-12 sm:col-span-9">
+                        <div class="flex flex-col sm:flex-row items-start justify-between mb-3">
+                            <span
+                                class="bg-[var(--color-success)] text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+                                Completed
+                            </span>
+                            <span class="text-sm text-[var(--color-text)]">Due: Apr 15, 2025</span>
+                        </div>
+                        <div class="font-bold text-lg mb-2 line-through">Wireframe Creation</div>
+                        <div class="text-[var(--color-text)] text-sm mb-4 line-through">
+                            Create initial wireframes for the dashboard...
+                        </div>
+                        <div class="text-sm text-[var(--color-text)]">04:30:15</div>
+                    </div>
+
+                    <div
+                        class="col-span-12 sm:col-span-2 flex items-center justify-start sm:justify-center lg:justify-end h-full pl-2 gap-2 sm:flex-col lg:flex-row">
+                        <button
+                            class="theme-transition bg-[var(--color-success)] text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-opacity-50 flex items-center justify-center disabled:opacity-50 cursor-not-allowed"
+                            disabled aria-label="Task Completed">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+
+                        <button
+                            class="theme-transition bg-[var(--color-primary)] hover:opacity-80 text-[var(--color-text)] font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-text)] focus:ring-opacity-50 flex items-center justify-center"
+                            aria-label="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const currentTask = document.getElementById('currentTask');
+        const container = document.querySelector('.container');
+        const stickyTaskBar = document.getElementById('sticky-task-bar');
+
+        function updateStickyTaskBarVisibility() {
+            if (!currentTask) {
+                stickyTaskBar.style.display = 'block';
+                return;
+            }
+
+            const rect = currentTask.getBoundingClientRect();
+            const isOutOfViewport = (
+                rect.top >= (window.innerHeight || document.documentElement.clientHeight) ||
+                rect.left >= (window.innerWidth || document.documentElement.clientWidth) ||
+                rect.bottom <= 0 ||
+                rect.right <= 0
+            );
+
+            if (isOutOfViewport) {
+                stickyTaskBar.classList.remove('hidden');
+            } else {
+                stickyTaskBar.classList.add('hidden');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            startTimer();
+            setTheme('purple');
+            updateStickyTaskBarVisibility();
+        });
+        window.addEventListener('scroll', updateStickyTaskBarVisibility);
+        window.addEventListener('resize', updateStickyTaskBarVisibility);
+
+        const observer = new MutationObserver(updateStickyTaskBarVisibility);
+        if (currentTask) {
+            observer.observe(currentTask, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        }
+        function toggleThemeMenu() {
+            const menu = document.getElementById('themeMenu');
+            const icon = document.querySelector('.theme-toggle-icon');
+
+            // Toggle the menu
+            if (menu.style.maxHeight) {
+                menu.style.maxHeight = null;
+                menu.style.opacity = '0';
+                menu.style.marginTop = '0';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                menu.style.maxHeight = menu.scrollHeight + 'px';
+                menu.style.opacity = '1';
+                menu.style.marginTop = '0.5rem';
+                icon.style.transform = 'rotate(-180deg)';
+            }
+        }
+
+        // Initialize the menu as collapsed
+        window.addEventListener('load', () => {
+            const menu = document.getElementById('themeMenu');
+            menu.style.maxHeight = null;
+            menu.style.opacity = '0';
+            menu.style.marginTop = '0';
+        });
+
+    </script>
+</body>
+
+</html>
