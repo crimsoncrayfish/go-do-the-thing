@@ -1,29 +1,29 @@
-package todo
+package task
 
 import (
 	"database/sql"
 	"errors"
 	"go-do-the-thing/src/database"
-	tasks_repo "go-do-the-thing/src/database/repos/tasks"
-	users_repo "go-do-the-thing/src/database/repos/users"
-	templ_todo "go-do-the-thing/src/handlers/todo/templ"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
-	fm "go-do-the-thing/src/models/forms"
-	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 	"sort"
 	"strconv"
 	"time"
+
+	templ_todo "go-do-the-thing/src/handlers/task/templ"
+
+	fm "go-do-the-thing/src/models/forms"
+	task_service "go-do-the-thing/src/services/task"
+	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 type Handler struct {
-	repo      tasks_repo.TasksRepo
-	usersRepo users_repo.UsersRepo
-	logger    slog.Logger
+	logger  slog.Logger
+	service task_service.TaskService
 }
 
 var (
@@ -32,8 +32,7 @@ var (
 )
 
 func SetupTodoHandler(
-	tasksRepo tasks_repo.TasksRepo,
-	usersRepo users_repo.UsersRepo,
+	taskService task_service.TaskService,
 	router *http.ServeMux,
 	mw_stack middleware.Middleware,
 ) {
@@ -41,9 +40,8 @@ func SetupTodoHandler(
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
-		repo:      tasksRepo,
-		usersRepo: usersRepo,
-		logger:    logger,
+		service: taskService,
+		logger:  logger,
 	}
 
 	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItem)))
@@ -52,10 +50,6 @@ func SetupTodoHandler(
 	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItem)))
 	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItem)))
 	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItem)))
-}
-
-type idResponse struct {
-	Id int64 `json:"id"`
 }
 
 var defaultForm = fm.NewDefaultTaskForm()
@@ -77,15 +71,18 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}
-	date, err := time.Parse("2006-01-02", dateRaw)
+	due_date, err := time.Parse("2006-01-02", dateRaw)
+	if err != nil {
+		form.Errors["Due Date"] = err.Error()
+	}
 
 	form.Task = models.TaskView{
 		Name:        name,
 		Description: description,
-		DueDate:     database.NewSqliteTime(date),
+		DueDate:     database.NewSqliteTime(due_date),
 	}
-	if err != nil || len(form.Errors) > 0 {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+	if len(form.Errors) > 0 {
+		w.WriteHeader(http.StatusBadRequest)
 		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			assert.NoError(err, source, "Failed to render template for formData")
@@ -93,45 +90,16 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task := models.Task{
-		Name:         name,
-		Description:  description,
-		DueDate:      database.NewSqliteTime(date),
-		AssignedTo:   currentUserId, // TODO: need to update this
-		CreatedBy:    currentUserId,
-		CreatedDate:  database.SqLiteNow(),
-		ModifiedBy:   currentUserId,
-		ModifiedDate: database.SqLiteNow(),
-		IsDeleted:    false,
-	}
-
-	// NOTE: Validate data
-	form, isValid := formDataFromItem(task, currentUserEmail)
-	if !isValid {
-		h.logger.Info("invalid data")
-		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, source, "Failed to render template for formData")
-			// TODO: better error handling. Honestly i might as well panic here
-		}
-		return
-	}
-
-	// NOTE: Take action
-	id, err := h.repo.InsertItem(task)
+	new_id, err := h.service.CreateTask(currentUserId, name, description, database.NewSqliteTime(due_date))
 	if err != nil {
-		h.logger.Error(err, "failed to insert task")
-		form.Errors["Task"] = "failed to create task"
-		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
-			assert.NoError(err, source, "failed to notify create failure for task")
-			// TODO: what should happen if the fetch fails after create
-		}
-		return
-	}
-	task, err = h.repo.GetItem(id)
-	if err != nil {
-		assert.NoError(err, source, "failed to get newly inserted task")
 		// TODO: what should happen if the fetch fails after create
+		assert.NoError(err, source, "failed to get newly inserted task")
+		return
+	}
+	taskView, err = h.service.GetTaskView(new_id)
+	if err != nil {
+		// TODO: what should happen if the fetch fails after create
+		assert.NoError(err, source, "failed to get newly inserted task")
 		return
 	}
 
@@ -507,15 +475,6 @@ func formDataFromItemNoValidation(task models.Task, assignedUser string) fm.Task
 	formData.Task.DueDate = task.DueDate
 
 	return formData
-}
-
-func formDataFromItem(task models.Task, assignedUser string) (fm.TaskForm, bool) {
-	formData := formDataFromItemNoValidation(task, assignedUser)
-	isValid, errs := task.IsValid()
-	if !isValid {
-		formData.Errors = errs
-	}
-	return formData, isValid
 }
 
 func (h *Handler) handleUserIdNotFound(err error, userId int64) bool {

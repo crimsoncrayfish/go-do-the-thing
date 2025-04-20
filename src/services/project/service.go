@@ -1,4 +1,4 @@
-package project
+package projects_service
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	roles_repo "go-do-the-thing/src/database/repos/roles"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
@@ -25,7 +24,7 @@ const serviceSource = "ProjectService"
 
 func SetupProjectService(projectRepo projects_repo.ProjectsRepo, projectUsersRepo project_users_repo.ProjectUsersRepo, rolesRepo roles_repo.RolesRepo, usersRepo users_repo.UsersRepo) ProjectService {
 	return ProjectService{
-		logger:           slog.NewLogger(helpers.CallerName()),
+		logger:           slog.NewLogger(serviceSource),
 		projectRepo:      projectRepo,
 		usersRepo:        usersRepo,
 		projectUsersRepo: projectUsersRepo,
