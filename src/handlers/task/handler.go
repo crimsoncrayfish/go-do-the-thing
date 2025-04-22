@@ -29,6 +29,7 @@ type Handler struct {
 var (
 	activeScreens models.NavBarObject
 	source        = "TasksHandler"
+	defaultForm   = fm.NewDefaultTaskForm()
 )
 
 func SetupTodoHandler(
@@ -52,22 +53,28 @@ func SetupTodoHandler(
 	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItem)))
 }
 
-var defaultForm = fm.NewDefaultTaskForm()
-
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
+	currentUserId, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
 
 	// NOTE: Collect data
 	form := fm.NewTaskForm()
-	name, err := models.GetPropertyFromRequest(r, "name", "Task Name", true)
+	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Task Name")
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description, _ := models.GetPropertyFromRequest(r, "description", "Description", false)
+	description := models.GetPropertyFromRequest(r, "description", "Description")
+	project, err := models.GetRequiredPropertyFromRequest(r, "project", "Project")
+	if err != nil {
+		form.Errors["Project"] = err.Error()
+	}
+	project_id, err := strconv.ParseInt(project, 10, 64)
+	if err != nil {
+		form.Errors["Project"] = err.Error()
+	}
 
-	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", "Due on", true)
+	dateRaw, err := models.GetRequiredPropertyFromRequest(r, "due_date", "Due on")
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}
@@ -80,6 +87,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		Name:        name,
 		Description: description,
 		DueDate:     database.NewSqliteTime(due_date),
+		Project:     project_id,
 	}
 	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusBadRequest)
@@ -90,51 +98,27 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	new_id, err := h.service.CreateTask(currentUserId, name, description, database.NewSqliteTime(due_date))
+	new_id, err := h.service.CreateTask(currentUserId, project, name, description, database.NewSqliteTime(due_date))
 	if err != nil {
 		// TODO: what should happen if the fetch fails after create
-		assert.NoError(err, source, "failed to get newly inserted task")
 		return
 	}
-	taskView, err = h.service.GetTaskView(new_id)
+	taskView, err := h.service.GetTaskView(new_id)
 	if err != nil {
 		// TODO: what should happen if the fetch fails after create
-		assert.NoError(err, source, "failed to get newly inserted task")
 		return
 	}
 
-	// NOTE: Success zone
-	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
-	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
-		assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
-		// TODO: what should happen if the fetch fails after create
-		return
-	}
-	var createdBy *models.User
-	if task.CreatedBy == task.AssignedTo {
-		createdBy = assignedToUser
-	} else {
-		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
-		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
-			// TODO: what should happen if the fetch fails after create
-			return
-		}
-	}
-	taskListItem := task.ToViewModel(assignedToUser, createdBy)
-	if err := templ_todo.TaskRowOOB(taskListItem).Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
+	if err := templ_todo.TaskRowOOB(*taskView).Render(r.Context(), w); err != nil {
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
 	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
 		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
 	if err := templ_todo.TaskFormContent("Create", defaultForm).Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render the task form after creation")
 		// TODO: what should happen if rendering fails
 		return
 	}

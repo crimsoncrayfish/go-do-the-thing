@@ -559,6 +559,32 @@
                 </button>
             </div>
         </div>
+
+        <!-- Comments Section -->
+        <div
+            class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 mb-6 border border-[var(--color-border)] shadow-lg">
+            <h2 class="text-xl font-bold mb-4">Comment</h2>
+            <!-- Comment Form -->
+            <div class="flex gap-3">
+                <div class="flex-shrink-0">
+                    <div
+                        class="h-10 w-10 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-[var(--color-primary)] font-bold">
+                        M
+                    </div>
+                </div>
+                <div class="flex-grow">
+                    <textarea placeholder="Add a comment..."
+                        class="theme-transition bg-[var(--color-primary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-sm border border-[var(--color-border)] min-h-[100px]"></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button type="submit"
+                            class="theme-transition bg-[var(--color-accent)] hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50">
+                            Post Comment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Task Timeline -->
         <div
             class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 mb-6 border border-[var(--color-border)] shadow-lg">
@@ -681,7 +707,6 @@
                 </div>
 
                 <!-- Timeline Item with Comment -->
-                <!-- Timeline Item with Comment -->
                 <div class="relative flex gap-4">
                     <div class="flex-shrink-0 relative z-10 bg-[var(--color-secondary)]">
                         <div class="h-8 w-8 rounded-full bg-[var(--color-text)] flex items-center justify-center">
@@ -726,30 +751,6 @@
             </div>
         </div>
 
-        <!-- Comments Section -->
-        <div
-            class="theme-transition bg-[var(--color-secondary)] rounded-xl p-6 mb-6 border border-[var(--color-border)] shadow-lg">
-            <h2 class="text-xl font-bold mb-4">Comment</h2>
-            <!-- Comment Form -->
-            <div class="mb-6 flex gap-3">
-                <div class="flex-shrink-0">
-                    <div
-                        class="h-10 w-10 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-[var(--color-primary)] font-bold">
-                        M
-                    </div>
-                </div>
-                <div class="flex-grow">
-                    <textarea placeholder="Add a comment..."
-                        class="theme-transition bg-[var(--color-primary)] text-[var(--color-text)] rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50 shadow-sm border border-[var(--color-border)] min-h-[100px]"></textarea>
-                    <div class="flex justify-end mt-2">
-                        <button type="submit"
-                            class="theme-transition bg-[var(--color-accent)] hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-opacity-50">
-                            Post Comment
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>

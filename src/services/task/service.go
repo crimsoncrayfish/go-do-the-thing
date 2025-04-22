@@ -24,7 +24,8 @@ func SetupTaskService(tasksRepo tasks_repo.TasksRepo, usersRepo users_repo.Users
 	}
 }
 
-func (s TaskService) CreateTask(currentUserId int64, name, description string, due_date *database.SqLiteTime) (int64, error) {
+func (s TaskService) CreateTask(currentUserId, project_id int64, name, description string, due_date *database.SqLiteTime) (int64, error) {
+	// TODO: SHOULD I HANDLE PERMISSIONS HERE? May i create a task for this project
 	task := models.Task{
 		Name:         name,
 		Description:  description,
@@ -34,49 +35,59 @@ func (s TaskService) CreateTask(currentUserId int64, name, description string, d
 		CreatedDate:  database.SqLiteNow(),
 		ModifiedBy:   currentUserId,
 		ModifiedDate: database.SqLiteNow(),
+		Project:      project_id,
 		IsDeleted:    false,
 	}
 
-	// NOTE: Validate data
-
 	// NOTE: Take action
-	id, err := h.repo.InsertItem(task)
+	id, err := s.tasksRepo.InsertItem(task)
 	if err != nil {
-		h.logger.Error(err, "failed to insert task")
-		form.Errors["Task"] = "failed to create task"
-		if err := templ_todo.TaskFormContent("Create", form).Render(r.Context(), w); err != nil {
-			assert.NoError(err, source, "failed to notify create failure for task")
-			// TODO: what should happen if the fetch fails after create
-		}
-		return
+		s.logger.Error(err, "failed to insert task")
+		return 0, err
 	}
-	return 0, nil
+	return id, nil
 }
 
-func (s TaskService) GetTaskView(id, currentUserId int64) (models.TaskView, error) {
-	task, err = s.tasksRepo.GetItem(id)
+func (s TaskService) GetTaskView(id, currentUserId int64) (*models.TaskView, error) {
+	task, err := s.tasksRepo.GetItem(id)
 	if err != nil {
-		// TODO: what should happen if the fetch fails after create
-		assert.NoError(err, source, "failed to get newly inserted task")
-		return
+		return nil, err
 	}
+	// TODO: SHOULD I HANDLE PERMISSIONS HERE?
 
-	// NOTE: Success zone
-	assignedToUser, err := h.usersRepo.GetUserById(task.AssignedTo)
-	if ok := h.handleUserIdNotFound(err, task.AssignedTo); !ok {
-		assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
-		// TODO: what should happen if the fetch fails after create
-		return
-	}
-	var createdBy *models.User
-	if task.CreatedBy == task.AssignedTo {
-		createdBy = assignedToUser
-	} else {
-		createdBy, err = h.usersRepo.GetUserById(task.CreatedBy)
-		if ok := h.handleUserIdNotFound(err, task.CreatedBy); !ok {
-			assert.NoError(err, source, "how does a task with an created by user id of %d even exist?", task.AssignedTo)
-			// TODO: what should happen if the fetch fails after create
-			return
+	return s.taskToViewModel(task)
+}
+
+func (s *TaskService) taskToViewModel(task models.Task) (*models.TaskView, error) {
+	users := make(map[int64]*models.User, 3)
+	assignedTo, ok := users[task.AssignedTo]
+	if !ok {
+		owner, err := s.usersRepo.GetUserById(task.AssignedTo)
+		if err != nil {
+			// NOTE: this should already be nicely formatted
+			return nil, err
 		}
+		users[task.AssignedTo] = owner
 	}
+	createdBy, ok := users[task.CreatedBy]
+	if !ok {
+		createdBy, err := s.usersRepo.GetUserById(task.AssignedTo)
+		if err != nil {
+			// NOTE: this should already be nicely formatted
+			return nil, err
+		}
+		users[task.AssignedTo] = createdBy
+	}
+	modifiedBy, ok := users[task.ModifiedBy]
+	if !ok {
+		modifiedBy, err := s.usersRepo.GetUserById(task.ModifiedBy)
+		if err != nil {
+			// NOTE: this should already be nicely formatted
+			return nil, err
+		}
+		users[task.ModifiedBy] = modifiedBy
+	}
+	projectView := task.ToViewModel(assignedTo, createdBy, modifiedBy)
+
+	return &projectView, nil
 }

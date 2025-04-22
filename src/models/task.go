@@ -60,10 +60,12 @@ type TaskView struct {
 	DueDate       *database.SqLiteTime
 	CreatedDate   *database.SqLiteTime
 	CreatedBy     string
+	ModifiedDate  *database.SqLiteTime
+	ModifiedBy    string
 	Project       int64
 }
 
-func (t *Task) ToViewModel(assignedTo, createdBy *User) TaskView {
+func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User) TaskView {
 	return TaskView{
 		Id:            t.Id,
 		Name:          t.Name,
@@ -73,6 +75,8 @@ func (t *Task) ToViewModel(assignedTo, createdBy *User) TaskView {
 		CompletedDate: t.CompleteDate,
 		CreatedDate:   t.CreatedDate,
 		CreatedBy:     createdBy.FullName,
+		ModifiedDate:  t.ModifiedDate,
+		ModifiedBy:    modifiedBy.FullName,
 		DueDate:       t.DueDate,
 		Project:       t.Project,
 	}
