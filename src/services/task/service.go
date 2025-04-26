@@ -2,69 +2,140 @@ package task_service
 
 import (
 	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/database/repos"
+	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers/slog"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 )
 
 type TaskService struct {
-	logger    slog.Logger
-	tasksRepo tasks_repo.TasksRepo
-	usersRepo users_repo.UsersRepo
+	tasksRepo        tasks_repo.TasksRepo
+	usersRepo        users_repo.UsersRepo
+	projectUsersRepo project_users_repo.ProjectUsersRepo
 }
 
 const serviceSource = "TaskService"
 
-func SetupTaskService(tasksRepo tasks_repo.TasksRepo, usersRepo users_repo.UsersRepo) TaskService {
-	return TaskService{
-		logger:    slog.NewLogger(serviceSource),
-		tasksRepo: tasksRepo,
-		usersRepo: usersRepo,
+func SetupTaskService(repo_container *repos.RepoContainer) *TaskService {
+	return &TaskService{
+		tasksRepo:        *repo_container.GetTasksRepo(),
+		usersRepo:        *repo_container.GetUsersRepo(),
+		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
 	}
 }
 
-func (s TaskService) CreateTask(currentUserId, project_id int64, name, description string, due_date *database.SqLiteTime) (int64, error) {
-	// TODO: SHOULD I HANDLE PERMISSIONS HERE? May i create a task for this project
+func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *database.SqLiteTime) (int64, error) {
+	// NOTE: Does this user belong to the current project
+	err := s.userBelongsToProject(user_id, project_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return 0, err
+	}
 	task := models.Task{
 		Name:         name,
 		Description:  description,
 		DueDate:      due_date,
-		AssignedTo:   currentUserId, // TODO: need to update this
-		CreatedBy:    currentUserId,
+		AssignedTo:   user_id, // TODO: need to update this
+		CreatedBy:    user_id,
 		CreatedDate:  database.SqLiteNow(),
-		ModifiedBy:   currentUserId,
+		ModifiedBy:   user_id,
 		ModifiedDate: database.SqLiteNow(),
 		Project:      project_id,
 		IsDeleted:    false,
 	}
 
-	// NOTE: Take action
 	id, err := s.tasksRepo.InsertItem(task)
 	if err != nil {
-		s.logger.Error(err, "failed to insert task")
+		// NOTE: Errors from repo are wrapped
 		return 0, err
 	}
 	return id, nil
 }
 
-func (s TaskService) GetTaskView(id, currentUserId int64) (*models.TaskView, error) {
+func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *database.SqLiteTime, assigned_to int64) error {
+	// NOTE: Does this user belong to the current project
+	err := s.userBelongsToTaskProject(user_id, task_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+	err = s.userBelongsToProject(user_id, project_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+	task := models.Task{
+		Name:         name,
+		Description:  description,
+		DueDate:      due_date,
+		AssignedTo:   assigned_to, // TODO: need to update this
+		ModifiedBy:   user_id,
+		ModifiedDate: database.SqLiteNow(),
+		Project:      project_id,
+		IsDeleted:    false,
+	}
+
+	return s.tasksRepo.UpdateItem(task)
+}
+
+func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
+	err := s.userBelongsToTaskProject(user_id, task_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+
+	task, err := s.tasksRepo.GetItem(task_id)
+	if err != nil {
+		// NOTE: Take action
+		return err
+	}
+
+	if task.AssignedTo != user_id {
+		return errors.New(errors.ErrAccessDenied, "not user's task")
+	}
+
+	// NOTE: Take action
+	task.ToggleStatus(user_id)
+
+	return s.tasksRepo.UpdateItemStatus(task_id, task.CompleteDate, int64(task.Status), user_id)
+}
+
+func (s *TaskService) DeleteTask(user_id, task_id int64) error {
+	// NOTE: Does this user belong to the current project
+	err := s.userBelongsToTaskProject(user_id, task_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+
+	return s.tasksRepo.DeleteItem(task_id, user_id)
+}
+
+func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	task, err := s.tasksRepo.GetItem(id)
 	if err != nil {
+		// NOTE: Take action
 		return nil, err
 	}
-	// TODO: SHOULD I HANDLE PERMISSIONS HERE?
+	err = s.userBelongsToProject(user_id, task.Project)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return nil, err
+	}
 
 	return s.taskToViewModel(task)
 }
 
-func (s *TaskService) taskToViewModel(task models.Task) (*models.TaskView, error) {
+func (s *TaskService) taskToViewModel(task *models.Task) (*models.TaskView, error) {
 	users := make(map[int64]*models.User, 3)
 	assignedTo, ok := users[task.AssignedTo]
 	if !ok {
 		owner, err := s.usersRepo.GetUserById(task.AssignedTo)
 		if err != nil {
-			// NOTE: this should already be nicely formatted
+			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.AssignedTo] = owner
@@ -73,7 +144,7 @@ func (s *TaskService) taskToViewModel(task models.Task) (*models.TaskView, error
 	if !ok {
 		createdBy, err := s.usersRepo.GetUserById(task.AssignedTo)
 		if err != nil {
-			// NOTE: this should already be nicely formatted
+			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.AssignedTo] = createdBy
@@ -82,12 +153,33 @@ func (s *TaskService) taskToViewModel(task models.Task) (*models.TaskView, error
 	if !ok {
 		modifiedBy, err := s.usersRepo.GetUserById(task.ModifiedBy)
 		if err != nil {
-			// NOTE: this should already be nicely formatted
+			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.ModifiedBy] = modifiedBy
 	}
-	projectView := task.ToViewModel(assignedTo, createdBy, modifiedBy)
 
-	return &projectView, nil
+	return task.ToViewModel(assignedTo, createdBy, modifiedBy), nil
+}
+
+func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err error) {
+	task, err := s.tasksRepo.GetItem(task_id)
+	if err != nil {
+		// NOTE: Take action
+		return err
+	}
+	return s.userBelongsToProject(user_id, task.Project)
+}
+
+func (s *TaskService) userBelongsToProject(user_id, project_id int64) (err error) {
+	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
+	if err != nil {
+		// NOTE: Errors from repo are wrapped
+		return err
+	}
+	// TODO: Move this logic to the project_users_service and expose it to both the projects service and the tasks service???
+	if len(roles) == 0 {
+		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
+	}
+	return nil
 }

@@ -2,9 +2,10 @@ package project_users_repo
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
+	app_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 )
 
@@ -34,23 +35,27 @@ const createProjectUsersTable = `CREATE TABLE IF NOT EXISTS project_users (
 );`
 
 func scanFromRows(rows *sql.Rows, item *models.ProjectUser) error {
-	return rows.Scan(
+	err := rows.Scan(
 		&item.ProjectId,
 		&item.UserId,
 		&item.RoleId,
 	)
+	return app_errors.New(app_errors.ErrDBGenericError, "failed to scan rows: %w", err)
 }
 
 const getAllForProject = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE project_id = ?`
 
 func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []models.ProjectUser, err error) {
 	rows, err := r.database.Query(getAllForProject, projectId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return make([]models.ProjectUser, 0), nil
+	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all project users for projectId - query failed: %w", err)
+		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get all project users for projectId - query failed: %w", err)
 	}
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
-		err = fmt.Errorf("failed to get all project users for userId - row error: %w", err)
+		err = app_errors.New(app_errors.ErrDBGenericError, "failed to get all project users for userId - row error: %w", err)
 	}(rows)
 
 	projectUsers = make([]models.ProjectUser, 0)
@@ -59,13 +64,13 @@ func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []model
 
 		err = scanFromRows(rows, &projectUser)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get all project users for projectId - scan failed: %w", err)
+			return nil, err
 		}
 		projectUsers = append(projectUsers, projectUser)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all project users for projectId - row error: %w", err)
+		return nil, app_errors.New(app_errors.ErrDBGenericError, "failed to get all project users for projectId - row error: %w", err)
 	}
 	return projectUsers, nil
 }
@@ -74,12 +79,15 @@ const getAllForUser = `SELECT [project_id], [user_id], [role_id] FROM project_us
 
 func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, error) {
 	rows, err := r.database.Query(getAllForUser, userId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return make([]models.ProjectUser, 0), nil
+	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all project users for userId - query failed: %w", err)
+		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get all project users for userId - query failed: %w", err)
 	}
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
-		err = fmt.Errorf("failed to get all project users for userId - row error: %w", err)
+		err = app_errors.New(app_errors.ErrDBGenericError, "failed to get all project users for userId - row error: %w", err)
 	}(rows)
 
 	projectUsers := make([]models.ProjectUser, 0)
@@ -88,13 +96,13 @@ func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, erro
 
 		err = scanFromRows(rows, &projectUser)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get all project users for userId - scan failed: %w", err)
+			return nil, err
 		}
 		projectUsers = append(projectUsers, projectUser)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all project users for userId - row error: %w", err)
+		return nil, app_errors.New(app_errors.ErrDBGenericError, "failed to get all project users for userId - row error: %w", err)
 	}
 	return projectUsers, nil
 }
@@ -104,11 +112,11 @@ const insertProjectUser = `INSERT INTO project_users (project_id, user_id, role_
 func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) (int64, error) {
 	result, err := r.database.Exec(insertProjectUser, projectId, userId, roleId)
 	if err != nil {
-		return 0, fmt.Errorf("failed to link user (%d) to project (%d): %w", userId, projectId, err)
+		return 0, app_errors.New(app_errors.ErrDBInsertFailed, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
 	}
 	inserted_id, err := result.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("failed to link user (%d) to project (%d): %w", userId, projectId, err)
+		return 0, app_errors.New(app_errors.ErrDBGenericError, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
 	}
 
 	return inserted_id, nil
@@ -119,7 +127,7 @@ const updateProjectUser = `UPDATE project_users SET [role_id] = ? WHERE [project
 func (r *ProjectUsersRepo) Update(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(updateProjectUser, roleId, projectId, userId)
 	if err != nil {
-		return fmt.Errorf("failed to update link for user (%d) and project (%d): %w", userId, projectId, err)
+		return app_errors.New(app_errors.ErrDBUpdateFailed, "failed to update link for user (%d) and project (%d): %w", userId, projectId, err)
 	}
 
 	return nil
@@ -130,7 +138,7 @@ const deleteProjectUser = `DELETE FROM project_users WHERE [project_id] = ? AND 
 func (r *ProjectUsersRepo) Delete(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(deleteProjectUser, projectId, userId)
 	if err != nil {
-		return fmt.Errorf("failed to remove link for user (%d) and project (%d): %w", userId, projectId, err)
+		return app_errors.New(app_errors.ErrDBDeleteFailed, "failed to remove link for user (%d) and project (%d): %w", userId, projectId, err)
 	}
 
 	return nil
@@ -146,20 +154,24 @@ const (
 )
 
 func (r *ProjectUsersRepo) GetProjectUserRoles(projectId, userId int64) (roleIds []int64, err error) {
+	roleIds = make([]int64, 0)
 	rows, err := r.database.Query(getAllRolesForUserProject, projectId, userId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return roleIds, nil
+	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get project_user roles: %w", err)
+		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get project_user roles: %w", err)
 	}
 	for rows.Next() {
 		var val int64
 		if err := rows.Scan(&val); err != nil {
-			return nil, fmt.Errorf("failed to get project_user roles: %w", err)
+			return nil, app_errors.New(app_errors.ErrDBGenericError, "failed to get project user roles: %w", err)
 		}
 		roleIds = append(roleIds, val)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to get project_user roles: %w", err)
+		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get project_user roles: %w", err)
 	}
 
 	return roleIds, nil
