@@ -10,7 +10,6 @@ import (
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	"net/http"
-	"sort"
 	"strconv"
 	"time"
 
@@ -348,7 +347,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	tasks, err := h.service.GetListTaskViews(current_user_id)
+	tasks, err := h.service.GetTaskViewList(current_user_id)
 	if err != nil {
 		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo tasks")
@@ -356,23 +355,17 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].DueDate.Before(tasks[j].DueDate)
-	})
-
-	var tasksList []models.TaskView
-
 	// NOTE: Success zone
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskList(activeScreens, defaultForm, tasksList).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskList(activeScreens, defaultForm, tasks).Render(r.Context(), w); err != nil {
 			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasksList).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasks).Render(r.Context(), w); err != nil {
 			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -407,7 +400,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	hasData, err := h.service.GetItemsCount(current_user_id)
+	hasData, err := h.service.GetTaskCount(current_user_id)
 	if err != nil {
 		assert.NoError(err, source, "failed to update ui")
 		return

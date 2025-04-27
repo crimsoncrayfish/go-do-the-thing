@@ -8,7 +8,7 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
+templ TaskItemWithBody(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@ts.Header()
@@ -18,7 +18,7 @@ templ TaskItemWithBody(task models.TaskView, navbar models.NavBarObject, formdat
 	</html>
 }
 
-templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
+templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
 	@ts.NavBar(navbar)
 	@ts.Loader()
 	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
@@ -73,7 +73,7 @@ templ TaskItem(task models.TaskView, navbar models.NavBarObject, formdata fm.Tas
 	</div>
 }
 
-templ taskItemContent(task models.TaskView) {
+templ taskItemContent(task *models.TaskView) {
 	<div id="task-item-content">
 		<div
 			class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
@@ -110,17 +110,17 @@ templ taskItemContent(task models.TaskView) {
 					{ task.Description }
 				}
 				<div class="sm:flex w-full sm:justify-between items-center">
-					<p>Assigned To: { task.AssignedTo }</p>
+					<p>Assigned To: { task.AssignedTo.FullName }</p>
 					<p class="pt-2 sm:p-0">Due on: { task.DueDate.Format(constants.DateFormat) }</p>
 				</div>
-				<div>Created by: { task.CreatedBy }</div>
+				<div>Created by: { task.CreatedBy.FullName }</div>
 				<div>Created on: { task.CreatedDate.String() }</div>
 			</div>
 		</div>
 	</div>
 }
 
-templ TaskItemContentOOB(task models.TaskView) {
+templ TaskItemContentOOB(task *models.TaskView) {
 	<div id="task-item-content" hx-swap-oob="true">
 		@taskItemContent(task)
 	</div>

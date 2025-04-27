@@ -1,13 +1,16 @@
 package task_service
 
 import (
+	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
+	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
+	"sort"
 )
 
 type TaskService struct {
@@ -117,7 +120,7 @@ func (s *TaskService) DeleteTask(user_id, task_id int64) error {
 func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	task, err := s.tasksRepo.GetItem(id)
 	if err != nil {
-		// NOTE: Take action
+		// NOTE: Errors from function already wrapped
 		return nil, err
 	}
 	err = s.userBelongsToProject(user_id, task.Project)
@@ -127,6 +130,68 @@ func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	}
 
 	return s.taskToViewModel(task)
+}
+
+func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error) {
+	tasks, err := s.tasksRepo.GetItemsForUser(user_id)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].DueDate.Before(tasks[j].DueDate)
+	})
+	return s.taskListToViewModels(tasks)
+}
+
+func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*models.TaskView, err error) {
+	taskViews = make([]*models.TaskView, len(tasks))
+	users := make(map[int64]*models.User)
+
+	for i, task := range tasks {
+		var assigned_to *models.User
+
+		assigned_to, ok := users[task.AssignedTo]
+		if !ok {
+			assigned_to, err = s.usersRepo.GetUserById(task.AssignedTo)
+			if err != nil {
+				// NOTE: this should already be nicely formatted
+				return nil, err
+			}
+			users[task.AssignedTo] = assigned_to
+		}
+		assert.NotNil(assigned_to, serviceSource, fmt.Sprintf("task assignee cant be nil - assigned to id %d", task.AssignedTo))
+
+		var created_by *models.User
+
+		created_by, ok = users[task.CreatedBy]
+		if !ok {
+			created_by, err = s.usersRepo.GetUserById(task.CreatedBy)
+			if err != nil {
+				// NOTE: this should already be nicely formatted
+				return nil, err
+			}
+			users[task.ModifiedBy] = created_by
+		}
+		assert.NotNil(created_by, serviceSource, fmt.Sprintf("task created by user cant be nil - created by id %d", task.CreatedBy))
+
+		var modified_by *models.User
+
+		modified_by, ok = users[task.ModifiedBy]
+		if !ok {
+			modified_by, err = s.usersRepo.GetUserById(task.ModifiedBy)
+			if err != nil {
+				// NOTE: this should already be nicely formatted
+				return nil, err
+			}
+			users[task.ModifiedBy] = modified_by
+		}
+		assert.NotNil(modified_by, serviceSource, fmt.Sprintf("task modified by user cant be nil - modified by id %d", task.ModifiedBy))
+
+		// Convert to ViewModel
+		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by)
+	}
+
+	return taskViews, nil
 }
 
 func (s *TaskService) taskToViewModel(task *models.Task) (*models.TaskView, error) {

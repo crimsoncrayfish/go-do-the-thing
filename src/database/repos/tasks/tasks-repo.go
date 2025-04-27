@@ -105,7 +105,7 @@ const getItemsByAssignedUser = `
 	WHERE [is_deleted] = 0 
 	AND [assigned_to] = ?`
 
-func (r *TasksRepo) GetItemsForUser(userId int64) (items []models.Task, err error) {
+func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err error) {
 	rows, err := r.database.Query(getItemsByAssignedUser, userId)
 	if err != nil {
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to read items for user: %w", err)
@@ -117,11 +117,11 @@ func (r *TasksRepo) GetItemsForUser(userId int64) (items []models.Task, err erro
 		}
 	}(rows)
 
-	items = make([]models.Task, 0)
+	items = make([]*models.Task, 0)
 	for rows.Next() {
-		item := models.Task{}
+		item := &models.Task{}
 
-		err = scanFromRows(rows, &item)
+		err = scanFromRows(rows, item)
 		if err != nil {
 			// NOTE: Already wrapped
 			return nil, err

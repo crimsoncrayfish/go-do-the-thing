@@ -8,7 +8,7 @@ import (
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskRow(task models.TaskView) {
+templ TaskRow(task *models.TaskView) {
 	<tr
 		id={ fmt.Sprintf("task-row-%d", task.Id) }
 		class="item-row transition-transform cursor-pointer text-primary-900 dark:text-primary-50
@@ -20,7 +20,7 @@ templ TaskRow(task models.TaskView) {
 	</tr>
 }
 
-templ TaskRowOOB(task models.TaskView) {
+templ TaskRowOOB(task *models.TaskView) {
 	<tbody id="task-rows" hx-swap-oob="afterbegin">
 		<tr
 			id={ fmt.Sprintf("task-row-%d", task.Id) }
@@ -34,7 +34,7 @@ templ TaskRowOOB(task models.TaskView) {
 	</tbody>
 }
 
-templ TaskRowContent(task models.TaskView) {
+templ TaskRowContent(task *models.TaskView) {
 	<td class="pl-5 w-0 mx-auto">
 		<div hx-swap="innetHTML" hx-target="closest tr" hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }>
 			@statusIcon(task)
@@ -58,7 +58,7 @@ templ TaskRowContent(task models.TaskView) {
 				<dd class="font-light text-wrap">{ task.Description }</dd>
 			}
 			<dt class="sr-only lg:hidden">Assigned To</dt>
-			<dd class="font-light lg:hidden">{ task.AssignedTo }</dd>
+			<dd class="font-light lg:hidden">{ task.AssignedTo.FullName }</dd>
 			<dt class="sr-only md:hidden">Due date</dt>
 			<dd class="font-light md:hidden">{ task.DueDate.Format(constants.DateFormat) }</dd>
 		</dl>
@@ -79,7 +79,7 @@ templ TaskRowContent(task models.TaskView) {
 		hx-replace-url="true"
 		class="hidden lg:table-cell px-6 py-4"
 	>
-		{ task.AssignedTo }
+		{ task.AssignedTo.FullName }
 	</td>
 	<td class="px-6 py-4">
 		<button
@@ -95,7 +95,7 @@ templ TaskRowContent(task models.TaskView) {
 	</td>
 }
 
-templ statusIcon(task models.TaskView) {
+templ statusIcon(task *models.TaskView) {
 	<div
 		if task.Status==models.Completed {
 			class="text-action-400"
