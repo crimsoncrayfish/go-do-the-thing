@@ -5,21 +5,22 @@ import (
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskForm(postTo string, formType string, formdata form_models.TaskForm) {
+templ TaskForm(postTo string, formType string, formdata form_models.TaskForm, projects map[int64]string) {
 	<div id="create-task-form">
 		<form
 			hx-post={ postTo }
 			class="px-5 pt-5 pb-1 border border-primary-200 dark:border-primary-700 mb-0 dark:bg-primary-900 "
 		>
-			@TaskFormContent(formType, formdata)
+			@TaskFormContent(formType, formdata, projects)
 		</form>
 	</div>
 }
 
-templ TaskFormContent(formType string, formdata form_models.TaskForm) {
+templ TaskFormContent(formType string, formdata form_models.TaskForm, projects map[int64]string) {
 	@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
 	@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
 		formdata.Task.Description)
+	@templ_shared.FormListInput("Project", "project", formdata.Task.Project, projects)
 	@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
 	for _, v:= range formdata.Errors {
 		<div class="py-4 text-error">

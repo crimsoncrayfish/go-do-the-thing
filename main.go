@@ -62,7 +62,7 @@ func main() {
 	project.SetupProjectHandler(project_service, router, middleware_full)
 
 	task_service := taskService.SetupTaskService(reposContainer)
-	task.SetupTodoHandler(task_service, router, middleware_full)
+	task.SetupTodoHandler(task_service, project_service, router, middleware_full)
 
 	home.SetupHomeHandler(router, middleware_full)
 	setupStaticContent(router)

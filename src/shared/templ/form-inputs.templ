@@ -1,37 +1,52 @@
 package templ_shared
 
 import (
-"go-do-the-thing/src/database"
-"go-do-the-thing/src/helpers/constants"
+	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/helpers/constants"
+	"strconv"
 )
 
 templ FormTextInput(title, name, placeholder, value string) {
-<div class="mb-5">
-	<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">
-		{ title }
-		<input type="text" name={ name } placeholder={ placeholder } value={ value }
-			class="bg-primary-50 mt-2 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link" />
-	</label>
-</div>
+	<div class="mb-5">
+		<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">
+			{ title }
+			<input
+				type="text"
+				name={ name }
+				placeholder={ placeholder }
+				value={ value }
+				class="bg-primary-50 mt-2 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link"
+			/>
+		</label>
+	</div>
 }
 
 templ FormPasswordInput(title, name, placeholder string) {
-<div>
-	<label for={ name } class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">{ title }</label>
-	<input type="password" name={ name } id={ name } placeholder="••••••••"
-		class="bg-primary-50 border border-primary-300 text-primary-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link"
-		required="" />
-</div>
+	<div>
+		<label for={ name } class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">{ title }</label>
+		<input
+			type="password"
+			name={ name }
+			id={ name }
+			placeholder="••••••••"
+			class="bg-primary-50 border border-primary-300 text-primary-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link"
+			required=""
+		/>
+	</div>
 }
 
 templ FormDatePicker(title, name string, date *database.SqLiteTime) {
-<div class="mb-5">
-	<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">
-		{ title }
-		<input type="date" name={ name } value={ date.Format(constants.DateFormat) }
-			class="bg-primary-50 mt-2 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link" />
-	</label>
-</div>
+	<div class="mb-5">
+		<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">
+			{ title }
+			<input
+				type="date"
+				name={ name }
+				value={ date.Format(constants.DateFormat) }
+				class="bg-primary-50 mt-2 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link"
+			/>
+		</label>
+	</div>
 }
 
 //templ FormKVSelector(name string, value int, kvList map[int]string) {
@@ -43,20 +58,22 @@ templ FormDatePicker(title, name string, date *database.SqLiteTime) {
 //        </label>
 //    </div-->
 //}
-templ FormListInput(title, name, value string, opts []string) {
-<div class="mb-5">
-	<label class="block mb-2 p-0 text-sm font-medium text-primary-900 dark:text-primary-50">
-		{ title }
-		<select name={ name }
-			class="mt-2 bg-primary-50 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link">
-			for _, o:= range opts {
-			if o == value {
-			<option selected>{ o }</option>
-			} else {
-			<option>{ o }</option>
-			}
-			}
-		</select>
-	</label>
-</div>
+templ FormListInput(title, name string, value int64, opts map[int64]string) {
+	<div class="mb-5">
+		<label class="block mb-2 p-0 text-sm font-medium text-primary-900 dark:text-primary-50">
+			{ title }
+			<select
+				name={ name }
+				class="mt-2 bg-primary-50 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link"
+			>
+				for id, name := range opts {
+					if id == value {
+						<option value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
+					} else {
+						<option value={ strconv.FormatInt(id, 10) }>{ name }</option>
+					}
+				}
+			</select>
+		</label>
+	</div>
 }

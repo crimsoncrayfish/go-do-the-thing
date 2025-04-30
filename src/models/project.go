@@ -7,7 +7,7 @@ import (
 )
 
 type Project struct {
-	Id           int
+	Id           int64
 	Name         string
 	Description  string
 	Owner        int64
@@ -45,7 +45,7 @@ func (p *Project) AssertHealthy() {
 }
 
 type ProjectView struct {
-	Id           int
+	Id           int64
 	Name         string
 	Description  string
 	Owner        UserView
@@ -87,4 +87,12 @@ type ProjectUser struct {
 	ProjectId int
 	UserId    int
 	RoleId    RoleEnum
+}
+
+func ProjectListToMap(projects []ProjectView) map[int64]string {
+	new_map := make(map[int64]string, len(projects))
+	for _, project := range projects {
+		new_map[project.Id] = project.Name
+	}
+	return new_map
 }

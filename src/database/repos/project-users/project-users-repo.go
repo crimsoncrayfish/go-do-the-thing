@@ -155,7 +155,7 @@ const (
 
 func (r *ProjectUsersRepo) GetProjectUserRoles(projectId, userId int64) (roleIds []int64, err error) {
 	roleIds = make([]int64, 0)
-	rows, err := r.database.Query(getAllRolesForUserProject, projectId, userId)
+	rows, err := r.database.Query(getAllRolesForUserProject, userId, projectId)
 	if errors.Is(err, sql.ErrNoRows) {
 		return roleIds, nil
 	}

@@ -8,17 +8,21 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskItemWithBody(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
+templ TaskItemWithBody(
+	task *models.TaskView,
+	navbar models.NavBarObject,
+	formdata fm.TaskForm,
+	projects map[int64]string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@ts.Header()
 		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-			@TaskItem(task, navbar, formdata)
+			@TaskItem(task, navbar, formdata, projects)
 		</body>
 	</html>
 }
 
-templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm) {
+templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, projects map[int64]string) {
 	@ts.NavBar(navbar)
 	@ts.Loader()
 	<div id="item-view" class="w-full lg:w-[80%] m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
@@ -65,7 +69,7 @@ templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.Ta
 							@ts.SvgClose()
 						</button>
 					</div>
-					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata)
+					@TaskForm(fmt.Sprintf("/todo/item/%d", task.Id), "Update", formdata, projects)
 				</div>
 			</div>
 		</div>
@@ -94,7 +98,7 @@ templ taskItemContent(task *models.TaskView) {
 									}
 								</div>
 							</div>
-							if !task.CompletedDate.IsZero() {
+							if task.Status == models.Completed {
 								<div class="text-sm">
 									Completed on: { task.CompletedDate.String() }
 								</div>

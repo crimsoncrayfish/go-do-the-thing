@@ -9,6 +9,7 @@ import (
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"sort"
 )
@@ -17,6 +18,7 @@ type TaskService struct {
 	tasksRepo        tasks_repo.TasksRepo
 	usersRepo        users_repo.UsersRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
+	logger           slog.Logger
 }
 
 const serviceSource = "TaskService"
@@ -26,6 +28,7 @@ func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 		tasksRepo:        *repo_container.GetTasksRepo(),
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
+		logger:           slog.NewLogger("Debug Task Service"),
 	}
 }
 
@@ -203,29 +206,34 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 	return taskViews, nil
 }
 
-func (s *TaskService) taskToViewModel(task *models.Task) (*models.TaskView, error) {
+func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView, err error) {
 	users := make(map[int64]*models.User, 3)
+	var assignedTo *models.User
 	assignedTo, ok := users[task.AssignedTo]
 	if !ok {
-		owner, err := s.usersRepo.GetUserById(task.AssignedTo)
+		assignedTo, err = s.usersRepo.GetUserById(task.AssignedTo)
 		if err != nil {
 			// NOTE: this should already be wrapped
 			return nil, err
 		}
-		users[task.AssignedTo] = owner
+		users[task.AssignedTo] = assignedTo
 	}
-	createdBy, ok := users[task.CreatedBy]
+
+	var createdBy *models.User
+	createdBy, ok = users[task.CreatedBy]
 	if !ok {
-		createdBy, err := s.usersRepo.GetUserById(task.AssignedTo)
+		createdBy, err = s.usersRepo.GetUserById(task.AssignedTo)
 		if err != nil {
 			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.AssignedTo] = createdBy
 	}
-	modifiedBy, ok := users[task.ModifiedBy]
+
+	var modifiedBy *models.User
+	modifiedBy, ok = users[task.ModifiedBy]
 	if !ok {
-		modifiedBy, err := s.usersRepo.GetUserById(task.ModifiedBy)
+		modifiedBy, err = s.usersRepo.GetUserById(task.ModifiedBy)
 		if err != nil {
 			// NOTE: this should already be wrapped
 			return nil, err
@@ -242,6 +250,7 @@ func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err erro
 		// NOTE: Take action
 		return err
 	}
+	s.logger.Debug("%v", task)
 	return s.userBelongsToProject(user_id, task.Project)
 }
 

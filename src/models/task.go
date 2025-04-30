@@ -2,6 +2,8 @@ package models
 
 import (
 	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/assert"
 )
 
 type Task struct {
@@ -66,6 +68,9 @@ type TaskView struct {
 }
 
 func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User) *TaskView {
+	assert.NotNil(assignedTo, helpers.PrevCallerName(2), "task assigned to cant be nil")
+	assert.NotNil(createdBy, helpers.PrevCallerName(2), "task creator cant be nil")
+	assert.NotNil(modifiedBy, helpers.PrevCallerName(2), "task modifier cant be nil")
 	return &TaskView{
 		Id:            t.Id,
 		Name:          t.Name,
