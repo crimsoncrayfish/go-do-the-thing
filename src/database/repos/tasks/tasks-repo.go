@@ -261,9 +261,9 @@ func (r *TasksRepo) GetItem(id int64) (*models.Task, error) {
 
 const countItems = "SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?"
 
-func (r *TasksRepo) GetItemsCount(userId int64) (int, error) {
+func (r *TasksRepo) GetItemsCount(userId int64) (int64, error) {
 	row := r.database.QueryRow(countItems, userId)
-	var temp int
+	var temp int64
 	err := row.Scan(&temp)
 	if err != nil {
 		return 0, errors.New(errors.ErrDBReadFailed, "failed to get the task count: %w", err)

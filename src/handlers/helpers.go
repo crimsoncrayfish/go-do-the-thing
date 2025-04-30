@@ -1,32 +1,21 @@
 package handlers
 
 import (
-	"errors"
-	"go-do-the-thing/src/models"
 	"net/http"
 )
 
 func AcceptHeaderSwitch(w http.ResponseWriter, r *http.Request, jsonFunc func(w http.ResponseWriter, r *http.Request), uiFunc func(w http.ResponseWriter, r *http.Request)) {
 	contentType := r.Header.Get("accept")
-	if contentType == "application/json" {
+	switch contentType {
+	case "application/json":
 		w.Header().Set("Content-Type", "application/json")
 		jsonFunc(w, r)
-	} else if contentType == "text/html" {
+	case "text/html":
 		w.Header().Set("Content-Type", "text/html")
 		uiFunc(w, r)
-	} else {
-		HttpError("No Content-type specified", errors.New("no content-type specified in request"), w)
+	default:
+		http.Error(w, "No Content-type specified", http.StatusInternalServerError)
 	}
-}
-
-type ErrorPage struct {
-	NavBar       models.NavBarObject
-	Message      string
-	ErrorMessage string
-}
-
-func HttpError(message string, err error, w http.ResponseWriter) {
-	http.Error(w, message, http.StatusInternalServerError)
 }
 
 func Redirect(location string, w http.ResponseWriter) {

@@ -1,8 +1,6 @@
 package task
 
 import (
-	"database/sql"
-	"errors"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
@@ -21,9 +19,8 @@ import (
 )
 
 type Handler struct {
-	logger      slog.Logger
-	service     task_service.TaskService
-	userService user_service.UserService
+	logger  slog.Logger
+	service task_service.TaskService
 }
 
 var (
@@ -115,7 +112,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	if err := templ_todo.TaskRowOOB(*taskView).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskRowOOB(taskView).Render(r.Context(), w); err != nil {
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
@@ -136,7 +133,7 @@ type NoItemRowData struct {
 
 func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, currentUserEmail, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -185,12 +182,6 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assignedToUser, err := h.userService.GetUserById(current_user_id)
-	if ok := h.handleUserIdNotFound(err, current_user_id); !ok {
-		assert.NoError(err, source, "how did we get here when i cant read the current user from the db")
-		return
-	}
-
 	// NOTE: Take action
 	if err = h.service.UpdateTask(
 		current_user_id,
@@ -199,7 +190,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		name,
 		description,
 		database.NewSqliteTime(date),
-		assignedToUser,
+		current_user_id,
 	); err != nil {
 		h.logger.Error(err, "failed to update task")
 		form.Errors["Task"] = "failed to update task"
@@ -217,13 +208,13 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_todo.TaskItemContentOOB(*task).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskItemContentOOB(task).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
 
-	formData := formDataFromItemNoValidation(task, currentUserEmail)
+	formData := formDataFromItemNoValidation(task)
 	if err := templ_todo.TaskFormContent("Update", formData).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render form content after update")
 		// TODO: what should happen if the fetch fails after create
@@ -263,18 +254,18 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	formData := formDataFromItemNoValidation(task, assignedUser.Email)
+	formData := formDataFromItemNoValidation(task)
 
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskItem(*task, activeScreens, formData).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskItem(task, activeScreens, formData).Render(r.Context(), w); err != nil {
 			// TODO: some user feedback here?
 			h.logger.Error(err, "Failed to execute template for the item page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskItemWithBody(*task, activeScreens, formData).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskItemWithBody(task, activeScreens, formData).Render(r.Context(), w); err != nil {
 			// TODO: some user feedback here?
 			h.logger.Error(err, "Failed to execute template for the item page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -322,7 +313,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = templ_todo.TaskRowContent(*task).Render(r.Context(), w); err != nil {
+	if err = templ_todo.TaskRowContent(task).Render(r.Context(), w); err != nil {
 		// TODO: what to do here
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -414,24 +405,12 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func formDataFromItemNoValidation(task *models.TaskView, assignedUser string) fm.TaskForm {
+func formDataFromItemNoValidation(task *models.TaskView) fm.TaskForm {
 	formData := fm.NewTaskForm()
 	formData.Task.Name = task.Name
 	formData.Task.Description = task.Description
-	formData.Task.AssignedTo = assignedUser
+	formData.Task.AssignedTo = task.AssignedTo
 	formData.Task.DueDate = task.DueDate
 
 	return formData
-}
-
-func (h *Handler) handleUserIdNotFound(err error, userId int64) bool {
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		h.logger.Error(err, "the entered email address does not corrispond to an existing user: %d", userId)
-	} else {
-		assert.NoError(err, source, "some error occurred. probably fialed to read from the db while checking user %d", userId)
-	}
-	return false
 }

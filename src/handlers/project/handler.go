@@ -145,13 +145,13 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Collect data
 	form := form_models.NewProjectForm()
-	name, err := models.GetPropertyFromRequest(r, "name", "Project Name", true)
+	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Project Name")
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description, _ := models.GetPropertyFromRequest(r, "description", "Description", false)
+	description := models.GetPropertyFromRequest(r, "description", "Description")
 
-	dateRaw, err := models.GetPropertyFromRequest(r, "due_date", "Due on", true)
+	dateRaw, err := models.GetRequiredPropertyFromRequest(r, "due_date", "Due on")
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}

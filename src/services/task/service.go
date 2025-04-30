@@ -21,8 +21,8 @@ type TaskService struct {
 
 const serviceSource = "TaskService"
 
-func SetupTaskService(repo_container *repos.RepoContainer) *TaskService {
-	return &TaskService{
+func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
+	return TaskService{
 		tasksRepo:        *repo_container.GetTasksRepo(),
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
@@ -141,6 +141,15 @@ func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error)
 		return tasks[i].DueDate.Before(tasks[j].DueDate)
 	})
 	return s.taskListToViewModels(tasks)
+}
+
+func (s *TaskService) GetTaskCount(user_id int64) (int64, error) {
+	task_count, err := s.tasksRepo.GetItemsCount(user_id)
+	if err != nil {
+		return 0, err
+	}
+
+	return task_count, nil
 }
 
 func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*models.TaskView, err error) {
