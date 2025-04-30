@@ -8,7 +8,6 @@ import (
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	"net/http"
-	"sort"
 	"strconv"
 	"time"
 
@@ -376,9 +375,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].DueDate.Before(tasks[j].DueDate)
-	})
+
 	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		defaultForm.Errors["Project"] = err.Error()

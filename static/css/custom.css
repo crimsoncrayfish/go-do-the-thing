@@ -6,7 +6,8 @@
 .item-list .item-row {
   z-index: 1;
   position: relative;
-  transition: .8s;
+  transition: .4s;
+  transition-timing-function: ease-out;
 }
 
 .item-list.item-row {

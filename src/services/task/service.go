@@ -141,6 +141,9 @@ func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error)
 		return nil, err
 	}
 	sort.Slice(tasks, func(i, j int) bool {
+		if tasks[i].Status != tasks[j].Status {
+			return tasks[i].Status < tasks[j].Status
+		}
 		return tasks[i].DueDate.Before(tasks[j].DueDate)
 	})
 	return s.taskListToViewModels(tasks)
