@@ -5,6 +5,7 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
+	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
@@ -16,6 +17,7 @@ import (
 type TaskService struct {
 	tasksRepo        tasks_repo.TasksRepo
 	usersRepo        users_repo.UsersRepo
+	projectRepo      projects_repo.ProjectsRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
 }
 
@@ -26,6 +28,7 @@ func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 		tasksRepo:        *repo_container.GetTasksRepo(),
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
+		projectRepo:      *repo_container.GetProjectsRepo(),
 	}
 }
 
@@ -163,6 +166,7 @@ func (s *TaskService) GetTaskCount(user_id int64) (int64, error) {
 func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*models.TaskView, err error) {
 	taskViews = make([]*models.TaskView, len(tasks))
 	users := make(map[int64]*models.User)
+	projects := make(map[int64]*models.Project)
 
 	for i, task := range tasks {
 		var assigned_to *models.User
@@ -204,8 +208,20 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 		}
 		assert.NotNil(modified_by, serviceSource, fmt.Sprintf("task modified by user cant be nil - modified by id %d", task.ModifiedBy))
 
+		var project *models.Project
+		project, ok = projects[task.Project]
+		if !ok {
+			project, err = s.projectRepo.GetProject(task.Project)
+			if err != nil {
+				// NOTE: this should already be nicely formatted
+				return nil, err
+			}
+			projects[task.Project] = project
+
+		}
+
 		// Convert to ViewModel
-		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by)
+		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by, *project)
 	}
 
 	return taskViews, nil
@@ -246,7 +262,13 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 		users[task.ModifiedBy] = modifiedBy
 	}
 
-	return task.ToViewModel(assignedTo, createdBy, modifiedBy), nil
+	project, err := s.projectRepo.GetProject(task.Project)
+	if err != nil {
+		// NOTE: this should already be wrapped
+		return nil, err
+	}
+
+	return task.ToViewModel(assignedTo, createdBy, modifiedBy, *project), nil
 }
 
 func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err error) {

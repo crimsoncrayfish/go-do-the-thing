@@ -64,10 +64,11 @@ type TaskView struct {
 	CreatedBy     UserView
 	ModifiedDate  *database.SqLiteTime
 	ModifiedBy    UserView
-	Project       int64
+	ProjectId     int64
+	ProjectName   string
 }
 
-func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User) *TaskView {
+func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Project) *TaskView {
 	assert.NotNil(assignedTo, helpers.PrevCallerName(2), "task assigned to cant be nil")
 	assert.NotNil(createdBy, helpers.PrevCallerName(2), "task creator cant be nil")
 	assert.NotNil(modifiedBy, helpers.PrevCallerName(2), "task modifier cant be nil")
@@ -83,6 +84,7 @@ func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User) *TaskView {
 		ModifiedDate:  t.ModifiedDate,
 		ModifiedBy:    modifiedBy.ToViewModel(),
 		DueDate:       t.DueDate,
-		Project:       t.Project,
+		ProjectId:     t.Project,
+		ProjectName:   project.Name,
 	}
 }

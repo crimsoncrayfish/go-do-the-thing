@@ -95,7 +95,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		Name:        name,
 		Description: description,
 		DueDate:     database.NewSqliteTime(due_date),
-		Project:     project_id,
+		ProjectId:   project_id,
 	}
 	if len(form.Errors) > 0 {
 		if err := templ_todo.TaskFormContent("Create", form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
@@ -421,6 +421,8 @@ func formDataFromTask(task *models.TaskView) fm.TaskForm {
 	formData.Task.Description = task.Description
 	formData.Task.AssignedTo = task.AssignedTo
 	formData.Task.DueDate = task.DueDate
+	formData.Task.ProjectId = task.ProjectId
+	formData.Task.ProjectName = task.ProjectName
 
 	return formData
 }
