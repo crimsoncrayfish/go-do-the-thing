@@ -57,9 +57,7 @@ func SetupTodoHandler(
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
-	// TODO: what to do here
 	if err != nil {
-		// TODO: Handle properly
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -100,9 +98,8 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		Project:     project_id,
 	}
 	if len(form.Errors) > 0 {
-		w.WriteHeader(http.StatusBadRequest)
 		if err := templ_todo.TaskFormContent("Create", form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			assert.NoError(err, source, "Failed to render template for formData")
 		}
 		return
@@ -110,8 +107,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 
 	new_id, err := h.taskService.CreateTask(current_user_id, project_id, name, description, database.NewSqliteTime(due_date))
 	if err != nil {
-		// TODO: what should happen if the fetch fails after create
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to create task with error")
 		return
 	}
@@ -119,16 +115,18 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Now handle everything
 	taskView, err := h.taskService.GetTaskView(new_id, current_user_id)
 	if err != nil {
-		// TODO: what should happen if the fetch fails after create
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to get newly created task with id %d", new_id)
 		return
 	}
 	if err := templ_todo.TaskRowOOB(taskView).Render(r.Context(), w); err != nil {
-		// TODO: what should happen if the fetch fails after create
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render task row")
 		return
 	}
 	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
-		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		// TODO: what should happen if the fetch fails after create
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render no-data-row")
 		return
 	}
 	projects, err = h.projectService.GetAllProjectsForUser(current_user_id)
@@ -136,7 +134,8 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		defaultForm.Errors["Project"] = err.Error()
 	}
 	if err := templ_todo.TaskFormContent("Create", defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-		// TODO: what should happen if rendering fails
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render task form")
 		return
 	}
 }
@@ -149,7 +148,6 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -159,6 +157,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.logger.Error(err, "not authenticated")
 		return
 	}
 	form := fm.NewTaskForm()
@@ -182,26 +181,31 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		form.Errors["due_on"] = err.Error()
 	}
 	date, err := time.Parse("2006-01-02", dateRaw)
+	if err != nil {
+		form.Errors["due_on"] = err.Error()
+	}
 	form.Task = models.TaskView{
 		Name:        name,
 		Description: description,
 		DueDate:     database.NewSqliteTime(date),
 	}
-	if err != nil || len(form.Errors) > 0 {
+	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+	if err != nil {
+		form.Errors["Project"] = err.Error()
+	}
+
+	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
-		if err != nil {
-			form.Errors["Project"] = err.Error()
-		}
 		if err := templ_todo.TaskFormContent("Update", form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			assert.NoError(err, source, "failed to render task form")
+			h.logger.Error(err, "failed to render task form content")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		return
 	}
 
 	// NOTE: Take action
-	if err = h.taskService.UpdateTask(
+	err = h.taskService.UpdateTask(
 		current_user_id,
 		id,
 		project_id,
@@ -209,41 +213,30 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		description,
 		database.NewSqliteTime(date),
 		current_user_id,
-	); err != nil {
-		h.logger.Error(err, "failed to update task")
-		form.Errors["Task"] = "failed to update task"
-		projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
-		if err != nil {
-			form.Errors["Project"] = err.Error()
-		}
-		if err := templ_todo.TaskFormContent("Update", form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			assert.NoError(err, source, "failed to notify create failure for task")
-			// TODO: what should happen if the fetch fails after create
-		}
+	)
+	if err != nil {
+		h.logger.Error(err, "failed to update task with id %d", id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// NOTE: Success zone
 	task, err := h.taskService.GetTaskView(id, current_user_id)
 	if err != nil {
-		assert.NoError(err, source, "failed to get updated task")
-		// TODO: what should happen if the fetch fails after update
+		h.logger.Error(err, "failed to get updated task with id %d", task.Id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := templ_todo.TaskItemContentOOB(task).Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render new task row with id %d", task.Id)
-		// TODO: what should happen if the fetch fails after create
+		h.logger.Error(err, "failed to render new task row with id %d", task.Id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	formData := formDataFromItemNoValidation(task)
-	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
-	if err != nil {
-		formData.Errors["Project"] = err.Error()
-	}
+	formData := formDataFromTask(task)
 	if err := templ_todo.TaskFormContent("Update", formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render form content after update")
-		// TODO: what should happen if the fetch fails after create
+		h.logger.Error(err, "failed to render form content after update")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -256,9 +249,7 @@ type ItemPageModel struct {
 func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
-	// TODO: what to do here
 	if err != nil {
-		// TODO: Handle properly
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -267,20 +258,19 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		h.logger.Error(err, "failed to parse id from path")
-		// TODO: Handle error by type
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	task, err := h.taskService.GetTaskView(id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get todo tasks")
-		// TODO: Handle error by type
+		// TODO: Handle not found?
+		h.logger.Error(err, "failed to get task with id %d", id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// NOTE: Take action
-	formData := formDataFromItemNoValidation(task)
+	formData := formDataFromTask(task)
 	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		formData.Errors["Project"] = err.Error()
@@ -289,15 +279,13 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
 		if err = templ_todo.TaskItem(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			// TODO: some user feedback here?
-			h.logger.Error(err, "Failed to execute template for the item page")
+			h.logger.Error(err, "failed to render task item with id %d", id)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
 		if err = templ_todo.TaskItemWithBody(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			// TODO: some user feedback here?
-			h.logger.Error(err, "Failed to execute template for the item page")
+			h.logger.Error(err, "failed to render task item with id %d", id)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -307,9 +295,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
-	// TODO: what to do here
 	if err != nil {
-		// TODO: Handle properly
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -317,18 +303,15 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		// TODO: what to do here
 		h.logger.Error(err, "failed to parse id from path")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// NOTE: Validate data
+	// NOTE: Act
 	err = h.taskService.UpdateTaskStatus(current_user_id, id)
 	if err != nil {
-		// TODO: what to do here
-		h.logger.Error(err, "failed to toggle task status")
-		// TODO: handle err types
+		h.logger.Error(err, "failed to toggle task status for task with id %d", id)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -336,15 +319,13 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Success zone
 	task, err := h.taskService.GetTaskView(id, current_user_id)
 	if err != nil {
-		// TODO: what to do here
-		h.logger.Error(err, "failed to get todo item")
 		// TODO: handle err types
+		h.logger.Error(err, "failed to get task with id %d", id)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err = templ_todo.TaskRowContent(task).Render(r.Context(), w); err != nil {
-		// TODO: what to do here
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -360,9 +341,7 @@ type ListModel struct {
 func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
-	// TODO: what to do here
 	if err != nil {
-		// TODO: Handle properly
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -385,14 +364,12 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
 		if err = templ_todo.TaskList(activeScreens, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
 		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			// TODO: Should this panic
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -403,9 +380,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
-	// TODO: what to do here
 	if err != nil {
-		// TODO: Handle properly
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -440,7 +415,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func formDataFromItemNoValidation(task *models.TaskView) fm.TaskForm {
+func formDataFromTask(task *models.TaskView) fm.TaskForm {
 	formData := fm.NewTaskForm()
 	formData.Task.Name = task.Name
 	formData.Task.Description = task.Description

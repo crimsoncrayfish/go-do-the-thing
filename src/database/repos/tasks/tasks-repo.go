@@ -191,6 +191,7 @@ func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	if err != nil {
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update the task: %w", err)
 	}
+
 	return nil
 }
 

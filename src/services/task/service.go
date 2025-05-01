@@ -9,7 +9,6 @@ import (
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"sort"
 )
@@ -18,7 +17,6 @@ type TaskService struct {
 	tasksRepo        tasks_repo.TasksRepo
 	usersRepo        users_repo.UsersRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
-	logger           slog.Logger
 }
 
 const serviceSource = "TaskService"
@@ -28,7 +26,6 @@ func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 		tasksRepo:        *repo_container.GetTasksRepo(),
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
-		logger:           slog.NewLogger("Debug Task Service"),
 	}
 }
 
@@ -73,6 +70,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		return err
 	}
 	task := models.Task{
+		Id:           task_id,
 		Name:         name,
 		Description:  description,
 		DueDate:      due_date,
@@ -82,8 +80,12 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		Project:      project_id,
 		IsDeleted:    false,
 	}
+	err = s.tasksRepo.UpdateItem(task)
+	if err != nil {
+		return err
+	}
 
-	return s.tasksRepo.UpdateItem(task)
+	return nil
 }
 
 func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
@@ -253,7 +255,6 @@ func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err erro
 		// NOTE: Take action
 		return err
 	}
-	s.logger.Debug("%v", task)
 	return s.userBelongsToProject(user_id, task.Project)
 }
 

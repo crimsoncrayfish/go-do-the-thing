@@ -21,6 +21,16 @@ document.addEventListener("DOMContentLoaded", (_) => {
   document.addEventListener("htmx:afterRequest", function (_) {
     toggleLoader(true);
   });
+  document.addEventListener("htmx:afterSwap", function (_) {
+    if (typeof initFlowbite === "function") {
+      initFlowbite();
+    } else if (
+      typeof Flowbite !== "undefined" &&
+      typeof Flowbite.init === "function"
+    ) {
+      Flowbite.init();
+    }
+  });
 });
 
 function getAuthToken() {
