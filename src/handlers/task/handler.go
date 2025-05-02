@@ -363,7 +363,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Success zone
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskList(activeScreens, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskListPage(activeScreens, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

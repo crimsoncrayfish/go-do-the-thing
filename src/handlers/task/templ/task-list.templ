@@ -1,91 +1,87 @@
 package templ_todo
 
 import (
-	m "go-do-the-thing/src/models"
-	mf "go-do-the-thing/src/models/forms"
-	ts "go-do-the-thing/src/shared/templ"
+m "go-do-the-thing/src/models"
+mf "go-do-the-thing/src/models/forms"
+ts "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@ts.Header()
-		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-			@TaskList(navbar, formdata, tasks, projects)
-		</body>
-	</html>
+<!DOCTYPE html>
+<html lang="en">
+@ts.Header()
+
+<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
+	@TaskListPage(navbar, formdata, tasks, projects)
+</body>
+
+</html>
 }
 
-templ TaskList(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
-	@ts.NavBar(navbar)
-	@ts.Loader()
-	<div class="px-1 xl:px-[10%] w-full text-primary-900 dark:text-primary-50">
-		<div class="w-[90%] mx-auto pt-5 px-5 py-5 flex items-center justify-between">
-			<p class="text-xl text-primary-900 dark:text-primary-50">TODO: Items</p>
-			<div>
-				<button
-					type="button"
-					onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-					class="text-action-700 hover:text-primary-50 border border-action-700 hover:bg-action-800 focus:ring-4
+templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
+@ts.NavBar(navbar)
+@ts.Loader()
+<div class="px-1 xl:px-[10%] w-full text-primary-900 dark:text-primary-50">
+	<div class="w-[90%] mx-auto pt-5 px-5 py-5 flex items-center justify-between">
+		<p class="text-xl text-primary-900 dark:text-primary-50">TODO: Items</p>
+		<div>
+			<button type="button"
+				onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
+				class="text-action-700 hover:text-primary-50 border border-action-700 hover:bg-action-800 focus:ring-4
                         focus:outline-none focus:ring-action-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
                         me-2 mb-2 dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                        dark:focus:ring-action-800 flex items-center"
-				>
-					Add Task
-					@ts.SvgPlus()
-				</button>
-			</div>
-		</div>
-		<div
-			id="create-task-form-container"
-			class="w-[90%] mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out"
-		>
-			<div
-				class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full"
-			>
-				<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
-					<div
-						class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600"
-					>
-						<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
-						<button
-							class="text-primary-900 dark:text-primary-50"
-							onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-						>
-							@ts.SvgClose()
-						</button>
-					</div>
-					@TaskForm("item", "Create", formdata, projects)
-				</div>
-			</div>
-		</div>
-		<div class="relative items-center overflow-x-auto ">
-			<table
-				class="w-[90%] mb-2 mx-auto bg-primary-900 text-sm text-left rtl:text-right text-primary-50 dark:text-primary-400"
-			>
-				<thead
-					class="text-xs text-primary-700 uppercase bg-primary-50 dark:bg-primary-700 dark:text-primary-400"
-				>
-					<tr>
-						<th scope="col" class="px-6 py-3">
-							<p class="hidden lg:block">Status</p>
-						</th>
-						<th scope="col" class="columns-2xl px-6 py-3">Task</th>
-						<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
-						<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
-						<th scope="col" class="columns-lg hidden md:table-cell px-6 py-3">Project</th>
-						<th scope="col" class="px-6 py-3">
-							<p class="hidden lg:block">Actions</p>
-						</th>
-					</tr>
-				</thead>
-				<tbody id="task-rows" class="item-list">
-					for _, task := range tasks {
-						@TaskRow(task)
-					}
-				</tbody>
-			</table>
-			@ts.NoDataRow(len(tasks) > 0)
+                        dark:focus:ring-action-800 flex items-center">
+				Add Task
+				@ts.SvgPlus()
+			</button>
 		</div>
 	</div>
+	<div id="create-task-form-container"
+		class="w-[90%] mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out">
+		<div
+			class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full">
+			<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
+				<div
+					class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600">
+					<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
+					<button class="text-primary-900 dark:text-primary-50"
+						onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');">
+						@ts.SvgClose()
+					</button>
+				</div>
+				@TaskForm("item", "Create", formdata, projects)
+			</div>
+		</div>
+	</div>
+	@TaskListTable(tasks)
+</div>
+}
+
+templ TaskListTable(tasks []*m.TaskView) {
+<div class="relative items-center overflow-x-auto ">
+	<table
+		class="w-[90%] mb-2 mx-auto bg-primary-900 text-sm text-left rtl:text-right text-primary-50 dark:text-primary-400">
+		<thead
+			class="text-xs text-primary-700 uppercase bg-primary-50 dark:bg-primary-700 dark:text-primary-400">
+			<tr>
+				<th scope="col" class="px-6 py-3">
+					<p class="hidden lg:block">Status</p>
+				</th>
+				<th scope="col" class="columns-2xl px-6 py-3">Task</th>
+				<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
+				<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
+				<th scope="col" class="columns-lg hidden md:table-cell px-6 py-3">Project</th>
+				<th scope="col" class="px-6 py-3">
+					<p class="hidden lg:block">Actions</p>
+				</th>
+			</tr>
+		</thead>
+		<tbody id="task-rows" class="item-list">
+			for _, task := range tasks {
+			@TaskRow(task)
+			}
+		</tbody>
+	</table>
+	@ts.NoDataRow(len(tasks) > 0)
+</div>
 }

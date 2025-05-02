@@ -14,13 +14,15 @@ import (
 	templ_project "go-do-the-thing/src/handlers/project/templ"
 
 	form_models "go-do-the-thing/src/models/forms"
-	projectServices "go-do-the-thing/src/services/project"
+	project_service "go-do-the-thing/src/services/project"
+	task_service "go-do-the-thing/src/services/task"
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
 type Handler struct {
-	logger  slog.Logger
-	service projectServices.ProjectService
+	logger          slog.Logger
+	project_service project_service.ProjectService
+	task_service    task_service.TaskService
 }
 
 var activeScreens models.NavBarObject
@@ -30,13 +32,14 @@ var (
 	defaultForm   = form_models.NewDefaultProjectForm()
 )
 
-func SetupProjectHandler(service projectServices.ProjectService, router *http.ServeMux, mw_stack middleware.Middleware) {
+func SetupProjectHandler(service project_service.ProjectService, task_service task_service.TaskService, router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger(handlerSource)
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsProjects: true}}
 	projectsHandler := &Handler{
-		service: service,
-		logger:  logger,
+		project_service: service,
+		task_service:    task_service,
+		logger:          logger,
 	}
 
 	router.Handle("GET /projects", mw_stack(http.HandlerFunc(projectsHandler.getProjects)))
@@ -60,7 +63,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: service call
-	projectView, err := h.service.GetProjectView(id, currentUserId)
+	projectView, err := h.project_service.GetProjectView(id, currentUserId)
 	if err != nil {
 		h.logger.Error(err, "Failed to get the project")
 		// TODO: Handle error on frontend
@@ -71,11 +74,19 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: frontend response
 	contentType := r.Header.Get("accept")
 	formData := formDataFromProject(*projectView)
+
+	var tasks []*models.TaskView
+	tasks, err = h.task_service.GetProjectTaskViewList(currentUserId, projectView.Id)
+	if err != nil {
+		h.logger.Error(err, "Failed to get the tasks")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	switch contentType {
 	case "text/html":
-		err = templ_project.ProjectView(*projectView, activeScreens, formData).Render(r.Context(), w)
+		err = templ_project.ProjectView(*projectView, activeScreens, formData, tasks).Render(r.Context(), w)
 	default:
-		err = templ_project.ProjectWithBody(*projectView, activeScreens, formData).Render(r.Context(), w)
+		err = templ_project.ProjectWithBody(*projectView, activeScreens, formData, tasks).Render(r.Context(), w)
 	}
 
 	if err != nil {
@@ -100,7 +111,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: service call
-	hasProjects, err := h.service.DeleteProject(id, currentUserId)
+	hasProjects, err := h.project_service.DeleteProject(id, currentUserId)
 	if err != nil {
 		h.logger.Error(err, "failed to delete project")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -122,7 +133,7 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	assert.NoError(err, handlerSource, "user auth failed unsuccessfully")
 
 	// NOTE: service call
-	pList, err := h.service.GetAllProjectsForUser(currentUserId)
+	pList, err := h.project_service.GetAllProjectsForUser(currentUserId)
 	if err != nil {
 		h.logger.Error(err, "failed to get projects for user %d", currentUserId)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -175,7 +186,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	new_id, err := h.service.CreateProject(
+	new_id, err := h.project_service.CreateProject(
 		currentUserId, currentUserId, // NOTE: for now owner is also creator
 		name, description,
 		database.SqLiteNow(), database.NewSqliteTime(due_date))
@@ -184,7 +195,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	projectView, err := h.service.GetProjectView(new_id, currentUserId)
+	projectView, err := h.project_service.GetProjectView(new_id, currentUserId)
 	if err != nil {
 		h.logger.Error(err, "failed to get newly added project (%d) for user %d", new_id, currentUserId)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

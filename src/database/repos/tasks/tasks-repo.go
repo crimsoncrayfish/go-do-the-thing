@@ -135,6 +135,56 @@ func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err err
 	return items, nil
 }
 
+const getItemsByAssignedUserAndProject = `
+	SELECT 
+		[Id],
+		[name], 
+		[description],
+		[status],	
+		[assigned_to],
+		[due_date],
+		[created_by],
+		[created_date],
+		[modified_by],
+		[modified_date],
+		[is_deleted], 
+		[project_id],
+		[complete_date]
+	FROM items
+	WHERE [is_deleted] = 0 
+	AND [assigned_to] = ?
+	AND [project_id] = ?`
+
+func (r *TasksRepo) GetItemsForUserAndProject(user_id, project_id int64) (items []*models.Task, err error) {
+	rows, err := r.database.Query(getItemsByAssignedUserAndProject, user_id, project_id)
+	if err != nil {
+		return nil, errors.New(errors.ErrDBReadFailed, "failed to read items for user and project: %w", err)
+	}
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			err = errors.New(errors.ErrDBGenericError, "failed to close rows: %w", err)
+		}
+	}(rows)
+
+	items = make([]*models.Task, 0)
+	for rows.Next() {
+		item := &models.Task{}
+
+		err = scanFromRows(rows, item)
+		if err != nil {
+			// NOTE: Already wrapped
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+	}
+	return items, nil
+}
+
 const insertItem = `
 	INSERT INTO items 
 		(

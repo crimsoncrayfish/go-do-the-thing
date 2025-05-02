@@ -3,6 +3,7 @@ package projects_service
 import (
 	"fmt"
 	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	roles_repo "go-do-the-thing/src/database/repos/roles"
@@ -22,13 +23,13 @@ type ProjectService struct {
 
 const serviceSource = "ProjectService"
 
-func SetupProjectService(projectRepo projects_repo.ProjectsRepo, projectUsersRepo project_users_repo.ProjectUsersRepo, rolesRepo roles_repo.RolesRepo, usersRepo users_repo.UsersRepo) ProjectService {
+func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
 	return ProjectService{
 		logger:           slog.NewLogger(serviceSource),
-		projectRepo:      projectRepo,
-		usersRepo:        usersRepo,
-		projectUsersRepo: projectUsersRepo,
-		rolesRepo:        rolesRepo,
+		projectRepo:      *repo_container.GetProjectsRepo(),
+		usersRepo:        *repo_container.GetUsersRepo(),
+		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
+		rolesRepo:        *repo_container.GetRolesRepo(),
 	}
 }
 
