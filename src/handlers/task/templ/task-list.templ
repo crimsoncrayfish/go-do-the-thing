@@ -20,7 +20,7 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 	@ts.NavBar(navbar)
 	@ts.Loader()
 	<div class="px-1 xl:px-[10%] w-full text-primary-900 dark:text-primary-50">
-		<div class="w-[90%] mx-auto pt-5 px-5 py-5 flex items-center justify-between">
+		<div class="mx-auto pt-5 px-5 py-5 flex items-center justify-between">
 			<p class="text-xl text-primary-900 dark:text-primary-50">TODO: Items</p>
 			<div>
 				<button
@@ -38,7 +38,7 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 		</div>
 		<div
 			id="create-task-form-container"
-			class="w-[90%] mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out"
+			class="mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out"
 		>
 			<div
 				class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full"
