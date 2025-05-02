@@ -1,0 +1,43 @@
+package templ_users
+
+import (
+	form_models "go-do-the-thing/src/models/forms"
+	templ_shared "go-do-the-thing/src/shared/templ"
+)
+
+templ Profile(form form_models.ProfileEditForm) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@templ_shared.Header()
+		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
+			@ProfileEditForm(form)
+		</body>
+	</html>
+}
+
+templ ProfileEditForm(form form_models.ProfileEditForm) {
+	@templ_shared.Loader()
+	<div id="signup-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+		<div
+			class="w-full bg-primary-50 rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-primary-800 dark:border-primary-700"
+		>
+			<div class="px-10 mt-10 text-primary-900 dark:text-primary-50">
+				@templ_shared.SvgLogo()
+			</div>
+			<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+				<h1
+					class="text-xl font-bold leading-tight tracking-tight text-primary-900 md:text-2xl dark:text-primary-50"
+				>
+					Update your profile
+				</h1>
+				<form hx-post="profile" class="space-y-4 md:space-y-6">
+					@ProfileFormContent(form)
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+templ ProfileFormContent(form form_models.ProfileEditForm) {
+	<div>todo</div>
+}

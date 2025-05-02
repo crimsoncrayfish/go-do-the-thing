@@ -164,36 +164,41 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 	return projectViews, nil
 }
 
-func (s *ProjectService) projectToViewModel(project models.Project) (*models.ProjectView, error) {
+func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *models.ProjectView, err error) {
 	users := make(map[int64]*models.User, 3)
+	var owner *models.User
 	owner, ok := users[project.Owner]
+	s.logger.Debug("owner:%d", project.Owner)
 	if !ok {
-		owner, err := s.usersRepo.GetUserById(project.Owner)
+		owner, err = s.usersRepo.GetUserById(project.Owner)
 		if err != nil {
 			// NOTE: this should already be nicely formatted
 			return nil, err
 		}
 		users[project.Owner] = owner
 	}
-	createdBy, ok := users[project.CreatedBy]
+	var created_by *models.User
+	created_by, ok = users[project.CreatedBy]
 	if !ok {
-		createdBy, err := s.usersRepo.GetUserById(project.CreatedBy)
+		created_by, err = s.usersRepo.GetUserById(project.CreatedBy)
 		if err != nil {
 			// NOTE: this should already be nicely formatted
 			return nil, err
 		}
-		users[project.CreatedBy] = createdBy
+		users[project.CreatedBy] = created_by
 	}
-	modifiedBy, ok := users[project.ModifiedBy]
+	var modified_by *models.User
+	modified_by, ok = users[project.ModifiedBy]
 	if !ok {
-		modifiedBy, err := s.usersRepo.GetUserById(project.ModifiedBy)
+		modified_by, err = s.usersRepo.GetUserById(project.ModifiedBy)
 		if err != nil {
 			// NOTE: this should already be nicely formatted
 			return nil, err
 		}
-		users[project.ModifiedBy] = modifiedBy
+		users[project.ModifiedBy] = modified_by
 	}
-	projectView := project.ToViewModel(owner, createdBy, modifiedBy)
+	s.logger.Debug("owner:%v", owner)
+	projectView := project.ToViewModel(owner, created_by, modified_by)
 
 	return &projectView, nil
 }
