@@ -67,6 +67,18 @@ function swapClassForId(class1Name, class2Name, elementId) {
   elem.classList.add(class1Name);
   elem.classList.remove(class2Name);
 }
+function swapClassesForId(class1List, class2List, elementId) {
+  for (let i = 0; i < class1List.length; i++) {
+    const elem = document.getElementById(elementId);
+    if (elem.classList.contains(class1List[i])) {
+      elem.classList.remove(class1List[i]);
+      elem.classList.add(class2List[i]);
+    } else {
+      elem.classList.remove(class2List[i]);
+      elem.classList.add(class1List[i]);
+    }
+  }
+}
 
 if ("dark-mode" in localStorage) {
   if (localStorage.getItem("dark-mode") === "true") {

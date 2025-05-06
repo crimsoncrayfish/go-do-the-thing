@@ -1,0 +1,28 @@
+package templ_shared
+
+/***
+ * This button toggles the css properties for the defined id being passed in.
+ * It also has a edit icon.
+ *  templ.JSFuncCall("swapClassForId","opacity-0","opacity-100",target_id)
+ * templ.JSFuncCall("swapClassForId", "max-h-0", "max-h-[50rem]", target_id)
+***/
+
+templ EditButton(target_id string) {
+	<button
+		onclick={ templ.JSFuncCall(
+        "swapClassesForId",
+        // raw JS array literals:
+        templ.JSExpression(`["opacity-0","max-h-0"]`),
+        templ.JSExpression(`["opacity-100","max-h-[50rem]"]`),
+        target_id,
+      ) }
+		class="mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+				border-success-light text-success-light hover:text-text-on-dark hover:bg-success-light
+				dark:border-success-light dark:text-success-dark dark:hover:text-text-on-light dark:hover:bg-success-dark
+				focus:ring-success-light dark:focus:ring-success-dark
+				flex items-center"
+	>
+		@SvgEdit()
+		&nbsp;Edit
+	</button>
+}
