@@ -43,7 +43,7 @@ templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.Ta
 					Back
 				</button>
 			</div>
-			@ts.EditButton("edit-task-form-container")
+			@ts.OpenFormButton("Edit Task", "edit-task-form-container", ts.SvgEdit())
 		</div>
 		<div
 			id="edit-task-form-container"
