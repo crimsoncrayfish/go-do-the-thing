@@ -6,14 +6,7 @@ import (
 )
 
 templ Index(navbar models.NavBarObject) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@templ_shared.Header()
-		<body id="main-body" class="bg-primary-light dark:bg-primary-dark antialiased">
-			@IndexBody(navbar)
-			@templ_shared.Loader()
-		</body>
-	</html>
+	@templ_shared.Main(IndexBody(navbar))
 }
 
 templ IndexBody(navbar models.NavBarObject) {

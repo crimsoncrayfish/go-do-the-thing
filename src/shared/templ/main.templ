@@ -1,0 +1,12 @@
+package templ_shared
+
+templ Main(body templ.Component, args ...any) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@Header()
+		<body id="main-body" class="bg-primary-light dark:bg-primary-dark antialiased">
+			@body
+			@Loader()
+		</body>
+	</html>
+}

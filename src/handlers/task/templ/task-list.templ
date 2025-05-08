@@ -7,18 +7,11 @@ import (
 )
 
 templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@ts.Header()
-		<body id="main-body" class="bg-primary-light dark:bg-primary-dark antialiased">
-			@TaskListPage(navbar, formdata, tasks, projects)
-		</body>
-	</html>
+	@ts.Main(TaskListPage(navbar, formdata, tasks, projects))
 }
 
 templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
 	@ts.NavBar(navbar)
-	@ts.Loader()
 	<div class="px-1 xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark">
 		<div class="mx-auto pt-5 px-5 py-5 flex items-center justify-between">
 			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Items</p>
