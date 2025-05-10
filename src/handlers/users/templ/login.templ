@@ -27,13 +27,13 @@ templ LoginFormContainer(form form_models.LoginForm) {
 
 templ loginForm(form form_models.LoginForm) {
 	<div
-		class="w-full bg-primary-50 rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-primary-800 dark:border-primary-700"
+		class="w-full bg-secondary-light rounded-lg shadow border border-border-light md:mt-0 sm:max-w-md xl:p-0 dark:bg-secondary-dark dark:border-border-dark"
 	>
-		<div class="px-10 mt-10 text-primary-900 dark:text-primary-50">
+		<div class="px-10 mt-10 text-text-on-light dark:text-text-on-dark">
 			@templ_shared.SvgLogo()
 		</div>
 		<div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-			<h1 class="text-xl font-bold leading-tight tracking-tight text-primary-900 md:text-2xl dark:text-primary-50">
+			<h1 class="text-xl font-bold leading-tight tracking-tight text-text-on-light md:text-2xl dark:text-text-on-dark">
 				Sign in to your account
 			</h1>
 			<form hx-post="/login" class="space-y-4 md:space-y-6">
@@ -52,14 +52,14 @@ templ LoginFormContent(form form_models.LoginForm) {
 				<input
 					id="remember"
 					type="checkbox"
-					class="w-4 h-4 border border-primary-300 rounded bg-primary-50 focus:ring-3 focus:ring-primary-300 dark:bg-primary-700 dark:border-primary-600 dark:focus:ring-primary-600 dark:ring-offset-primary-800"
+					class="w-4 h-4 border border-border-light rounded bg-secondary focus:ring-3 dark:bg-secondary-dark dark:border-border-dark"
 				/>
 			</div>
 			<div class="ml-3 text-sm">
-				<label for="remember" class="text-primary-500 dark:text-primary-300">Remember me</label>
+				<label for="remember" class="text-text-on-light dark:text-text-on-dark">Remember me</label>
 			</div>
 		</div>
-		<a href="#" class="text-sm font-medium text-grey-600 hover:underline dark:text-primary-300">Forgot password?</a>
+		<a href="#" class="text-sm font-medium text-text-on-light hover:underline dark:text-text-on-dark">Forgot password?</a>
 	</div>
 	for _, v := range form.Errors {
 		<div class="py-4 text-error">
@@ -68,18 +68,18 @@ templ LoginFormContent(form form_models.LoginForm) {
 	}
 	<button
 		type="submit"
-		class="text-primary-500 pl-3 flex items-center justify-center hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-30"
+		class="text-text-on-light pl-3 flex items-center justify-center dark:text-text-on-dark"
 	>
 		Sign in
 	</button>
-	<p class="text-sm font-light text-primary-500 dark:text-primary-400">
+	<p class="text-sm font-light text-text-on-light dark:text-text-on-dark">
 		Don’t have an account yet? <a
 	hx-get="register"
 	hx-replace-url="true"
 	hx-target="#login-form"
 	hx-swap="outerHTML"
 	href="#"
-	class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+	class="font-medium text-text-on-light hover:underline dark:text-text-on-dark"
 >Sign up</a>
 	</p>
 }

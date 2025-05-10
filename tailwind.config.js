@@ -30,6 +30,13 @@ module.exports = {
         "tag-1": "#c084fc",
         "tag-2": "#f472b6",
         "tag-3": "#fb923c",
+        "tag-4": "#60a5fa",
+        "tag-5": "#a78bfa",
+        "tag-6": "#fcd34d",
+        "tag-7": "#4ade80",
+        "tag-8": "#e879f9",
+        "tag-9": "#22d3ee",
+        "tag-10": "#f87171"
       },
       transitionProperty: {
         "max-height": "max-height",
@@ -43,7 +50,7 @@ module.exports = {
   },
   plugins: [
     require("flowbite/plugin"),
-    plugin(function ({ matchUtilities, theme }) {
+    plugin(function({ matchUtilities, theme }) {
       matchUtilities(
         {
           "translate-z": (value) => ({
@@ -58,25 +65,31 @@ module.exports = {
   flowbite: {
     theme: {
       light: {
-        // re-map Flowbite’s “primary” to your `primary-500`
-        primary: "primary-light",
-        // you can also override datepicker-specific tokens if you like:
         datepicker: {
           cell: {
-            hover: "secondary-light",
-            selected: "accent-light",
+            hover: "bg-accent-light",
+            selected: "bg-secondary-light",
+          },
+          controls: {
+            prevBtn: "hover:bg-secondary-light",
+            nextBtn: "hover:bg-secondary-light",
+            viewSwitch: "hover:bg-secondary-light",
           },
         },
       },
       dark: {
-        primary: "primary-dark",
         datepicker: {
           cell: {
-            hover: "secondary-dark",
-            selected: "accent-dark",
+            hover: "dark:bg-accent-dark",
+            selected: "dark:bg-secondary-dark",
+          },
+          controls: {
+            prevBtn: "dark:hover:bg-secondary-dark",
+            nextBtn: "dark:hover:bg-secondary-dark",
+            viewSwitch: "dark:hover:bg-secondary-dark",
           },
         },
       },
     },
-  },
+  }
 };

@@ -1,63 +1,90 @@
 package templ_shared
 
 import (
-"go-do-the-thing/src/database"
-"go-do-the-thing/src/helpers/constants"
-"strconv"
+	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/helpers/constants"
+	"strconv"
 )
 
 templ FormTextInput(title, name, placeholder, value string) {
-<div class="mb-5">
-	<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">
-		{ title }
-		<input type="text" name={ name } placeholder={ placeholder } value={ value }
-			class="bg-primary-50 mt-2 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link" />
-	</label>
-</div>
+	<div class="mb-5">
+		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+			{ title }
+			<input
+				type="text"
+				name={ name }
+				placeholder={ placeholder }
+				value={ value }
+				class="bg-secondary-light mt-2 border border-border-light text-text-on-light text-sm rounded-lg focus:ring-accent-light focus:border-border-light block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark placeholder-accent-light dark:placeholder-accent-dark dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-border-dark"
+			/>
+		</label>
+	</div>
 }
 
 templ FormPasswordInput(title, name, placeholder string) {
-<div>
-	<label for={ name } class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">{ title }</label>
-	<input type="password" name={ name } id={ name } placeholder="••••••••"
-		class="bg-primary-50 border border-primary-300 text-primary-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link"
-		required="" />
-</div>
+	<div>
+		<label for={ name } class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
+		<input
+			type="password"
+			name={ name }
+			id={ name }
+			placeholder="••••••••"
+			class="bg-secondary-light border border-border-light text-text-on-light rounded-lg block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark dark:text-text-on-dark placeholder-accent-light dark:placeholder-accent-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark"
+			required=""
+		/>
+	</div>
 }
 
 templ FormDatePicker(title, name string, date *database.SqLiteTime) {
-<div class="mb-5 ">
-	<label class="block mb-2 text-sm font-medium text-primary-900 dark:text-primary-50">{ title }</label>
-	<div class="mt-2 relative">
-		<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-			<svg class="w-4 h-4 text-primary-500 dark:text-primary-400" aria-hidden="true"
-				xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-				<path
-					d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z">
-				</path>
-			</svg>
+	<div class="mb-5 ">
+		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
+		<div class="mt-2 relative">
+			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+				<svg
+					class="w-4 h-4 text-text-on-light dark:text-text-on-dark"
+					aria-hidden="true"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="currentColor"
+					viewBox="0 0 20 20"
+				>
+					<path
+						d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"
+					></path>
+				</svg>
+			</div>
+			<input
+				type="text"
+				name={ name }
+				value={ date.Format(constants.DateFormat) }
+				placeholder={ title }
+				id="datepicker-format"
+				datepicker
+				datepicker-format="yyyy-mm-dd"
+				class=" border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5
+				bg-secondary-light dark:bg-secondary-dark dark:border-border-dark 
+				dark:placeholder-accent-dark placeholder-accent-light
+				dark:text-text-on-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark"
+			/>
 		</div>
-		<input datepicker type="text" name={ name } value={ date.Format(constants.DateFormat) } placeholder={ title }
-			id="datepicker-format" datepicker datepicker-format="yyyy-mm-dd"
-			class="bg-primary-50 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full ps-10 p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link" />
 	</div>
-</div>
 }
 
 templ FormListInput(title, name string, value int64, opts map[int64]string) {
-<div class="mb-5">
-	<label class="block mb-2 p-0 text-sm font-medium text-primary-900 dark:text-primary-50">
-		{ title }
-		<select name={ name }
-			class="mt-2 bg-primary-50 border border-primary-300 text-primary-900 text-sm rounded-lg focus:ring-link focus:border-link block w-full p-2.5 dark:bg-primary-700 dark:border-primary-600 dark:placeholder-primary-400 dark:text-primary-50 dark:focus:ring-link dark:focus:border-link">
-			for id, name := range opts {
-			if id == value {
-			<option value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
-			} else {
-			<option value={ strconv.FormatInt(id, 10) }>{ name }</option>
-			}
-			}
-		</select>
-	</label>
-</div>
+	<div class="mb-5">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+			{ title }
+			<select
+				name={ name }
+				class="mt-2 bg-secondary-light border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
+			>
+				for id, name := range opts {
+					if id == value {
+						<option value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
+					} else {
+						<option value={ strconv.FormatInt(id, 10) }>{ name }</option>
+					}
+				}
+			</select>
+		</label>
+	</div>
 }
