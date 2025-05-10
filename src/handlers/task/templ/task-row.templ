@@ -100,7 +100,7 @@ templ TaskRowContent(task *models.TaskView) {
 	</td>
 	<td class="px-6 py-4">
 		<button
-			class="text-error"
+			class="text-danger-light dark:text-danger-dark"
 			hx-swap="outerHTML swap:0.5s"
 			hx-target="closest tr"
 			hx-on--after-request={ fmt.Sprintf("toggleClassForId('item-row-stay-hover','task-row-%d');toggleClassForId('item-row-swiped','task-row-%d');",
@@ -118,7 +118,7 @@ templ TaskCard(task *models.TaskView) {
 templ statusIcon(task *models.TaskView) {
 	<div
 		if task.Status==models.Completed {
-			class="text-success-light dark:text-secondary-dark"
+			class="text-success-light dark:text-success-dark"
 		}
 		else
 		if task.DueDate.Before(database.SqLiteNow()) {
