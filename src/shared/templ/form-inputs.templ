@@ -7,7 +7,7 @@ import (
 )
 
 templ FormTextInput(title, name, placeholder, value string) {
-	<div class="mb-5">
+	<div>
 		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">
 			{ title }
 			<input
@@ -36,7 +36,7 @@ templ FormPasswordInput(title, name, placeholder string) {
 }
 
 templ FormDatePicker(title, name string, date *database.SqLiteTime) {
-	<div class="mb-5 ">
+	<div>
 		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
 		<div class="mt-2 relative">
 			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -70,13 +70,14 @@ templ FormDatePicker(title, name string, date *database.SqLiteTime) {
 }
 
 templ FormListInput(title, name string, value int64, opts map[int64]string) {
-	<div class="mb-5">
+	<div>
 		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light dark:text-text-on-dark">
 			{ title }
 			<select
 				name={ name }
 				class="mt-2 bg-secondary-light border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
 			>
+				<option disabled selected value class="hidden">-- select an option -- </option>
 				for id, name := range opts {
 					if id == value {
 						<option value={ strconv.FormatInt(id, 10) } selected>{ name }</option>

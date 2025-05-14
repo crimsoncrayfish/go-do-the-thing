@@ -17,11 +17,13 @@ templ TaskForm(postTo string, formType string, formdata form_models.TaskForm, pr
 }
 
 templ TaskFormContent(formType string, formdata form_models.TaskForm, projects map[int64]string) {
-	@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
-	@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
-		formdata.Task.Description)
-	@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
-	@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
+	<div class="space-y-5 mb-5">
+		@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
+		@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
+			formdata.Task.Description)
+		@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
+		@templ_shared.FormDatePicker("Due on", "due_date", formdata.Task.DueDate)
+	</div>
 	for _, v:= range formdata.Errors {
 		<div class="py-4 text-error">
 			{ v }

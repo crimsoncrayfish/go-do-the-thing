@@ -1,0 +1,117 @@
+package templ_todo
+
+import (
+	"fmt"
+	"go-do-the-thing/src/helpers/constants"
+	"go-do-the-thing/src/models"
+	"go-do-the-thing/src/shared/templ"
+)
+
+templ TaskItemCard(task *models.TaskView) {
+	<div id={ fmt.Sprintf("task-card-%d", task.Id) } class="[perspective:1000px] mb-4">
+		<div
+			id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
+			class="relative w-full transition-transform duration-500
+             [transform-style:preserve-3d]"
+		>
+			@CardFront(task)
+			@CardBack(task.Name)
+		</div>
+	</div>
+}
+
+templ CardFront(task *models.TaskView) {
+	<div class="relative [backface-visibility:hidden]">
+		<div
+			class="theme-transition bg-secondary-light dark:bg-secondary-dark
+                 rounded-xl p-6 border border-border-light
+                 dark:border-border-dark shadow-lg"
+		>
+			<div class="grid grid-cols-12 gap-6">
+				<div class="hidden sm:flex col-span-1 items-center justify-center">
+					@templ_shared.CheckMarkButton()
+				</div>
+				<div class="col-span-12 sm:col-span-9">
+					<div
+						class="flex flex-col sm:flex-row items-start
+                       justify-between mb-3"
+					>
+						if (task.InProgress) {
+							<span
+								class="bg-accent-light dark:bg-accent-dark
+                         text-primary-light dark:text-primary-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+							>
+								In Progress
+							</span>
+						}
+						<span
+							class="text-sm text-text-on-light
+                         dark:text-text-on-dark"
+						>
+							Due: { task.DueDate.Format(constants.DateFormat) }
+						</span>
+					</div>
+					<div class="font-bold text-lg mb-2">{ task.Name }</div>
+					<div
+						class="text-text-on-light dark:text-text-on-dark
+                       text-sm mb-4"
+					>
+						{ task.Description }
+					</div>
+					if (task.TimeSpent > 0) {
+						<div
+							class="text-sm text-text-on-light
+                       dark:text-text-on-dark"
+						>
+							{ task.TimeSpent }
+						</div>
+					}
+				</div>
+				<div
+					class="col-span-12 sm:col-span-2 flex items-center
+                     justify-start sm:justify-center
+                     lg:justify-end h-full pl-2 gap-2
+                     sm:flex-col lg:flex-row"
+				>
+					if task.InProgress {
+						@templ_shared.StopButton()
+					} else {
+						@templ_shared.StartButton()
+					}
+					<button
+						class="theme-transition bg-primary-light
+                       dark:bg-primary-dark hover:opacity-80
+                       text-text-on-light dark:text-text-on-dark
+                       font-bold p-2 rounded-full shadow-md
+                       focus:outline-none focus:ring-2
+                       focus:ring-text-light focus:dark:ring-text-dark
+                       focus:ring-opacity-50 flex items-center
+                       justify-center"
+						hx-swap="outerHTML swap:0.5s"
+						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
+						hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
+						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+					>
+						@templ_shared.SvgBin()
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ CardBack(taskName string) {
+	<div
+		class="absolute inset-0 bg-danger-light dark:bg-danger-dark
+         rounded-xl p-6 shadow-lg flex flex-col items-center
+         justify-center [backface-visibility:hidden]
+         [transform:rotateX(180deg)]"
+	>
+		@templ_shared.LoaderSmall()
+		<span class="mt-4 text-white text-lg font-semibold">
+			Deleting “{ taskName }”…
+		</span>
+	</div>
+}

@@ -1,9 +1,9 @@
 package templ_todo
 
 import (
-	"go-do-the-thing/src/helpers/constants"
 	m "go-do-the-thing/src/models"
 	mf "go-do-the-thing/src/models/forms"
+	"go-do-the-thing/src/shared/templ"
 	ts "go-do-the-thing/src/shared/templ"
 )
 
@@ -43,16 +43,25 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 				</div>
 			</div>
 		</div>
+		<div class="mb-4 p-4 bg-secondary-light dark:bg-secondary-dark rounded-xl shadow">
+			<form
+				hx-get="/tasks"
+				hx-trigger="submit, keyup delay:500ms changed"
+				hx-target="#task-list"
+				hx-swap="innerHTML"
+				class="grid grid-cols-1 md:grid-cols-3 gap-4"
+			>
+				@templ_shared.FormTextInput("Search", "Search", "Search...", "")
+				@templ_shared.FormListInput("Project", "Project", 0, projects)
+				@templ_shared.FormTextInput("Tags", "Tag", "Tags comma separated...", "")
+			</form>
+		</div>
 		<div class="space-y-4">
 			for _, task := range tasks {
 				@TaskItemCard(task)
 			}
 		</div>
-		@TaskListTable(tasks)
 	</div>
-}
-
-templ TaskItemCard(task *m.TaskView) {
 	<script>
     if (!window.flipTaskCard) {
       window.flipTaskCard = function(id) {
@@ -61,251 +70,7 @@ templ TaskItemCard(task *m.TaskView) {
         inner.style.transform = 'rotateX(180deg)';
       };
     }
-  </script>
-	<div class="[perspective:1000px] mb-4">
-		<div
-			id="task-card-inner-{ task.ID }"
-			class="relative w-full transition-transform duration-500
-             [transform-style:preserve-3d]"
-		>
-			<!-- FRONT -->
-			<div class="relative [backface-visibility:hidden]">
-				<div
-					class="theme-transition bg-secondary-light dark:bg-secondary-dark
-                 rounded-xl p-6 border border-border-light
-                 dark:border-border-dark shadow-lg"
-				>
-					<div class="grid grid-cols-12 gap-6">
-						<div class="hidden sm:flex col-span-1 items-center justify-center">
-							<button
-								class="theme-transition bg-transparent text-success-light
-                       dark:text-success-dark hover:text-white font-bold p-2
-                       rounded-full shadow-md focus:outline-none
-                       focus:ring-2 focus:ring-success-light
-                       focus:dark:ring-success-dark focus:ring-opacity-50
-                       flex items-center justify-center w-10 h-10
-                       border border-success-light
-                       dark:border-success-dark"
-								aria-label="Mark as Complete"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="w-6 h-6"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="m4.5 12.75 6 6 9-13.5"
-									></path>
-								</svg>
-							</button>
-						</div>
-						<div class="col-span-12 sm:col-span-9">
-							<div
-								class="flex flex-col sm:flex-row items-start
-                       justify-between mb-3"
-							>
-								<span
-									class="bg-accent-light dark:bg-accent-dark
-                         text-primary-light dark:text-primary-dark
-                         text-xs font-bold py-1 px-3 rounded-full
-                         shadow-sm mb-1 sm:mb-0"
-								>
-									In Progress
-								</span>
-								<span
-									class="text-sm text-text-on-light
-                         dark:text-text-on-dark"
-								>
-									Due: { task.DueDate.Format(constants.DateFormat) }
-								</span>
-							</div>
-							<div class="font-bold text-lg mb-2">{ task.Name }</div>
-							<div
-								class="text-text-on-light dark:text-text-on-dark
-                       text-sm mb-4"
-							>
-								{ task.Description }
-							</div>
-							<div
-								class="text-sm text-text-on-light
-                       dark:text-text-on-dark"
-							>
-								TIME SPENT HERE
-							</div>
-						</div>
-						<div
-							class="col-span-12 sm:col-span-2 flex items-center
-                     justify-start sm:justify-center
-                     lg:justify-end h-full pl-2 gap-2
-                     sm:flex-col lg:flex-row"
-						>
-							<button
-								class="theme-transition bg-danger-light
-                       dark:bg-danger-dark hover:opacity-80
-                       text-white font-bold p-2 rounded-full shadow-md
-                       focus:outline-none focus:ring-2
-                       focus:ring-danger-light focus:dark:ring-danger-dark
-                       focus:ring-opacity-50 flex items-center
-                       justify-center"
-								aria-label="Stop Task"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									height="24"
-									viewBox="0 0 24 24"
-									width="24"
-									fill="currentColor"
-								>
-									<path d="M6 6h12v12H6V6z"></path>
-								</svg>
-							</button>
-							<button
-								class="theme-transition bg-primary-light
-                       dark:bg-primary-dark hover:opacity-80
-                       text-text-on-light dark:text-text-on-dark
-                       font-bold p-2 rounded-full shadow-md
-                       focus:outline-none focus:ring-2
-                       focus:ring-text-light focus:dark:ring-text-dark
-                       focus:ring-opacity-50 flex items-center
-                       justify-center"
-								aria-label="Delete Task"
-								onclick="flipTaskCard('{ task.ID }')"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="w-6 h-6"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M14.74 9l-.346 9m-4.788 0L9.26 9
-                           m9.968-3.21c.342.052.682.107 1.022.166
-                           m-1.022-.165L18.16 19.673a2.25 2.25 0
-                           01-2.244 2.077H8.084a2.25 2.25 0
-                           01-2.244-2.077L4.772 5.79m14.456 0
-                           a48.108 48.108 0 00-3.478-.397m-12 .562
-                           c.34-.059.68-.114 1.022-.165m0 0
-                           a48.11 48.11 0 013.478-.397m7.5 0
-                           v-.916c0-1.18-.91-2.164-2.09-2.201
-                           a51.964 51.964 0 00-3.32 0
-                           c-1.18.037-2.09 1.022-2.09 2.201v.916
-                           m7.5 0a48.667 48.667 0 00-7.5 0"
-									></path>
-								</svg>
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-			<!-- BACK -->
-			<!-- BACK -->
-			<div
-				class="absolute inset-0 bg-danger-light dark:bg-danger-dark
-         rounded-xl p-6 shadow-lg flex flex-col items-center
-         justify-center [backface-visibility:hidden]
-         [transform:rotateX(180deg)]"
-			>
-				<!-- spinning loader -->
-				@Loader()
-				<span class="mt-4 text-white text-lg font-semibold">
-					Deleting “{ task.Name }”…
-				</span>
-			</div>
-		</div>
-	</div>
-}
-
-templ Loader() {
-	<style>
-.loader {
-  display: inline-grid;
-  padding: 5px;
-  background: #fff;
-  filter: blur(4px) contrast(12);
-}
-.loader:before,
-.loader:after {
-  content: "";
-  grid-area: 1/1;
-  height: 40px;
-  aspect-ratio: 3;
-  --c: #0000 64%,#000 66% 98%,#0000 101%;
-  background:
-    radial-gradient(35% 146% at 50% 159%,var(--c)) 0 0,
-    radial-gradient(35% 146% at 50% -59%,var(--c)) 100% 100%;
-  background-size: calc(200%/3) 50%;
-  background-repeat: repeat-x;
-  clip-path: inset(0 100% 0 0);
-  animation: l15 1.5s infinite linear;
-}
-.loader:after {
-  scale: -1 1;
-}
-@keyframes l15{
-  50% {clip-path: inset(0)}
-  to {clip-path: inset(0 0 0 100%)}
-}
-	</style>
-	<div id="loader"></div>
-}
-
-templ TaskItemCard_bac(task *m.TaskView) {
-	<script>
-  // no-op if already defined
-  if (!window.flipTaskCard) {
-    window.flipTaskCard = function (btn) {
-      const inner = btn
-        .closest('.task-card-container')
-        .querySelector('.task-card-inner');
-      inner.classList.add('flipped');
-    };
-  }
 	</script>
-	<div id="task-card-container" class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-lg">
-		<div class="grid grid-cols-12 gap-6">
-			<div class="hidden sm:flex col-span-1 items-center justify-center">
-				<button class="theme-transition bg-transparent text-success-light dark:text-success-dark hover:text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-light focus:dark:ring-success-dark focus:ring-opacity-50 flex items-center justify-center w-10 h-10 border border-success-light dark:border-success-dark" aria-label="Mark as Complete">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-						<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"></path>
-					</svg>
-				</button>
-			</div>
-			<div class="col-span-12 sm:col-span-9">
-				<div class="flex flex-col sm:flex-row items-start justify-between mb-3">
-					<span class="bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
-						In Progress
-					</span>
-					<span class="text-sm text-text-on-light dark:text-text-on-dark">Due: { task.DueDate.Format(constants.DateFormat) }</span>
-				</div>
-				<div class="font-bold text-lg mb-2">{ task.Name }</div>
-				<div class="text-text-on-light dark:text-text-on-dark text-sm mb-4">
-					{ task.Description }
-				</div>
-				<div class="text-sm text-text-on-light dark:text-text-on-dark">TIME SPENT HERE</div>
-			</div>
-			<div class="col-span-12 sm:col-span-2 flex items-center justify-start sm:justify-center lg:justify-end h-full pl-2 gap-2 sm:flex-col lg:flex-row">
-				<button class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-danger-light focus:dark:ring-danger-dark focus:ring-opacity-50 flex items-center justify-center" aria-label="Stop Task">
-					<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor">
-						<path d="M6 6h12v12H6V6z"></path>
-					</svg>
-				</button>
-				<button class="theme-transition bg-primary-light dark:bg-primary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-text-light focus:dark:ring-text-dark focus:ring-opacity-50 flex items-center justify-center" aria-label="Delete Task">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
-					</svg>
-				</button>
-			</div>
-		</div>
-	</div>
 }
 
 templ TaskListTable(tasks []*m.TaskView) {
