@@ -19,33 +19,37 @@ templ Loader() {
 templ LoaderSmall() {
 	<style>
 .loader {
-  display: inline-grid;
-  padding: 5px;
+  width: 100px;
+  aspect-ratio: 1;
+  padding: 10px;
+  box-sizing: border-box;
+  display: grid;
   background: #fff;
-  filter: blur(4px) contrast(12);
+  filter: blur(5px) contrast(10);
+  mix-blend-mode: darken;
 }
 .loader:before,
-.loader:after {
+.loader:after{
   content: "";
   grid-area: 1/1;
-  height: 40px;
-  aspect-ratio: 3;
-  --c: #0000 64%,#000 66% 98%,#0000 101%;
   background:
-    radial-gradient(35% 146% at 50% 159%,var(--c)) 0 0,
-    radial-gradient(35% 146% at 50% -59%,var(--c)) 100% 100%;
-  background-size: calc(200%/3) 50%;
-  background-repeat: repeat-x;
-  clip-path: inset(0 100% 0 0);
-  animation: l15 1.5s infinite linear;
+    linear-gradient(#000 0 0) left,
+    linear-gradient(#000 0 0) right;
+  background-size: 20px 40px;
+  background-origin: content-box;
+  background-repeat: no-repeat;
 }
 .loader:after {
-  scale: -1 1;
+  height: 20px;
+  width:  20px;
+  margin: auto 0;
+  border-radius: 50%;
+  background: #000;
+  animation: l10 1s infinite;
 }
-@keyframes l15{
-  50% {clip-path: inset(0)}
-  to {clip-path: inset(0 0 0 100%)}
+@keyframes l10{
+  90%,100% {transform: translate(300%)}
 }
 	</style>
-	<div id="loader"></div>
+	<div class="loader"></div>
 }

@@ -2,6 +2,7 @@ package templ_todo
 
 import (
 	"fmt"
+	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	"go-do-the-thing/src/shared/templ"
@@ -23,9 +24,10 @@ templ TaskItemCard(task *models.TaskView) {
 templ CardFront(task *models.TaskView) {
 	<div class="relative [backface-visibility:hidden]">
 		<div
-			class="theme-transition bg-secondary-light dark:bg-secondary-dark
-                 rounded-xl p-6 border border-border-light
-                 dark:border-border-dark shadow-lg"
+			class={ templ.KV("border-border-light dark:border-border-dark", !task.DueDate.Before(database.SqLiteNow())),
+			templ.KV("border-danger-light dark:border-danger-dark", task.DueDate.Before(database.SqLiteNow())),
+			" theme-transition bg-secondary-light", 
+		" dark:bg-secondary-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-lg" }
 		>
 			<div class="grid grid-cols-12 gap-6">
 				<div class="hidden sm:flex col-span-1 items-center justify-center">
@@ -44,6 +46,13 @@ templ CardFront(task *models.TaskView) {
                          shadow-sm mb-1 sm:mb-0"
 							>
 								In Progress
+							</span>
+						} else if task.DueDate.Before(database.SqLiteNow()) {
+							<span
+								class="bg-danger-light dark:bg-danger-dark
+								text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
+							>
+								Over Due
 							</span>
 						}
 						<span
@@ -89,7 +98,7 @@ templ CardFront(task *models.TaskView) {
                        focus:ring-text-light focus:dark:ring-text-dark
                        focus:ring-opacity-50 flex items-center
                        justify-center"
-						hx-swap="outerHTML swap:0.5s"
+						hx-swap="outerHTML swap:1.2s"
 						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
 						hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
 						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
