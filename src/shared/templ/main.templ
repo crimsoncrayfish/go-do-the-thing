@@ -8,5 +8,18 @@ templ Main(body templ.Component, args ...any) {
 			@body
 			@Loader()
 		</body>
+		<script>
+		if ('dark-mode' in localStorage) {
+			if (localStorage.getItem('dark-mode') === 'true') {
+				document.querySelector('html').classList.add('dark');
+			} else {
+				document.querySelector('html').classList.remove('dark');
+			}
+		} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+			document.querySelector('html').classList.add('dark');
+		} else {
+			document.querySelector('html').classList.remove('dark');
+		}
+		</script>
 	</html>
 }
