@@ -80,9 +80,9 @@ templ FormListInput(title, name string, value int64, opts map[int64]string) {
 			>
 				for id, name := range opts {
 					if id == value {
-						<option value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
+						<option class="text-accent-light dark:text-accent-dark" value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
 					} else {
-						<option value={ strconv.FormatInt(id, 10) }>{ name }</option>
+						<option class="text-accent-light dark:text-accent-dark" value={ strconv.FormatInt(id, 10) }>{ name }</option>
 					}
 				}
 			</select>
@@ -101,9 +101,9 @@ templ FormListInputWithAllOption(title, name string, value int64, opts map[int64
 				<option selected value="0" class="text-accent-light dark:text-accent-dark">All</option>
 				for id, name := range opts {
 					if id == value {
-						<option value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
+						<option class="text-accent-light dark:text-accent-dark" value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
 					} else {
-						<option value={ strconv.FormatInt(id, 10) }>{ name }</option>
+						<option class="text-accent-light dark:text-accent-dark" value={ strconv.FormatInt(id, 10) }>{ name }</option>
 					}
 				}
 			</select>

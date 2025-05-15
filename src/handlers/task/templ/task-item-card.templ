@@ -9,10 +9,15 @@ import (
 )
 
 templ TaskItemCard(task *models.TaskView) {
-	<div id={ fmt.Sprintf("task-card-%d", task.Id) } class="[perspective:1000px] mb-4">
+	<div
+		id={ fmt.Sprintf("task-card-%d", task.Id) }
+		class="group relative [perspective:1000px] mb-4
+           overflow-visible z-0
+           focus-within:z-10 transition-all"
+	>
 		<div
 			id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
-			class="relative w-full transition-transform duration-500
+			class="w-full transition-transform duration-500 relative
              [transform-style:preserve-3d]"
 		>
 			@CardFront(task)
@@ -21,24 +26,59 @@ templ TaskItemCard(task *models.TaskView) {
 	</div>
 }
 
+func getTaskBorderStyle(task *models.TaskView) string {
+	if task.Status == models.Completed {
+		return "border-border-light dark:border-border-dark"
+	}
+	if task.DueDate.Before(database.SqLiteNow()) {
+		return "border-danger-light dark:border-danger-dark"
+	}
+	return "border-border-light dark:border-border-dark"
+}
+
 templ CardFront(task *models.TaskView) {
-	<div class="relative [backface-visibility:hidden]">
+	<div class="relative [backface-visibility:hidden] overflow-visible z-0">
 		<div
-			class={ templ.KV("border-border-light dark:border-border-dark", !task.DueDate.Before(database.SqLiteNow())),
-			templ.KV("border-danger-light dark:border-danger-dark", task.DueDate.Before(database.SqLiteNow())),
+			class={ getTaskBorderStyle(task),
 			" theme-transition bg-secondary-light", 
-		" dark:bg-secondary-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-lg" }
+			" dark:bg-secondary-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-lg" }
 		>
 			<div class="grid grid-cols-12 gap-6">
 				<div class="hidden sm:flex col-span-1 items-center justify-center">
-					@templ_shared.CheckMarkButton()
+					<button
+						class={ templ.KV( "bg-transparent text-success-light dark:text-success-dark" , task.Status != models.Completed),
+							templ.KV( "bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark" , task.Status == models.Completed),
+							"theme-transition",
+							"hover:text-white font-bold p-2",
+							"rounded-full shadow-md focus:outline-none",
+							"focus:ring-2 focus:ring-success-light",
+							"focus:dark:ring-success-dark focus:ring-opacity-50",
+							"flex items-center justify-center w-10 h-10",
+							"border border-success-light",
+							"dark:border-success-dark" }
+						aria-label="Mark as Complete"
+						hx-swap="outerHTML"
+						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
+						hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }
+					>
+						@templ_shared.SvgCheck()
+					</button>
 				</div>
 				<div class="col-span-12 sm:col-span-9">
 					<div
 						class="flex flex-col sm:flex-row items-start
                        justify-between mb-3"
 					>
-						if (task.InProgress) {
+						if (task.Status == models.Completed) {
+							<span
+								class="bg-success-light dark:bg-success-dark
+                         text-text-on-light dark:text-text-on-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+							>
+								Complete
+							</span>
+						} else if (task.InProgress) {
 							<span
 								class="bg-accent-light dark:bg-accent-dark
                          text-primary-light dark:text-primary-dark
@@ -84,27 +124,86 @@ templ CardFront(task *models.TaskView) {
                      lg:justify-end h-full pl-2 gap-2
                      sm:flex-col lg:flex-row"
 				>
-					if task.InProgress {
-						@templ_shared.StopButton()
-					} else {
-						@templ_shared.StartButton()
-					}
 					<button
-						class="theme-transition bg-primary-light
-                       dark:bg-primary-dark hover:opacity-80
-                       text-text-on-light dark:text-text-on-dark
-                       font-bold p-2 rounded-full shadow-md
-                       focus:outline-none focus:ring-2
-                       focus:ring-text-light focus:dark:ring-text-dark
-                       focus:ring-opacity-50 flex items-center
-                       justify-center"
-						hx-swap="outerHTML swap:1.2s"
-						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
-						hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
-						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+						class="theme-transition 
+	bg-success-light dark:bg-success-dark 
+	hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 
+	focus:ring-success-light dark:focus:ring-success-dark
+	focus:ring-opacity-50 flex items-center justify-center"
+						aria-label="Start Task"
 					>
-						@templ_shared.SvgBin()
+						@templ_shared.SvgPlay()
 					</button>
+					<div
+						class="col-span-12 sm:col-span-2 flex items-center justify-start
+           sm:justify-center lg:justify-end h-full pl-2 gap-2"
+					>
+						<div tabindex="0" class="relative group">
+							<button
+								aria-haspopup="true"
+								aria-expanded="false"
+								class="theme-transition bg-primary-light dark:bg-primary-dark
+             hover:opacity-80 text-text-on-light dark:text-text-on-dark
+             font-bold p-2 rounded-full shadow-md focus:outline-none
+             focus:ring-2 focus:ring-text-light dark:focus:ring-text-dark
+             focus:ring-opacity-50 flex items-center justify-center"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-6 w-6"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M12 6v.01M12 12v.01M12 18v.01"
+									></path>
+								</svg>
+								<span class="sr-only">Open task actions</span>
+							</button>
+							<div
+								class="origin-top-left absolute right-0 mt-2 w-40 rounded-md
+								shadow-lg bg-primary-light dark:bg-primary-dark ring-1 ring-black
+								ring-opacity-5 opacity-0 invisible group-focus-within:opacity-100
+								group-focus-within:visible transition-all z-50"
+							>
+								<ul class="py-1">
+									<li>
+										<button
+											class="w-full text-left px-4 py-2 text-sm
+											text-text-on-light dark:text-text-on-dark
+											hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center space-x-2"
+											hx-get="/todo/item/{{.Id}}/edit"
+											hx-target="#task-card-{{.Id}}"
+											hx-swap="outerHTML"
+											aria-label="Edit Task"
+										>
+											@templ_shared.SvgEdit()
+											Edit Task
+										</button>
+									</li>
+									<li>
+										<button
+											class="w-full text-left px-4 py-2 text-sm
+											text-text-on-light dark:text-text-on-dark
+											hover:bg-secondary-light dark:hover:bg-secondary-dark flex space-x-2"
+											hx-swap="outerHTML swap:1.2s"
+											hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
+											hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
+											hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+											aria-label="Delete Task"
+										>
+											@templ_shared.SvgBin()
+											Delete Task
+										</button>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
