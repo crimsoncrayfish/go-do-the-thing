@@ -4,6 +4,7 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
+	"time"
 )
 
 type Task struct {
@@ -66,6 +67,8 @@ type TaskView struct {
 	ModifiedBy    UserView
 	ProjectId     int64
 	ProjectName   string
+	InProgress    bool
+	TimeSpent     time.Duration
 }
 
 func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Project) *TaskView {

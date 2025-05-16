@@ -3,33 +3,39 @@ package templ_shared
 import "go-do-the-thing/src/models"
 
 templ SideBar(navbar models.NavBarObject) {
-<div id="sidebar-container"
-	class="fixed top-0 left-0 z-40 w-[100%] h-[100%] transition-transform -translate-x-full bg-primary-900 bg-opacity-50">
-	<div id="sidebar" class="fixed top-0 left-0 z-40 w-[100%] sm:w-96 h-[100%] bg-primary-50 dark:bg-primary-800 p-4">
-		<h5 class="text-base font-semibold text-primary-500 uppercase dark:text-primary-400">
-			Menu
-		</h5>
-		<button onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
-			class="text-primary-400 bg-transparent hover:bg-primary-200 hover:text-primary-900 rounded-lg text-sm p-1.5 absolute top-2.5 end-2.5 inline-flex items-center dark:hover:bg-primary-600 dark:hover:text-primary-50">
-			Close
-		</button>
-		<div class="py-4 overflow-y-auto">
-			<ul class="space-y-2 font-medium">
-				@navBarListItem("Take me back home", navbar.ActiveScreens.IsHome, "/home")
-				@navBarListItem("Whats on the agenda?", navbar.ActiveScreens.IsTodoList, "/todo/items")
-				@navBarListItem("My side projects...", navbar.ActiveScreens.IsProjects, "/projects")
-				@navBarListItem("Lets form a habbit!", false, "/habbits")
-				@navBarListItem("This is an ERROR", navbar.ActiveScreens.IsError, "/error")
-			</ul>
+	<div
+		id="sidebar-container"
+		class="fixed top-0 left-0 z-40 w-[100%] h-[100%] transition-transform -translate-x-full bg-gray-900 bg-opacity-50"
+	>
+		<div id="sidebar" class="fixed top-0 left-0 z-40 w-[100%] sm:w-96 h-[100%] bg-secondary-light dark:bg-secondary-dark p-4">
+			<h5 class="text-base font-semibold text-text-on-light uppercase dark:text-text-on-dark">
+				Menu
+			</h5>
+			<button
+				onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
+				class="text-text-on-light bg-transparent dark:text-text-on-dark rounded-lg text-sm p-1.5 absolute top-2.5 end-2.5 inline-flex items-center"
+			>
+				Close
+			</button>
+			<div class="py-4 overflow-y-auto">
+				<ul class="space-y-2 font-medium">
+					@navBarListItem("Take me back home", navbar.ActiveScreens.IsHome, "/home")
+					@navBarListItem("Whats on the agenda?", navbar.ActiveScreens.IsTodoList, "/todo/items")
+					@navBarListItem("My side projects...", navbar.ActiveScreens.IsProjects, "/projects")
+					@navBarListItem("Lets form a habbit!", false, "/habbits")
+					@navBarListItem("This is an ERROR", navbar.ActiveScreens.IsError, "/error")
+				</ul>
+			</div>
+			<div class="absolute bottom-0 py-4 overflow-y-auto">
+				@lightSwitch()
+			</div>
 		</div>
-		<div class="absolute bottom-0 py-4 overflow-y-auto">
-			@lightSwitch()
-		</div>
+		<div
+			class="bg-primary-900 bg-opacity-50 h-full w-full "
+			onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
+		></div>
 	</div>
-	<div class="bg-primary-900 bg-opacity-50 h-full w-full "
-		onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"></div>
-</div>
-<script>
+	<script>
 	if (typeof lightSwitches === 'undefined') {
 		if ('dark-mode' in localStorage) {
 			if (localStorage.getItem('dark-mode') === 'true') {
@@ -96,26 +102,30 @@ templ SideBar(navbar models.NavBarObject) {
 }
 
 templ navBarListItem(description string, isActive bool, navigation string) {
-<li>
-	<a hx-get={ navigation } hx-replace-url="true" hx-target="body"
-		class="flex items-center p-2 text-primary-900 dark:text-primary-50 cursor-pointer">
-		if isActive {
-		@SvgBracket()
-		} else {
-		@SvgSlash()
-		}
-		<span class="ms-3">{ description }</span>
-	</a>
-</li>
+	<li>
+		<a
+			hx-get={ navigation }
+			hx-replace-url="true"
+			hx-target="body"
+			class="flex items-center p-2 text-text-on-light dark:text-text-on-dark cursor-pointer"
+		>
+			if isActive {
+				@SvgBracket()
+			} else {
+				@SvgSlash()
+			}
+			<span class="ms-3">{ description }</span>
+		</a>
+	</li>
 }
 
 templ lightSwitch() {
-<div class="border rounded-lg dark:border-primary-600 flex dark:text-primary-100 flex-col justify-center ">
-	<input type="checkbox" id="light-switch" class="light-switch sr-only" />
-	<label for="light-switch" class="relative cursor-pointer p-2">
-		@SvgLightsOff()
-		@SvgLightsOn()
-		<span class="sr-only">Switch to light / dark version</span>
-	</label>
-</div>
+	<div class="border rounded-lg dark:border-primary-600 flex text-text-on-light dark:text-text-on-dark flex-col justify-center ">
+		<input type="checkbox" id="light-switch" class="light-switch sr-only"/>
+		<label for="light-switch" class="relative cursor-pointer p-2">
+			@SvgLightsOff()
+			@SvgLightsOn()
+			<span class="sr-only">Switch to light / dark version</span>
+		</label>
+	</div>
 }

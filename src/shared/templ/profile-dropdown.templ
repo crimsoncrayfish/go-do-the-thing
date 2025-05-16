@@ -3,37 +3,46 @@ package templ_shared
 import "go-do-the-thing/src/helpers"
 
 templ ProfileMenu() {
-<div
-	class="z-10 bg-primary-50 divide-y divide-primary-100 rounded-lg shadow w-44 dark:bg-primary-700 dark:divide-primary-600">
-	<div class="px-4 py-3 text-sm text-primary-900 dark:text-primary-50">
-		<div>{ helpers.GetNameFromContext(ctx) }</div>
-		<div class="font-medium truncate">{ helpers.GetEmailFromContext(ctx) }</div>
-	</div>
-	<ul class="py-2 text-sm text-primary-700 dark:text-primary-200" aria-labelledby="dropdownInformationButton">
-		<li>
-			<a href="#"
-				class="block px-4 py-2 hover:bg-primary-100 dark:hover:bg-primary-600 dark:hover:text-primary-50">Profile</a>
-		</li>
-		<li>
-			<a href="#"
-				class="block px-4 py-2 hover:bg-primary-100 dark:hover:bg-primary-600 dark:hover:text-primary-50">Settings</a>
-		</li>
-		if helpers.GetIsAdminFromContext(ctx) {
-		<li>
-			<a href="#"
-				class="block px-4 py-2 hover:bg-primary-100 dark:hover:bg-primary-600 dark:hover:text-primary-50">
-				Admin
-				Settings
+	<div
+		class="z-10 bg-secondary-light divide-y divide-border-light rounded-lg shadow w-44 dark:bg-secondary-dark dark:divide-border-dark"
+	>
+		<div class="px-4 py-3 text-sm text-primary-900 dark:text-primary-50">
+			<div>{ helpers.GetNameFromContext(ctx) }</div>
+			<div class="font-medium truncate">{ helpers.GetEmailFromContext(ctx) }</div>
+		</div>
+		<ul class="py-2 text-sm text-primary-700 dark:text-primary-200" aria-labelledby="dropdownInformationButton">
+			<li>
+				<a
+					href="#"
+					class="block px-4 py-2 hover:bg-primary-100 dark:hover:bg-primary-600 dark:hover:text-primary-50"
+				>Profile</a>
+			</li>
+			<li>
+				<a
+					href="#"
+					class="block px-4 py-2 hover:bg-primary-100 dark:hover:bg-primary-600 dark:hover:text-primary-50"
+				>Settings</a>
+			</li>
+			if helpers.GetIsAdminFromContext(ctx) {
+				<li>
+					<a
+						href="#"
+						class="block px-4 py-2 hover:bg-primary-100 dark:hover:bg-primary-600 dark:hover:text-primary-50"
+					>
+						Admin
+						Settings
+					</a>
+				</li>
+			}
+		</ul>
+		<div class="py-2">
+			<a
+				hx-post="/logout"
+				class="block px-4 py-2 text-sm text-primary-700 hover:bg-primary-100 dark:hover:bg-primary-600 dark:text-primary-200 dark:hover:text-primary-50"
+			>
+				Sign
+				out
 			</a>
-		</li>
-		}
-	</ul>
-	<div class="py-2">
-		<a hx-post="/logout"
-			class="block px-4 py-2 text-sm text-primary-700 hover:bg-primary-100 dark:hover:bg-primary-600 dark:text-primary-200 dark:hover:text-primary-50">
-			Sign
-			out
-		</a>
+		</div>
 	</div>
-</div>
 }

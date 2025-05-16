@@ -325,7 +325,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = templ_todo.TaskRowContent(task).Render(r.Context(), w); err != nil {
+	if err = templ_todo.TaskItemCard(task).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
