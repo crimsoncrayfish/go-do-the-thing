@@ -201,12 +201,12 @@ templ cardActions(task *models.TaskView) {
 					ring-opacity-5 opacity-0 invisible group-focus-within:opacity-100
 					group-focus-within:visible transition-all z-50"
 				>
-					<ul class="py-1">
-						<li>
+					<ul class="py-1 w-full">
+						<li class="w-full">
 							<button
 								class="w-full text-left px-4 py-2 text-sm
 								text-text-on-light dark:text-text-on-dark
-								hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center space-x-2"
+								hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
 								hx-swap="outerHTML"
 								hx-target="body"
 								hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
@@ -214,14 +214,14 @@ templ cardActions(task *models.TaskView) {
 								aria-label="Edit Task"
 							>
 								@templ_shared.SvgEdit()
-								Edit Task
+								<p class="pl-4">Edit</p>
 							</button>
 						</li>
 						<li>
 							<button
 								class="w-full text-left px-4 py-2 text-sm
 					text-text-on-light dark:text-text-on-dark
-					hover:bg-secondary-light dark:hover:bg-secondary-dark flex space-x-2"
+					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
 								hx-swap="outerHTML swap:1.2s"
 								hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
 								hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
@@ -229,7 +229,7 @@ templ cardActions(task *models.TaskView) {
 								aria-label="Delete Task"
 							>
 								@templ_shared.SvgBin()
-								Delete Task
+								<p class="pl-4">Delete</p>
 							</button>
 						</li>
 					</ul>
