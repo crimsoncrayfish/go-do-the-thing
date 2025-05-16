@@ -43,28 +43,8 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 				</div>
 			</div>
 		</div>
-		<div class="mb-4 p-4 bg-secondary-light dark:bg-secondary-dark rounded-xl shadow">
-			<form
-				hx-get="/tasks"
-				hx-trigger="submit, keyup delay:500ms changed"
-				hx-target="#task-list"
-				hx-swap="innerHTML"
-				class="grid grid-cols-1 md:grid-cols-3 gap-4"
-			>
-				@templ_shared.FormTextInput("", "Search", "Search...", "")
-				@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
-				@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
-			</form>
-		</div>
-		<div class="[perspective:1000px] mb-4">
-			<div
-				class="relative w-full transition-transform duration-500
-             [transform-style:preserve-3d] h-100"
-			>
-				@CardBack("test")
-			</div>
-		</div>
-		<div class="space-y-4">
+		@searchBar(projects)
+		<div class="pt-4 space-y-4">
 			for _, task := range tasks {
 				@TaskItemCard(task)
 			}
@@ -79,6 +59,34 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
       };
     }
 	</script>
+}
+
+templ searchBar(projects map[int64]string) {
+	<form
+		hx-get="/tasks"
+		hx-trigger="submit, keyup delay:500ms changed"
+		hx-target="#task-list"
+		hx-swap="innerHTML"
+		class="grid grid-cols-1 md:grid-cols-3 gap-4"
+	>
+		@templ_shared.FormTextInput("", "Search", "Search...", "")
+		@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
+		@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
+	</form>
+	<div class="flex flex-wrap gap-2 pt-2">
+		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+			All
+		</button>
+		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+			Completed
+		</button>
+		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+			Incomplete
+		</button>
+		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+			Overdue
+		</button>
+	</div>
 }
 
 templ TaskListTable(tasks []*m.TaskView) {
