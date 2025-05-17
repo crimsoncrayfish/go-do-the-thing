@@ -13,7 +13,7 @@ templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.T
 
 templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
 	@ts.NavBar(navbar)
-	<div class="px-1 xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
+	<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 		<div class="mx-auto pt-5 px-5 py-5 flex items-center justify-between">
 			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Items</p>
 			<div>
