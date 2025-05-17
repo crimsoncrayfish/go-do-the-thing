@@ -28,152 +28,161 @@ templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.Ta
 
 templ TaskItemContent(task *models.TaskView, projects map[int64]string) {
 	<div id="task-content" class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg">
-		<!-- Header with back button, status, and action buttons -->
-		<div class="flex justify-between items-start mb-4">
-			<!-- Left side with back button and status -->
-			<div class="flex items-center gap-3">
-				<button
-					hx-get="/todo/items"
+		@taskHeader(task)
+		@taskTitleAndTimer(task, projects)
+		<hr class="h-px my-8 border-0 bg-border-light dark:border-border-dark "/>
+		@taskDetails(task)
+		@editActions()
+	</div>
+}
+
+templ taskHeader(task *models.TaskView) {
+	<div class="flex justify-between items-start mb-4">
+		<div class="flex items-center gap-3">
+			<button
+				hx-get="/todo/items"
+				hx-replace-url="true"
+				hx-target="body"
+				class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path>
+				</svg>
+			</button>
+			@taskStatusChip(task)
+		</div>
+		<div class="flex gap-2">
+			<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+					<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+				</svg>
+				<span class="hidden md:inline">Pause</span>
+			</button>
+			<button
+				hx-swap="outerHTML"
+				hx-target="#task-content"
+				hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
+				class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+				</svg>
+				<span class="hidden md:inline">Complete</span>
+			</button>
+			@editDeleteMenu(task, editFromTask())
+		</div>
+	</div>
+}
+
+templ taskTitleAndTimer(task *models.TaskView, projects map[int64]string) {
+	<div class="mb-6">
+		<div class="flex items-center justify-between mb-6">
+			<div class="flex flex-row items-center space-x-4">
+				@statusIcon(task)
+				<h1 id="task-title-view" class="text-2xl font-bold">
+					{ task.Name }
+				</h1>
+				<input type="text" id="task-title-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-2xl font-bold text-text-on-light dark:text-text-on-dark" value={ task.Name }/>
+			</div>
+			<div class="flex flex-row items-center">
+				<div class="float-end px-2">
+					@templ_shared.SvgTag(task.ProjectId)
+				</div>
+				<p
+					hx-get={ fmt.Sprintf("/project/%d", task.ProjectId) }
 					hx-replace-url="true"
 					hx-target="body"
-					class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity"
+					id="task-project-view"
+					class="cursor-pointer hover:text-link dark:hover:text-link hover:underline text-xl text-text-on-light dark:text-text-on-dark"
 				>
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path>
-					</svg>
-				</button>
-				@taskStatusChip(task)
-			</div>
-			<!-- Right side with action buttons -->
-			<div class="flex gap-2">
-				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
-					<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-						<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
-					</svg>
-					<span class="hidden md:inline">Pause</span>
-				</button>
-				<button
-					hx-swap="outerHTML"
-					hx-target="#task-content"
-					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
-					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
-				>
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-					</svg>
-					<span class="hidden md:inline">Complete</span>
-				</button>
-				<!-- More Options Button and Dropdown -->
-				@editDeleteMenu(task, editFromTask())
-			</div>
-		</div>
-		<!-- Task Title and Timer -->
-		<div class="mb-6">
-			<!-- Task Header with Title -->
-			<div class="flex items-center justify-between mb-6">
-				<!-- Name -->
-				<div class="flex flex-row items-center space-x-4">
-					@statusIcon(task)
-					<h1 id="task-title-view" class="text-2xl font-bold">
-						{ task.Name }
-					</h1>
-					<!-- Edit Mode -->
-					<input type="text" id="task-title-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-2xl font-bold text-text-on-light dark:text-text-on-dark" value="Design System Implementation"/>
-				</div>
-				<!-- Project -->
-				<div class="flex flex-row items-center">
-					<!-- View Mode -->
-					<div class="float-end px-2">
-						@templ_shared.SvgTag(task.ProjectId)
-					</div>
-					<p
-						hx-get={ fmt.Sprintf("/project/%d", task.ProjectId) }
-						hx-replace-url="true"
-						hx-target="body"
-						id="task-project-view"
-						class="cursor-pointer hover:text-link dark:hover:text-link hover:underline text-xl text-text-on-light dark:text-text-on-dark"
-					>
-						{ task.ProjectName }
-					</p>
-					<!-- Edit Mode -->
-					<div id="task-project-edit" class="hidden">
-						@templ_shared.FormListInput("", "project", task.ProjectId, projects)
-					</div>
-				</div>
-			</div>
-			<div class="mb-4">
-				<div class="text-text-on-light dark:text-text-on-dark text-sm">Time Elapsed</div>
-				<div id="detail-timer" class="text-xl font-semibold">02:37:05</div>
-			</div>
-		</div>
-		<!-- Horizontal Divider -->
-		<hr class="h-px my-8 border-0 bg-border-light dark:border-border-dark "/>
-		<!-- Task Details with Divider -->
-		<div class="flex flex-col md:flex-row">
-			<div class="md:w-2/3 md:pr-6">
-				<div class="mb-6">
-					<h2 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-2">Description</h2>
-					<!-- View Mode -->
-					<div id="task-description-view" class="text-text-on-light dark:text-text-on-dark">
-						if len(task.Description) > 0 {
-							{ task.Description }
-						} else {
-							"..."
-						}
-					</div>
-					<!-- Edit Mode -->
-					<textarea id="task-description-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark min-h-[100px]">{ task.Description }</textarea>
-				</div>
-			</div>
-			<!-- Task Metadata -->
-			<div class="md:w-1/3 space-y-4 mt-4 md:mt-0 text-left md:text-right">
-				<!-- Due Date -->
-				<div>
-					<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Due Date</h3>
-					<!-- View Mode -->
-					<p id="task-due-date-view" class="text-text-on-light dark:text-text-on-dark">{ task.DueDate.Format(constants.PrettyDateFormat) }</p>
-					<!-- Edit Mode -->
-					<input type="date" id="task-due-date-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark" value="2025-04-25"/>
-				</div>
-				<div>
-					<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Created By</h3>
-					<p class="text-text-on-light dark:text-text-on-dark">{ task.CreatedBy.FullName }</p>
-				</div>
-				<div>
-					<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Created</h3>
-					<p class="text-text-on-light dark:text-text-on-dark">{ task.CreatedDate.Format(constants.PrettyDateFormat) }</p>
+					{ task.ProjectName }
+				</p>
+				<div id="task-project-edit" class="hidden">
+					@templ_shared.FormListInput("", "project", task.ProjectId, projects)
 				</div>
 			</div>
 		</div>
-		<!-- Edit Mode Actions -->
-		<div id="edit-actions" class="hidden mt-6 flex justify-end gap-2">
-			<button onclick="cancelEdit()" class="px-4 py-2 rounded-lg border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors">
-				Cancel
-			</button>
-			<button onclick="saveEdit()" class="px-4 py-2 rounded-lg bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark hover:opacity-80 transition-opacity">
-				Save Changes
-			</button>
+		<div class="mb-4">
+			<div class="text-text-on-light dark:text-text-on-dark text-sm">Time Elapsed</div>
+			<div id="detail-timer" class="text-xl font-semibold">02:37:05</div>
 		</div>
+	</div>
+}
+
+templ taskDetails(task *models.TaskView) {
+	<div class="flex flex-col md:flex-row">
+		<div class="md:w-2/3 md:pr-6">
+			<div class="mb-6">
+				<h2 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-2">Description</h2>
+				<div id="task-description-view" class="text-text-on-light dark:text-text-on-dark">
+					if len(task.Description) > 0 {
+						{ task.Description }
+					} else {
+						"..."
+					}
+				</div>
+				<textarea id="task-description-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark min-h-[100px]">{ task.Description }</textarea>
+			</div>
+		</div>
+		<div class="md:w-1/3 space-y-4 mt-4 md:mt-0 text-left md:text-right">
+			<div>
+				<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Due Date</h3>
+				<p id="task-due-date-view" class="text-text-on-light dark:text-text-on-dark">{ task.DueDate.Format(constants.PrettyDateFormat) }</p>
+				<input type="date" id="task-due-date-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark" value="2025-04-25"/>
+			</div>
+			<div>
+				<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Created By</h3>
+				<p class="text-text-on-light dark:text-text-on-dark">{ task.CreatedBy.FullName }</p>
+			</div>
+			<div>
+				<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Created</h3>
+				<p class="text-text-on-light dark:text-text-on-dark">{ task.CreatedDate.Format(constants.PrettyDateFormat) }</p>
+			</div>
+		</div>
+	</div>
+}
+
+templ editActions() {
+	<script>
+        function cancelEdit() {
+            document.getElementById('task-title-view').classList.remove('hidden');
+            document.getElementById('task-description-view').classList.remove('hidden');
+            document.getElementById('task-due-date-view').classList.remove('hidden');
+            document.getElementById('task-project-view').classList.remove('hidden');
+
+            document.getElementById('task-title-edit').classList.add('hidden');
+            document.getElementById('task-description-edit').classList.add('hidden');
+            document.getElementById('task-due-date-edit').classList.add('hidden');
+            document.getElementById('task-project-edit').classList.add('hidden');
+            document.getElementById('edit-actions').classList.add('hidden');
+
+            document.getElementById('task-options-menu').classList.remove('hidden');
+        }
+	</script>
+	<div id="edit-actions" class="hidden mt-6 flex justify-end gap-2">
+		<button onclick="cancelEdit()" class="px-4 py-2 rounded-lg border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors">
+			Cancel
+		</button>
+		<button class="px-4 py-2 rounded-lg bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark hover:opacity-80 transition-opacity">
+			Save Changes
+		</button>
 	</div>
 }
 
 templ editFromTask() {
 	<script>
         function editTask() {
-            // Hide view elements
             document.getElementById('task-title-view').classList.add('hidden');
             document.getElementById('task-description-view').classList.add('hidden');
             document.getElementById('task-due-date-view').classList.add('hidden');
             document.getElementById('task-project-view').classList.add('hidden');
 
-            // Show edit elements
             document.getElementById('task-title-edit').classList.remove('hidden');
             document.getElementById('task-description-edit').classList.remove('hidden');
             document.getElementById('task-due-date-edit').classList.remove('hidden');
             document.getElementById('task-project-edit').classList.remove('hidden');
             document.getElementById('edit-actions').classList.remove('hidden');
 
-            // Close the options menu
             document.getElementById('task-options-menu').classList.add('hidden');
         }
 	</script>
@@ -192,7 +201,6 @@ templ editFromTask() {
 templ taskCommentBox() {
 	<div class="theme-transition bg-secondary-light dark:bg-secondary-dark  rounded-xl p-6 mb-6 border border-border-light dark:border-border-dark  shadow-lg">
 		<h2 class="text-xl font-bold mb-4">Comment</h2>
-		<!-- Comment Form -->
 		<div class="flex gap-3">
 			<div class="flex-shrink-0">
 				<div class="h-10 w-10 rounded-full bg-accent-light dark:bg-accent-dark  flex items-center justify-center text-primary-light dark:text-primary-dark  font-bold">
@@ -215,9 +223,7 @@ templ taskTimeline(task *models.TaskView) {
 	<div class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-6 mb-6 border border-border-light dark:border-border-dark shadow-lg">
 		<h2 class="text-xl font-bold mb-4">Timeline</h2>
 		<div class="relative space-y-6">
-			<!-- Vertical Line -->
 			<div class="absolute left-[15px] top-0 bottom-0 w-[3px] bg-border-light dark:bg-border-dark "></div>
-			<!-- Timeline Item -->
 			<div class="relative flex gap-4">
 				<div class="flex-shrink-0 relative z-10 ">
 					<div class="h-8 w-8 rounded-full bg-accent-light dark:bg-accent-dark  flex items-center justify-center">
@@ -236,7 +242,6 @@ templ taskTimeline(task *models.TaskView) {
 					</div>
 				</div>
 			</div>
-			<!-- Timeline Item - Task Update -->
 			<div class="relative flex gap-4">
 				<div class="flex-shrink-0 relative z-10">
 					<div class="h-8 w-8 rounded-full bg-text-light dark:bg-text-dark  flex items-center justify-center">
@@ -272,7 +277,6 @@ templ taskTimeline(task *models.TaskView) {
 					</div>
 				</div>
 			</div>
-			<!-- Timeline Item -->
 			<div class="relative flex gap-4">
 				<div class="flex-shrink-0 relative z-10">
 					<div class="h-8 w-8 rounded-full bg-warning-light dark:bg-warning-dark flex items-center justify-center">
@@ -291,7 +295,6 @@ templ taskTimeline(task *models.TaskView) {
 					</div>
 				</div>
 			</div>
-			<!-- Timeline Item -->
 			<div class="relative flex gap-4">
 				<div class="flex-shrink-0 relative z-10">
 					<div class="h-8 w-8 rounded-full bg-accent-light dark:bg-accent-dark  flex items-center justify-center">
@@ -310,7 +313,6 @@ templ taskTimeline(task *models.TaskView) {
 					</div>
 				</div>
 			</div>
-			<!-- Timeline Item with Comment -->
 			<div class="relative flex gap-4">
 				<div class="flex-shrink-0 relative z-10 bg-secondary-light dark:bg-secondary-dark">
 					<div class="h-8 w-8 rounded-full bg-text-light dark:bg-text-dark  flex items-center justify-center">
@@ -333,7 +335,6 @@ templ taskTimeline(task *models.TaskView) {
 									<div class="h-8 w-8 rounded-full bg-accent-light dark:bg-accent-dark  flex items-center justify-center text-primary-light dark:text-primary-dark  font-medium cursor-pointer">
 										M
 									</div>
-									<!-- Tooltip -->
 									<div class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-secondary-light dark:bg-secondary-dark  border border-border-light dark:border-border-dark  rounded text-xs text-text-light dark:text-text-dark  whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
 										Marco
 									</div>
