@@ -227,7 +227,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_todo.TaskItemContentOOB(task).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskItemContent(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render new task row with id %d", task.Id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -324,11 +324,24 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	source := r.URL.Query().Get("source")
+	if source == "task_page" {
+		projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+		if err != nil {
+			defaultForm.Errors["Project"] = err.Error()
+		}
 
-	if err = templ_todo.TaskItemCard(task).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render task list item")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if err = templ_todo.TaskItemContent(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+			h.logger.Error(err, "failed to render task list item")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err = templ_todo.TaskItemCard(task).Render(r.Context(), w); err != nil {
+			h.logger.Error(err, "failed to render task list item")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

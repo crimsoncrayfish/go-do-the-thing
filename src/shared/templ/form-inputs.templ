@@ -16,7 +16,7 @@ templ FormTextInput(title, name, placeholder, value string) {
 				placeholder={ placeholder }
 				value={ value }
 				class="
-				bg-secondary-light mt-2 border border-border-light text-text-on-light text-sm rounded-lg focus:ring-accent-light focus:border-border-light block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark placeholder-accent-light dark:placeholder-accent-dark dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-border-dark"
+				bg-primary-light mt-2 border border-border-light text-text-on-light text-sm rounded-lg focus:ring-accent-light focus:border-border-light block w-full p-2.5 dark:bg-primary-dark dark:border-border-dark placeholder-accent-light dark:placeholder-accent-dark dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-border-dark"
 			/>
 		</label>
 	</div>
@@ -30,7 +30,7 @@ templ FormPasswordInput(title, name, placeholder string) {
 			name={ name }
 			id={ name }
 			placeholder="••••••••"
-			class="bg-secondary-light border border-border-light text-text-on-light rounded-lg block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark dark:text-text-on-dark placeholder-accent-light dark:placeholder-accent-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark"
+			class="bg-primary-light border border-border-light text-text-on-light rounded-lg block w-full p-2.5 dark:bg-primary-dark dark:border-border-dark dark:text-text-on-dark placeholder-accent-light dark:placeholder-accent-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark"
 			required=""
 		/>
 	</div>
@@ -62,7 +62,7 @@ templ FormDatePicker(title, name string, date *database.SqLiteTime) {
 				datepicker
 				datepicker-format="yyyy-mm-dd"
 				class=" border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5
-				bg-secondary-light dark:bg-secondary-dark dark:border-border-dark 
+				bg-primary-light dark:bg-primary-dark dark:border-border-dark 
 				dark:placeholder-accent-dark placeholder-accent-light
 				dark:text-text-on-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark"
 			/>
@@ -76,7 +76,7 @@ templ FormListInput(title, name string, value int64, opts map[int64]string) {
 			{ title }
 			<select
 				name={ name }
-				class="mt-2 bg-secondary-light border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
+				class="mt-2 bg-primary-light dark:bg-primary-dark border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
 			>
 				for id, name := range opts {
 					if id == value {
@@ -96,7 +96,7 @@ templ FormListInputWithAllOption(title, name string, value int64, opts map[int64
 			{ title }
 			<select
 				name={ name }
-				class="mt-2 bg-secondary-light border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:bg-secondary-dark dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
+				class="mt-2 bg-primary-light border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:bg-primary-dark dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
 			>
 				<option selected value="0" class="text-accent-light dark:text-accent-dark">All</option>
 				for id, name := range opts {

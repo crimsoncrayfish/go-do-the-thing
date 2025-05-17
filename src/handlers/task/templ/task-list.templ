@@ -62,30 +62,32 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 }
 
 templ searchBar(projects map[int64]string) {
-	<form
-		hx-get="/tasks"
-		hx-trigger="submit, keyup delay:500ms changed"
-		hx-target="#task-list"
-		hx-swap="innerHTML"
-		class="grid grid-cols-1 md:grid-cols-3 gap-4"
-	>
-		@templ_shared.FormTextInput("", "Search", "Search...", "")
-		@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
-		@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
-	</form>
-	<div class="flex flex-wrap gap-2 pt-2">
-		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-			All
-		</button>
-		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-			Completed
-		</button>
-		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-			Incomplete
-		</button>
-		<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-			Overdue
-		</button>
+	<div class="bg-secondary-light dark:bg-secondary-dark pb-4 px-4 pt-2 border border-border-light dark:border-border-dark rounded-lg">
+		<form
+			hx-get="/tasks"
+			hx-trigger="submit, keyup delay:500ms changed"
+			hx-target="#task-list"
+			hx-swap="innerHTML"
+			class="grid grid-cols-1 md:grid-cols-3 gap-4"
+		>
+			@templ_shared.FormTextInput("", "Search", "Search...", "")
+			@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
+			@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
+		</form>
+		<div class="flex flex-wrap gap-2 pt-2">
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				All
+			</button>
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				Completed
+			</button>
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				Incomplete
+			</button>
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				Overdue
+			</button>
+		</div>
 	</div>
 }
 

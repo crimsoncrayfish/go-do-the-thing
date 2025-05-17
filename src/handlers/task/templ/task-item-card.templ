@@ -45,7 +45,7 @@ templ cardStatus(task *models.TaskView) {
 	</div>
 }
 
-templ editDeleteMenu(task *models.TaskView) {
+templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 	<div tabindex="0" class="relative group">
 		<button
 			if (task.Status == models.Completed) {
@@ -78,30 +78,19 @@ templ editDeleteMenu(task *models.TaskView) {
 		<div
 			class={ templ.KV( "hidden" , task.Status == models.Completed),
 			"origin-top-left absolute left-0 sm:right-0 sm:left-auto mt-2 w-40 rounded-md",
+			"border-primary-light dark:border-primary-dark",
 			"shadow-lg bg-primary-light dark:bg-primary-dark ring-1 ring-black",
 			"ring-opacity-5 opacity-0 invisible group-focus-within:opacity-100",
 			"group-focus-within:visible transition-all z-50" }
 		>
 			<ul class="py-1 w-full">
 				<li class="w-full">
-					<button
-						class={ " w-full text-left px-4 py-2 text-sm",
-								"text-text-on-light dark:text-text-on-dark",
-								"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center" }
-						hx-swap="outerHTML"
-						hx-target="body"
-						hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-						hx-replace-url="true"
-						aria-label="Edit Task"
-					>
-						@templ_shared.SvgEdit()
-						<p class="pl-4">Edit</p>
-					</button>
+					@editButton
 				</li>
 				<li>
 					<button
 						class="w-full text-left px-4 py-2 text-sm
-					text-text-on-light dark:text-text-on-dark
+					text-danger-light dark:text-danger-dark font-bold
 					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
 						hx-swap="outerHTML swap:1.2s"
 						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
@@ -116,6 +105,22 @@ templ editDeleteMenu(task *models.TaskView) {
 			</ul>
 		</div>
 	</div>
+}
+
+templ editFromList(task *models.TaskView) {
+	<button
+		class={ " w-full text-left px-4 py-2 text-sm",
+								"text-text-on-light dark:text-text-on-dark",
+								"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center" }
+		hx-swap="outerHTML"
+		hx-target="body"
+		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
+		hx-replace-url="true"
+		aria-label="Edit Task"
+	>
+		@templ_shared.SvgEdit()
+		<p class="pl-4">Edit</p>
+	</button>
 }
 
 templ completeTaskButton(task *models.TaskView) {
@@ -139,38 +144,42 @@ templ completeTaskButton(task *models.TaskView) {
 	</button>
 }
 
+templ taskStatusChip(task *models.TaskView) {
+	if (task.Status == models.Completed) {
+		<span
+			class="bg-success-light dark:bg-success-dark
+                         text-text-on-light dark:text-text-on-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+		>
+			Complete
+		</span>
+	} else if (task.InProgress) {
+		<span
+			class="bg-accent-light dark:bg-accent-dark
+                         text-primary-light dark:text-primary-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+		>
+			In Progress
+		</span>
+	} else if task.DueDate.Before(database.SqLiteNow()) {
+		<span
+			class="bg-danger-light dark:bg-danger-dark
+					text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
+		>
+			Over Due
+		</span>
+	}
+}
+
 templ cardDetails(task *models.TaskView) {
 	<div class="col-span-12 sm:col-span-9">
 		<div
 			class="flex flex-col sm:flex-row items-start
                        justify-between mb-3"
 		>
-			if (task.Status == models.Completed) {
-				<span
-					class="bg-success-light dark:bg-success-dark
-                         text-text-on-light dark:text-text-on-dark
-                         text-xs font-bold py-1 px-3 rounded-full
-                         shadow-sm mb-1 sm:mb-0"
-				>
-					Complete
-				</span>
-			} else if (task.InProgress) {
-				<span
-					class="bg-accent-light dark:bg-accent-dark
-                         text-primary-light dark:text-primary-dark
-                         text-xs font-bold py-1 px-3 rounded-full
-                         shadow-sm mb-1 sm:mb-0"
-				>
-					In Progress
-				</span>
-			} else if task.DueDate.Before(database.SqLiteNow()) {
-				<span
-					class="bg-danger-light dark:bg-danger-dark
-					text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
-				>
-					Over Due
-				</span>
-			}
+			@taskStatusChip(task)
 			<span
 				class="text-sm text-text-on-light
                          dark:text-text-on-dark mt-2 md:mb-0"
@@ -243,7 +252,7 @@ templ cardActions(task *models.TaskView) {
 			class="col-span-12 sm:col-span-2 flex items-center justify-start
            sm:justify-center lg:justify-end"
 		>
-			@editDeleteMenu(task)
+			@editDeleteMenu(task, editFromList(task))
 		</div>
 		<div class="sm:hidden ml-auto">
 			@completeTaskButton(task)
