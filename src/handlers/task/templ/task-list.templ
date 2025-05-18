@@ -44,11 +44,7 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 			</div>
 		</div>
 		@searchBar(projects)
-		<div id="task-list-container" class="pt-4 space-y-4">
-			for _, task := range tasks {
-				@TaskItemCard(task)
-			}
-		</div>
+		@TaskList(tasks)
 	</div>
 	<script>
     if (!window.flipTaskCard) {
@@ -59,6 +55,14 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
       };
     }
 	</script>
+}
+
+templ TaskList(tasks []*m.TaskView) {
+	<div id="task-list-container" class="pt-4 space-y-4">
+		for _, task := range tasks {
+			@TaskItemCard(task)
+		}
+	</div>
 }
 
 templ searchBar(projects map[int64]string) {

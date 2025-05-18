@@ -24,103 +24,128 @@ templ ProjectView(
 	tasks []*models.TaskView,
 ) {
 	@ts.NavBar(navbar)
-	<div id="project-view" class="w-full m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
-		<div class="lg:w-[90%] flex w-full justify-between items-center">
-			<div class="flex items-center">
-				<button
-					hx-get="/projects"
-					hx-replace-url="true"
-					hx-target="body"
-					class="text-action-700 hover:text-primary-50 mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                        dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                        dark:focus:ring-action-800 flex items-center"
-				>
-					@ts.SvgBack()
-					Back
-				</button>
-			</div>
+	<div class="px-1 my-4 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
+		<div class="flex justify-between items-center mb-4">
 			<button
-				onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-project-form-container');swapClassForId('opacity-0', 'opacity-100','edit-project-form-container');"
-				class="float-end text-action-700 hover:text-primary-50 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                dark:focus:ring-action-800 flex items-center"
+				hx-get="/projects"
+				hx-replace-url="true"
+				hx-target="body"
+				class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity flex items-center gap-2"
+			>
+				@ts.SvgBack()
+				Back
+			</button>
+			<button
+				onclick="toggleProjectEdit()"
+				id="edit-project-button"
+				class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark rounded-full font-medium transition-all px-4 py-2 flex items-center gap-2"
 			>
 				@ts.SvgEdit()
-				&nbsp;Edit
+				Edit
 			</button>
 		</div>
-		<div
-			id="edit-project-form-container"
-			class=" max-h-0 opacity-0 transition-[opacity, max-height] pt-2 duration-500 ease-in-out"
-		>
-			<div
-				class="overflow-y-auto overflow-x-hidden z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
-			>
-				<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
-					<div
-						class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600"
-					>
-						<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
-						<button
-							class="text-primary-900 dark:text-primary-50"
-							onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-project-form-container');swapClassForId('opacity-0', 'opacity-100','edit-project-form-container');"
-						>
-							@ts.SvgClose()
-						</button>
-					</div>
-					@ProjectForm(fmt.Sprintf("/project/%d", project.Id), "Update", formdata)
-				</div>
-			</div>
-		</div>
 		@projectContent(project)
-		@templ_todo.TaskListTable(tasks)
+		@templ_todo.TaskList(tasks)
 	</div>
 }
 
 templ projectContent(project models.ProjectView) {
-	<div id="project-content" class="mb-10">
-		<div
-			class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full"
-		>
-			<div class="relative bg-primary-50 shadow dark:bg-primary-700">
-				<div
-					class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-primary-600"
-				>
-					<div class="sm:flex w-full sm:justify-between items-center">
-						<div>
-							<div class="flex items-center">
-								@statusIcon(project)
-								<div class="mx-4 text-xl ">
-									if len(project.Name) > 0 {
-										{ project.Name }
-									} else {
-										{ project.Description }
-									}
-								</div>
+	<form
+		hx-put={ fmt.Sprintf("/project/%d", project.Id) }
+		hx-target="#project-content"
+		hx-swap="outerHTML"
+		id="project-content-form"
+	>
+		<div class="mb-10 theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
+			<div class="flex items-center justify-between p-4 md:p-5 border-b border-border-light dark:border-border-dark rounded-t">
+				<div class="sm:flex w-full sm:justify-between items-center">
+					<div>
+						<div class="flex items-center gap-3">
+							<div id="project-title-view" class="text-2xl font-bold">
+								{ project.Name }
 							</div>
+							<input
+								type="text"
+								id="project-name-edit"
+								name="name"
+								class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-2xl font-bold text-text-on-light dark:text-text-on-dark"
+								value={ project.Name }
+							/>
 						</div>
 					</div>
 				</div>
 			</div>
 			<div
-				class="p-4 bg-transparent border-b dark:border-primary-600 divide-primary-900 dark:divide-primary-600"
+				class="p-4 bg-transparent border-b border-border-light dark:border-border-dark divide-border-light dark:divide-border-dark"
 			>
-				if len(project.Name) > 0 {
-					{ project.Description }
-				}
-				<div class="sm:flex w-full sm:justify-between items-center">
-					<p>Assigned To: { project.Owner.FullName }</p>
-					<p class="pt-2 sm:p-0">Due on: { project.DueDate.Format(constants.DateFormat) }</p>
+				<div id="project-description-view" class="mb-4 text-text-on-light dark:text-text-on-dark">
+					if len(project.Description) > 0 {
+						{ project.Description }
+					} else {
+						"..."
+					}
 				</div>
-				<div>Created by: { project.CreatedBy.FullName }</div>
-				<div>Created on: { project.CreatedDate.String() }</div>
+				<textarea
+					id="project-description-edit"
+					name="description"
+					class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark min-h-[100px]"
+				>{ project.Description }</textarea>
+				<div class="sm:flex w-full sm:justify-between items-center text-sm text-text-on-light/70 dark:text-text-on-dark/70">
+					<p>Assigned To: <span class="text-text-on-light dark:text-text-on-dark">{ project.Owner.FullName }</span></p>
+					<div>
+						<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Due Date</h3>
+						<p id="project-due-date-view" class="text-text-on-light dark:text-text-on-dark">{ project.DueDate.Format(constants.PrettyDateFormat) }</p>
+						<input
+							type="date"
+							id="project-due-date-edit"
+							name="dueDate"
+							class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark"
+							value={ project.DueDate.Format("2006-01-02") }
+						/>
+					</div>
+				</div>
+				<div class="text-sm text-text-on-light/70 dark:text-text-on-dark/70">Created by: <span class="text-text-on-light dark:text-text-on-dark">{ project.CreatedBy.FullName }</span></div>
+				<div class="text-sm text-text-on-light/70 dark:text-text-on-dark/70">Created on: <span class="text-text-on-light dark:text-text-on-dark">{ project.CreatedDate.Format(constants.PrettyDateFormat) }</span></div>
 			</div>
+			@projectEditActions()
 		</div>
-	</div>
+	</form>
 }
 
 templ ProjectContentOOB(project models.ProjectView) {
 	<div id="project-content" hx-swap-oob="true">
 		@projectContent(project)
+	</div>
+}
+
+templ projectEditActions() {
+	<script>
+        function toggleProjectEdit() {
+            toggleClassForId('hidden','project-title-view');
+            toggleClassForId('hidden','project-description-view');
+            toggleClassForId('hidden','project-due-date-view');
+
+            toggleClassForId('hidden','project-name-edit');
+            toggleClassForId('hidden','project-description-edit');
+            toggleClassForId('hidden','project-due-date-edit');
+
+            toggleClassForId('hidden','project-edit-actions');
+            toggleClassForId('hidden','edit-project-button');
+        }
+	</script>
+	<div id="project-edit-actions" class="hidden mt-6 flex justify-end gap-2">
+		<button
+			type="button"
+			onclick="toggleProjectEdit()"
+			class="px-4 py-2 rounded-lg border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors"
+		>
+			Cancel
+		</button>
+		<button
+			type="submit"
+			class="px-4 py-2 rounded-lg bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark hover:opacity-80 transition-opacity"
+		>
+			Save Changes
+		</button>
 	</div>
 }

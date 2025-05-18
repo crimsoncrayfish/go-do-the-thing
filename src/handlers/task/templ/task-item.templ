@@ -21,9 +21,9 @@ templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.Ta
 	@ts.NavBar(navbar)
 	<div class="px-1 my-4 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 		@TaskItemContent(task, projects)
-		@taskCommentBox()
 		@taskTimeline(task)
 	</div>
+	@taskCommentBox(task)
 }
 
 templ TaskItemContent(task *models.TaskView, projects map[int64]string) {
@@ -82,23 +82,85 @@ templ taskHeader(task *models.TaskView) {
 					<span class="hidden md:inline">Mark as Incomplete</span>
 				</button>
 			}
-			@editDeleteMenu(task, editFromTask())
+			@editDeleteMenuItemPage(task, editFromTask())
+		</div>
+	</div>
+}
+
+templ editDeleteMenuItemPage(task *models.TaskView, editButton templ.Component) {
+	<div tabindex="0" class="relative group">
+		<button
+			if (task.Status == models.Completed) {
+				disabled
+			}
+			aria-haspopup="true"
+			aria-expanded="false"
+			class="theme-transition bg-primary-light dark:bg-primary-dark
+             hover:opacity-80 text-text-on-light dark:text-text-on-dark
+             font-bold p-2 rounded-full shadow-md focus:outline-none
+             focus:ring-2 focus:ring-text-light dark:focus:ring-text-dark
+             focus:ring-opacity-50 flex items-center justify-center"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					d="M12 6v.01M12 12v.01M12 18v.01"
+				></path>
+			</svg>
+			<span class="sr-only">Open task actions</span>
+		</button>
+		<div
+			class={ templ.KV( "hidden" , task.Status == models.Completed),
+			"origin-top-right absolute right-0  mt-2 w-40 rounded-md",
+			"border-primary-light dark:border-primary-dark",
+			"shadow-lg bg-primary-light dark:bg-primary-dark ring-1 ring-black",
+			"ring-opacity-5 opacity-0 invisible group-focus-within:opacity-100",
+			"group-focus-within:visible transition-all z-50" }
+		>
+			<ul class="py-1 w-full">
+				<li class="w-full">
+					@editButton
+				</li>
+				<li>
+					<button
+						class="w-full text-left px-4 py-2 text-sm
+					text-danger-light dark:text-danger-dark font-bold
+					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
+						hx-swap="outerHTML swap:1.2s"
+						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
+						hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
+						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+						aria-label="Delete Task"
+					>
+						@templ_shared.SvgBin()
+						<p class="pl-4">Delete</p>
+					</button>
+				</li>
+			</ul>
 		</div>
 	</div>
 }
 
 templ taskTitleAndTimer(task *models.TaskView, projects map[int64]string) {
 	<div class="mb-6">
-		<div class="flex items-center justify-between mb-6">
-			<div class="flex flex-row items-center space-x-4">
+		<div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+			<div class="flex flex-row items-center">
 				@statusIcon(task)
-				<h1 id="task-title-view" class="text-2xl font-bold">
+				<p id="task-title-view" class="text-2xl ml-2 font-bold">
 					{ task.Name }
-				</h1>
-				<input type="text" id="task-title-edit" class="hidden w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-2xl font-bold text-text-on-light dark:text-text-on-dark" value={ task.Name }/>
+				</p>
+				<input type="text" id="task-title-edit" class="hidden ml-2 w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-2xl font-bold text-text-on-light dark:text-text-on-dark" value={ task.Name }/>
 			</div>
 			<div class="flex flex-row items-center">
-				<div class="float-end px-2">
+				<div class="float-end pr-2">
 					@templ_shared.SvgTag(task.ProjectId)
 				</div>
 				<p
@@ -157,23 +219,24 @@ templ taskDetails(task *models.TaskView) {
 
 templ editActions() {
 	<script>
-        function cancelEdit() {
-            document.getElementById('task-title-view').classList.remove('hidden');
-            document.getElementById('task-description-view').classList.remove('hidden');
-            document.getElementById('task-due-date-view').classList.remove('hidden');
-            document.getElementById('task-project-view').classList.remove('hidden');
+        function toggleEdit() {
+            toggleClassForId('hidden','task-title-view');
+            toggleClassForId('hidden','task-description-view');
+            toggleClassForId('hidden','task-due-date-view');
+            toggleClassForId('hidden','task-project-view');
 
-            document.getElementById('task-title-edit').classList.add('hidden');
-            document.getElementById('task-description-edit').classList.add('hidden');
-            document.getElementById('task-due-date-edit').classList.add('hidden');
-            document.getElementById('task-project-edit').classList.add('hidden');
-            document.getElementById('edit-actions').classList.add('hidden');
+            toggleClassForId('hidden','task-title-edit');
+            toggleClassForId('hidden','task-description-edit');
+            toggleClassForId('hidden','task-due-date-edit');
+            toggleClassForId('hidden','task-project-edit');
 
-            document.getElementById('task-options-menu').classList.remove('hidden');
-        }
+            toggleClassForId('hidden','edit-actions');
+
+            toggleClassForId('hidden','task-options-menu');
+    }
 	</script>
 	<div id="edit-actions" class="hidden mt-6 flex justify-end gap-2">
-		<button onclick="cancelEdit()" class="px-4 py-2 rounded-lg border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors">
+		<button onclick="toggleEdit()" class="px-4 py-2 rounded-lg border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors">
 			Cancel
 		</button>
 		<button class="px-4 py-2 rounded-lg bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark hover:opacity-80 transition-opacity">
@@ -183,51 +246,60 @@ templ editActions() {
 }
 
 templ editFromTask() {
-	<script>
-        function editTask() {
-            document.getElementById('task-title-view').classList.add('hidden');
-            document.getElementById('task-description-view').classList.add('hidden');
-            document.getElementById('task-due-date-view').classList.add('hidden');
-            document.getElementById('task-project-view').classList.add('hidden');
-
-            document.getElementById('task-title-edit').classList.remove('hidden');
-            document.getElementById('task-description-edit').classList.remove('hidden');
-            document.getElementById('task-due-date-edit').classList.remove('hidden');
-            document.getElementById('task-project-edit').classList.remove('hidden');
-            document.getElementById('edit-actions').classList.remove('hidden');
-
-            document.getElementById('task-options-menu').classList.add('hidden');
-        }
-	</script>
 	<button
 		class={ " w-full text-left px-4 py-2 text-sm",
 								"text-text-on-light dark:text-text-on-dark",
 								"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center" }
 		aria-label="Edit Task"
-		onclick="editTask()"
+		onclick="toggleEdit()"
 	>
 		@templ_shared.SvgEdit()
 		<p class="pl-4">Edit</p>
 	</button>
 }
 
-templ taskCommentBox() {
-	<div class="theme-transition bg-secondary-light dark:bg-secondary-dark  rounded-xl p-6 mb-6 border border-border-light dark:border-border-dark  shadow-lg">
-		<h2 class="text-xl font-bold mb-4">Comment</h2>
-		<div class="flex gap-3">
-			<div class="flex-shrink-0">
-				<div class="h-10 w-10 rounded-full bg-accent-light dark:bg-accent-dark  flex items-center justify-center text-primary-light dark:text-primary-dark  font-bold">
-					M
-				</div>
+templ taskCommentBox(task *models.TaskView) {
+	<div id="comment-fab-container" class="fixed bottom-6 right-6 z-50">
+		<button
+			id="comment-fab-button"
+			class="theme-transition bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark rounded-full p-4 shadow-lg hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50"
+			onclick="toggleClassForId('hidden','comment-area')"
+			aria-label="Add Comment"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"></path>
+			</svg>
+		</button>
+		<div
+			id="comment-area"
+			class="hidden absolute bottom-0 right-0 mb-16 w-80 theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl shadow-lg border border-accent-light dark:border-accent-dark p-4"
+		>
+			<div class="flex justify-between items-center mb-3">
+				<h3 class="text-lg font-bold text-text-on-light dark:text-text-on-dark">Add Comment</h3>
+				<button
+					class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity"
+					onclick="toggleClassForId('hidden','comment-area')"
+					aria-label="Close Comment Area"
+				>
+					@templ_shared.SvgClose()
+				</button>
 			</div>
-			<div class="flex-grow">
-				<textarea placeholder="Add a comment..." class="theme-transition bg-primary-light dark:bg-primary-dark  text-text-light dark:text-text-dark  rounded-xl py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark  focus:ring-opacity-50 shadow-sm border border-border-light dark:border-border-dark  min-h-[100px]"></textarea>
-				<div class="flex justify-end mt-2">
-					<button type="submit" class="theme-transition bg-accent-light dark:bg-accent-dark  hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark  focus:ring-opacity-50">
+			<form>
+				<textarea
+					id="comment-textarea"
+					name="comment"
+					placeholder="Add a comment..."
+					class="theme-transition bg-primary-light dark:bg-primary-dark text-text-on-light dark:text-text-on-dark rounded-lg py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 shadow-sm border border-border-light dark:border-border-dark min-h-[80px]"
+				></textarea>
+				<div class="flex justify-end mt-3">
+					<button
+						type="submit"
+						class="theme-transition bg-accent-light dark:bg-accent-dark hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50"
+					>
 						Post Comment
 					</button>
 				</div>
-			</div>
+			</form>
 		</div>
 	</div>
 }
