@@ -26,6 +26,12 @@ templ TaskItemCard(task *models.TaskView) {
 	</div>
 }
 
+templ TaskItemCardOOB(task *models.TaskView) {
+	<div id="task-list-container" hx-swap-oob="afterbegin">
+		@TaskItemCard(task)
+	</div>
+}
+
 templ cardFront(task *models.TaskView) {
 	<div
 		class={ getPosAnd3dStyles(),  

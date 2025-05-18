@@ -119,11 +119,12 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to get newly created task with id %d", new_id)
 		return
 	}
-	if err := templ_todo.TaskRowOOB(taskView).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskItemCardOOB(taskView).Render(r.Context(), w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to render task row")
 		return
 	}
+	// TODO: Implement a card or somehting for when there are no tasks
 	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to render no-data-row")

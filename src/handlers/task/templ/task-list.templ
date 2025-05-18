@@ -44,7 +44,7 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 			</div>
 		</div>
 		@searchBar(projects)
-		<div class="pt-4 space-y-4">
+		<div id="task-list-container" class="pt-4 space-y-4">
 			for _, task := range tasks {
 				@TaskItemCard(task)
 			}
