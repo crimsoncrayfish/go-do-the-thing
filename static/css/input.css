@@ -1,4 +1,160 @@
 @tailwind base;
 @tailwind components;
+
+/* 1) Bring in Flowbite’s defaults (components layer) */
 @import "flowbite";
+
 @tailwind utilities;
+
+/* 2) Everything in utilities layer so it overrides Flowbite */
+@layer utilities {
+/* DAY CELL HOVER */
+  .datepicker-dropdown .datepicker-cell:hover {
+    @apply bg-accent-light dark:bg-accent-dark !important;
+  }
+
+  /* NAV BUTTON HOVER */
+  .datepicker-dropdown
+    .datepicker-header
+    .prev-btn:hover,
+  .datepicker-dropdown
+    .datepicker-header
+    .next-btn:hover,
+  .datepicker-dropdown
+    .datepicker-header
+    .view-switch:hover
+  {
+    @apply bg-secondary-light dark:bg-secondary-dark !important;
+  }
+  /* --- SHELL (popup background) --- */
+  .datepicker-dropdown .datepicker-picker {
+    @apply bg-primary-light;
+  }
+  .dark .datepicker-dropdown .datepicker-picker {
+    @apply bg-primary-dark;
+  }
+
+  /* --- HEADER DIVIDER & PADDING --- */
+  .datepicker-header {
+    @apply border-b border-border-light pb-2 mb-4;
+  }
+  .dark .datepicker-header {
+    @apply border-border-dark;
+  }
+
+  /* --- NAV ARROWS --- */
+  .datepicker-controls .prev-btn,
+  .datepicker-controls .next-btn {
+    @apply
+      bg-secondary-light text-text-on-light
+      p-2.5 rounded-lg
+      hover:bg-secondary-light/90
+      focus:outline-none
+      focus:ring-2 focus:ring-secondary-light/50;
+  }
+  .dark .datepicker-controls .prev-btn,
+  .dark .datepicker-controls .next-btn {
+    @apply
+      bg-secondary-dark text-text-on-dark
+      hover:bg-secondary-dark/90
+      focus:ring-secondary-dark/50;
+  }
+  .days-of-week .dow {
+    @apply
+      text-text-on-light
+  }
+  .dark .days-of-week .dow {
+    @apply
+      text-text-on-dark
+  }
+
+  .datepicker-controls .prev-btn svg,
+  .datepicker-controls .next-btn svg {
+    @apply
+      text-text-on-light
+  }
+  .dark .datepicker-controls .prev-btn svg,
+  .dark .datepicker-controls .next-btn svg {
+    @apply
+      text-text-on-dark
+  }
+
+
+  /* --- MONTH/YEAR SWITCH BUTTON --- */
+  .datepicker-controls .view-switch {
+    @apply
+      bg-secondary-light text-text-on-light
+      font-semibold px-4 py-2 rounded-lg
+      hover:bg-secondary-light/90
+      focus:outline-none
+      focus:ring-2 focus:ring-secondary-light/50;
+  }
+  .dark .datepicker-controls .view-switch {
+    @apply
+      bg-secondary-dark text-text-on-dark
+      hover:bg-secondary-dark/90
+      focus:ring-secondary-dark/50;
+  }
+
+  /* --- MONTH & YEAR TITLE (if using .datepicker-title) --- */
+  .datepicker-title {
+    @apply
+      bg-secondary-light text-text-on-light
+      font-semibold px-4 py-2 rounded-lg mx-2;
+  }
+  .dark .datepicker-title {
+    @apply
+      bg-secondary-dark text-text-on-dark;
+  }
+
+  /* --- WEEKDAY HEADERS --- */
+  .datepicker-weekdays .datepicker-weekday {
+    @apply
+      text-xs font-medium
+      text-text-on-light/70 uppercase;
+  }
+  .dark .datepicker-weekdays .datepicker-weekday {
+    @apply text-text-on-dark/70;
+  }
+
+  /* --- DAY CELLS DEFAULT --- */
+  .datepicker-cell {
+    @apply
+      cursor-pointer text-text-on-light font-medium;
+  }
+  .dark .datepicker-cell {
+    @apply text-text-on-dark;
+  }
+
+  /* --- DAY CELL HOVER --- */
+  .datepicker-cell:hover {
+    @apply bg-accent-light;
+  }
+  .dark .datepicker-cell:hover {
+    @apply bg-accent-dark;
+  }
+
+  /* --- SELECTED DAY --- */
+  .datepicker-cell.selected {
+    @apply bg-secondary-light text-text-on-light;
+  }
+  .dark .datepicker-cell.selected {
+    @apply bg-secondary-dark text-text-on-dark;
+  }
+
+  /* --- DISABLED / OUT-OF-MONTH DAYS --- */
+  .datepicker-cell.disabled {
+    @apply cursor-not-allowed text-text-on-light/50;
+  }
+  .dark .datepicker-cell.disabled {
+    @apply text-text-on-dark/50;
+  }
+
+  /* --- FOOTER HELP TEXT --- */
+  .datepicker-footer {
+    @apply text-sm text-text-on-light/70;
+  }
+  .dark .datepicker-footer {
+    @apply text-text-on-dark/70;
+  }
+}

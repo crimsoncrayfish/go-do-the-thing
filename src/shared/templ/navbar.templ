@@ -1,48 +1,60 @@
 package templ_shared
 
 import (
-"go-do-the-thing/src/helpers"
-"go-do-the-thing/src/models"
+	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/models"
 )
 
+// TODO: Update the navbar to enable partial updates?
 templ NavBar(navbar models.NavBarObject) {
-<header
-	class="sticky top-0 z-10 flex justify-between items-center w-full bg-primary-50 border-b border-primary-200 dark:border-primary-600 dark:bg-primary-800">
-	<button onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
-		class="text-primary-500 pl-3 flex items-center justify-center hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300">
-		<span class="sr-only">
-			Navigation
-		</span>
-		<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-			class="size-6">
-			<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5">
-			</path>
-		</svg>
-	</button>
-	<div class="flex cursor-pointer items-center px-3 w-fit py-3 mx-auto lg:px-4 text-primary-900 dark:text-primary-50">
-		<a class="flex items-center" hx-get="/home" hx-target="body">
-			@SvgLogoTiny()
-			<p
-				class="hidden md:block self-center text-2xl font-semibold whitespace-nowrap dark:text-primary-50 text-ellipsis">
-				Think
-				of a heading
+	<header
+		class="sticky top-0 z-20 flex justify-between items-center w-full bg-secondary-light border-b border-border-light dark:border-border-dark dark:bg-secondary-dark"
+	>
+		<button
+			onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
+			class="text-text-on-light pl-3 flex items-center justify-center hover:text-primary-600 dark:text-text-on-dark dark:hover:text-primary-300"
+		>
+			<span class="sr-only">
+				Navigation
+			</span>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke-width="1.5"
+				stroke="currentColor"
+				class="size-6"
+			>
+				<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+			</svg>
+		</button>
+		<div class="flex cursor-pointer items-center px-3 w-fit py-3 mx-auto lg:px-4 text-text-on-light dark:text-text-on-dark">
+			<a class="flex items-center" hx-get="/home" hx-target="body">
+				@SvgLogoTiny()
+				<p
+					class="hidden md:block self-center text-2xl font-semibold whitespace-nowrap  text-ellipsis"
+				>
+					Think
+					of a heading
+				</p>
+			</a>
+		</div>
+		<div
+			onclick="toggleClassForId('hidden', 'profile-menu')"
+			class="cursor-pointer flex items-center text-text-on-light dark:text-text-on-dark pr-5 py-4"
+		>
+			<p class="text-text-on-light dark:text-text-on-dark pr-5 py-4">
+				{ helpers.GetNameFromContext(ctx) }
 			</p>
-		</a>
-	</div>
-	<div onclick="toggleClassForId('hidden', 'profile-menu')"
-		class="cursor-pointer flex items-center text-primary-900 dark:text-primary-50 pr-5 py-4">
-		<p class="text-primary-900 dark:text-primary-50 pr-5 py-4">
-			{ helpers.GetNameFromContext(ctx) }
-		</p>
-		<div>
-			<button class="relative inline-block">
-				@SvgProfileIcon()
-			</button>
-			<div id="profile-menu" class="hidden absolute z-50 mt-7 right-1.5">
-				@ProfileMenu()
+			<div>
+				<button class="relative inline-block">
+					@SvgProfileIcon()
+				</button>
+				<div id="profile-menu" class="hidden absolute z-50 mt-7 right-1.5">
+					@ProfileMenu()
+				</div>
 			</div>
 		</div>
-	</div>
-</header>
-@SideBar(navbar)
+	</header>
+	@SideBar(navbar)
 }
