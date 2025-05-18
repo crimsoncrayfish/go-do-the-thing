@@ -45,30 +45,43 @@ templ taskHeader(task *models.TaskView) {
 				hx-target="body"
 				class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path>
-				</svg>
+				@templ_shared.SvgBack()
 			</button>
 			@taskStatusChip(task)
 		</div>
 		<div class="flex gap-2">
-			<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
-				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-					<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
-				</svg>
-				<span class="hidden md:inline">Pause</span>
-			</button>
-			<button
-				hx-swap="outerHTML"
-				hx-target="#task-content"
-				hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
-				class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
-			>
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-				</svg>
-				<span class="hidden md:inline">Complete</span>
-			</button>
+			if (task.InProgress) {
+				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+					@templ_shared.SvgPause()
+					<span class="hidden md:inline">Pause</span>
+				</button>
+			} else {
+				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+					@templ_shared.SvgPlay()
+					<span class="hidden md:inline">Start</span>
+				</button>
+			}
+			if (task.Status != models.Completed) {
+				<button
+					hx-swap="outerHTML"
+					hx-target="#task-content"
+					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
+					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+				>
+					@templ_shared.SvgCheck()
+					<span class="hidden md:inline">Mark as Complete</span>
+				</button>
+			} else {
+				<button
+					hx-swap="outerHTML"
+					hx-target="#task-content"
+					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
+					class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+				>
+					@templ_shared.SvgClose()
+					<span class="hidden md:inline">Mark as Incomplete</span>
+				</button>
+			}
 			@editDeleteMenu(task, editFromTask())
 		</div>
 	</div>
