@@ -46,7 +46,7 @@ templ cardFront(task *models.TaskView) {
 }
 
 templ cardStatus(task *models.TaskView) {
-	<div class="hidden sm:flex col-span-1 items-center justify-center">
+	<div class="hidden sm:flex col-span-1 pr-8 pl-4 items-center justify-center border-r border-border-light dark:border-border-dark">
 		@completeTaskButton(task)
 	</div>
 }
@@ -180,7 +180,7 @@ templ taskStatusChip(task *models.TaskView) {
 }
 
 templ cardDetails(task *models.TaskView) {
-	<div class="col-span-12 sm:col-span-9">
+	<div class="pl-4 col-span-12 sm:col-span-9">
 		<div
 			class="flex flex-col sm:flex-row items-start
                        justify-between mb-3"
@@ -231,10 +231,10 @@ func getPosAnd3dStyles() string {
 	return "relative [backface-visibility:hidden] overflow-visible z-0"
 }
 func getThemingStyles() string {
-	return " theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-lg"
+	return " theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg"
 }
 func getLayoutStyles() string {
-	return "grid grid-cols-12 gap-6"
+	return "grid grid-cols-12"
 }
 
 templ cardActions(task *models.TaskView) {
