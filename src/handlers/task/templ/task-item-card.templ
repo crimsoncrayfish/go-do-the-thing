@@ -176,37 +176,45 @@ templ taskStatusChip(task *models.TaskView) {
 		>
 			Over Due
 		</span>
+	} else {
+		<span
+			class="bg-primary-light dark:bg-primary-dark
+					text-text-on-light dark:text-text-on-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
+		>
+			Pending
+		</span>
 	}
 }
 
 templ cardDetails(task *models.TaskView) {
-	<div class="pl-4 col-span-12 sm:col-span-9">
+	<div class="sm:pl-4 col-span-12 sm:col-span-9 md:col-span-10 lg:col-span-9 flex flex-col justify-around space-y-4 pb-4 sm:pb-0">
 		<div
-			class="flex flex-col sm:flex-row items-start
-                       justify-between mb-3"
+			class="flex flex-row items-start
+                       justify-between"
 		>
 			@taskStatusChip(task)
 			<span
-				class="text-sm text-text-on-light
-                         dark:text-text-on-dark mt-2 md:mb-0"
+				class="text-sm text-text-on-light dark:text-text-on-dark"
 			>
 				Due: { task.DueDate.Format(constants.DateFormat) }
 			</span>
 		</div>
 		<div
-			class="flex flex-col-reverse mb-2 md:flex-row md:justify-between md:items-center"
+			class="flex flex-col-reverse md:flex-row md:justify-between md:items-center"
 		>
-			<p class={ templ.KV("line-through",task.Status == models.Completed),"font-bold text-lg mt-2 md:mb-0" }>{ task.Name }</p>
+			<p class={ templ.KV("line-through",task.Status == models.Completed),"font-bold text-lg md:mb-0" }>{ task.Name }</p>
 			<div class="flex items-center space-x-2">
 				@templ_shared.SvgTag(task.ProjectId)
 				<span>{ task.ProjectName }</span>
 			</div>
 		</div>
-		<div
-			class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm mb-4" }
-		>
-			{ task.Description }
-		</div>
+		if (task.Description != "") {
+			<div
+				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm" }
+			>
+				{ task.Description }
+			</div>
+		}
 		if (task.TimeSpent > 0) {
 			<div
 				class="text-sm text-text-on-light
@@ -239,9 +247,9 @@ func getLayoutStyles() string {
 
 templ cardActions(task *models.TaskView) {
 	<div
-		class="col-span-12 sm:col-span-2 flex items-center
+		class="col-span-12 sm:col-span-2 md:col-span-1 lg:col-span-2 flex items-center
                      justify-start sm:justify-center
-                     lg:justify-end h-full pl-2 gap-2
+                     lg:justify-end h-full sm:pl-2 gap-2
                      sm:flex-col lg:flex-row"
 	>
 		<button
