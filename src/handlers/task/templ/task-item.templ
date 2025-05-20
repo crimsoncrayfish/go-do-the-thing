@@ -134,10 +134,6 @@ templ editDeleteMenuItemPage(task *models.TaskView, editButton templ.Component) 
 						class="w-full text-left px-4 py-2 text-sm
 					text-danger-light dark:text-danger-dark font-bold
 					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
-						hx-swap="outerHTML swap:1.2s"
-						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
-						hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
-						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
 						aria-label="Delete Task"
 					>
 						@templ_shared.SvgBin()

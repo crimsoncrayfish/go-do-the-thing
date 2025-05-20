@@ -14,7 +14,7 @@ templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.T
 templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
 	@ts.NavBar(navbar)
 	<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
-		<div class="mx-auto pt-5 px-5 py-5 flex items-center justify-between">
+		<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
 			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Items</p>
 			<div>
 				@ts.OpenFormButton("New Task", "create-task-form-container", ts.SvgPlus())
@@ -27,7 +27,7 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 			<div
 				class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full"
 			>
-				<div class="relative  rounded-lg shadow">
+				<div class="relative rounded-lg shadow">
 					<div
 						class="flex items-center justify-between p-4 md:p-5 rounded-t"
 					>
@@ -47,18 +47,38 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 		@TaskList(tasks)
 	</div>
 	<script>
-    if (!window.flipTaskCard) {
-      window.flipTaskCard = function(id) {
+    if (!window.flipTaskCardDelete) {
+      window.flipTaskCardDelete = function(id) {
+	toggleClassForId('hidden', 'task-card-back-delete-'+id)
         const inner = document.getElementById('task-card-inner-' + id);
         if (!inner) return;
         inner.style.transform = 'rotateX(180deg)';
+      };
+    }
+    if (!window.flipTaskCardUpdateToBack) {
+      window.flipTaskCardUpdateToBack = function(id) {
+	toggleClassForId('hidden', 'task-card-back-update-'+id)
+        const inner = document.getElementById('task-card-inner-' + id);
+        if (!inner) return;
+        inner.style.transform = 'rotateX(180deg)';
+      };
+      }
+    if (!window.flipTaskCardUpdateToFront) {
+      window.flipTaskCardUpdateToFront = function(id) {
+        const inner = document.getElementById('task-card-inner-' + id);
+        if (!inner) return;
+        inner.style.transform = 'rotateX(0deg)';
+	inner.addEventListener('transitionend', function hideBack() {
+	        toggleClassForId('hidden', 'task-card-back-update-'+id);
+	        inner.removeEventListener('transitionend', hideBack);
+	});
       };
     }
 	</script>
 }
 
 templ TaskList(tasks []*m.TaskView) {
-	<div id="task-list-container" class="pt-4 space-y-4">
+	<div id="task-list-container" class="space-y-4">
 		for _, task := range tasks {
 			@TaskItemCard(task)
 		}
@@ -66,7 +86,7 @@ templ TaskList(tasks []*m.TaskView) {
 }
 
 templ searchBar(projects map[int64]string) {
-	<div class="bg-secondary-light dark:bg-secondary-dark pb-4 px-4 pt-2 border border-border-light dark:border-border-dark rounded-lg">
+	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 pb-4 px-4 pt-2 border border-border-light dark:border-border-dark rounded-lg">
 		<form
 			hx-get="/tasks"
 			hx-trigger="submit, keyup delay:500ms changed"

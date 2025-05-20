@@ -14,14 +14,16 @@ templ TaskItemCard(task *models.TaskView) {
 		class="relative [perspective:1000px] mb-4
            overflow-visible z-0
            focus-within:z-10 transition-all"
+		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(%d)", task.Id) }
+		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(%d)", task.Id) }
 	>
 		<div
 			id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
 			class="w-full transition-transform duration-500 relative
              [transform-style:preserve-3d]"
 		>
-			@cardFront(task)
-			@cardBack(task.Name)
+			@TaskCardFront(task)
+			@cardBack(task)
 		</div>
 	</div>
 }
@@ -32,12 +34,14 @@ templ TaskItemCardOOB(task *models.TaskView) {
 	</div>
 }
 
-templ cardFront(task *models.TaskView) {
+templ TaskCardFront(task *models.TaskView) {
 	<div
-		class={ getPosAnd3dStyles(),  
-		getTaskBorderStyle(task), 
-		getThemingStyles(), 
-		getLayoutStyles() }
+		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
+		class={
+			getPosAnd3dStyles(),
+			getTaskBorderStyle(task),
+			getThemingStyles(),
+		}
 	>
 		@cardStatus(task)
 		@cardDetails(task)
@@ -46,7 +50,7 @@ templ cardFront(task *models.TaskView) {
 }
 
 templ cardStatus(task *models.TaskView) {
-	<div class="hidden sm:flex col-span-1 pr-8 pl-4 items-center justify-center border-r border-border-light dark:border-border-dark">
+	<div class="hidden sm:flex pr-8 pl-4 items-center justify-center ">
 		@completeTaskButton(task)
 	</div>
 }
@@ -98,9 +102,9 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 						class="w-full text-left px-4 py-2 text-sm
 					text-danger-light dark:text-danger-dark font-bold
 					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
-						hx-swap="outerHTML swap:1.2s"
+						hx-swap="outerHTML swap:0.8s"
 						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
-						hx-on--after-request={ fmt.Sprintf("flipTaskCard(%d)", task.Id) }
+						hx-on--before-request={ fmt.Sprintf("flipTaskCardDelete(%d)", task.Id) }
 						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
 						aria-label="Delete Task"
 					>
@@ -142,8 +146,8 @@ templ completeTaskButton(task *models.TaskView) {
 				"border border-success-light",
 				"dark:border-success-dark" }
 		aria-label="Mark as Complete"
-		hx-swap="outerHTML"
-		hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
+		hx-swap="outerHTML swap:0.8s"
+		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
 		hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }
 	>
 		@templ_shared.SvgCheck()
@@ -187,7 +191,7 @@ templ taskStatusChip(task *models.TaskView) {
 }
 
 templ cardDetails(task *models.TaskView) {
-	<div class="sm:pl-4 col-span-12 sm:col-span-9 md:col-span-10 lg:col-span-9 flex flex-col justify-around space-y-4 pb-4 sm:pb-0">
+	<div class="sm:px-4 flex flex-col w-full justify-around space-y-4 pb-4 sm:pb-0 sm:border-x border-border-light dark:border-border-dark">
 		<div
 			class="flex flex-row items-start
                        justify-between"
@@ -239,17 +243,14 @@ func getPosAnd3dStyles() string {
 	return "relative [backface-visibility:hidden] overflow-visible z-0"
 }
 func getThemingStyles() string {
-	return " theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg"
-}
-func getLayoutStyles() string {
-	return "grid grid-cols-12"
+	return " theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col sm:flex-row"
 }
 
 templ cardActions(task *models.TaskView) {
 	<div
-		class="col-span-12 sm:col-span-2 md:col-span-1 lg:col-span-2 flex items-center
-                     justify-start sm:justify-center
-                     lg:justify-end h-full sm:pl-2 gap-2
+		class=" flex sm:pl-8 pr-4 items-center 
+		     space-x-4 sm:space-x-0 lg:space-x-4 sm:space-y-4 lg:space-y-0
+                     justify-start sm:justify-center lg:justify-end
                      sm:flex-col lg:flex-row"
 	>
 		<button
@@ -263,7 +264,7 @@ templ cardActions(task *models.TaskView) {
 			@templ_shared.SvgPlay()
 		</button>
 		<div
-			class="col-span-12 sm:col-span-2 flex items-center justify-start
+			class="flex items-center justify-start
            sm:justify-center lg:justify-end"
 		>
 			@editDeleteMenu(task, editFromList(task))
@@ -274,16 +275,29 @@ templ cardActions(task *models.TaskView) {
 	</div>
 }
 
-templ cardBack(taskName string) {
+templ cardBack(task *models.TaskView) {
 	<div
-		class="absolute inset-0 bg-danger-light dark:bg-danger-dark
+		id={ fmt.Sprintf("task-card-back-update-%d", task.Id) }
+		class="hidden absolute inset-0 bg-success-light dark:bg-success-dark
          rounded-xl p-6 shadow-lg flex flex-col items-center
          justify-center [backface-visibility:hidden]
          [transform:rotateX(180deg)]"
 	>
 		@templ_shared.LoaderSmall()
 		<span class="mt-4 text-white text-lg font-semibold">
-			Deleting “{ taskName }”…
+			Toggling status for “{ task.Name }”
+		</span>
+	</div>
+	<div
+		id={ fmt.Sprintf("task-card-back-delete-%d", task.Id) }
+		class="hidden absolute inset-0 bg-danger-light dark:bg-danger-dark
+         rounded-xl p-6 shadow-lg flex flex-col items-center
+         justify-center [backface-visibility:hidden]
+         [transform:rotateX(180deg)]"
+	>
+		@templ_shared.LoaderSmall()
+		<span class="mt-4 text-white text-lg font-semibold">
+			Deleting “{ task.Name }”
 		</span>
 	</div>
 }
