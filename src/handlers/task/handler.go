@@ -153,10 +153,8 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		// TODO: some user feedback here?
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		h.logger.Error(err, "not authenticated")
 		return
@@ -197,7 +195,12 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 
 	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		if err := templ_todo.TaskFormContent("Update", form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		task, err := h.taskService.GetTaskView(id, current_user_id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if err := templ_todo.TaskItemContentWithErrors(task, models.ProjectListToMap(projects), form.Errors, true).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render task form content")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
