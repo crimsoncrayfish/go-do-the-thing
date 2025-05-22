@@ -231,7 +231,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_todo.TaskItemContent(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskItemContentOOB(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render new task row with id %d", task.Id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
