@@ -11,19 +11,23 @@ import (
 templ TaskItemCard(task *models.TaskView) {
 	<div
 		id={ fmt.Sprintf("task-card-%d", task.Id) }
-		class="relative [perspective:1000px] mb-4
+		class="relative [perspective:1000px]
            overflow-visible z-0
-           focus-within:z-10 transition-all"
-		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(%d)", task.Id) }
-		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(%d)", task.Id) }
+           focus-within:z-10 transition-all mb-4"
+		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.Id) }
+		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.Id) }
+		hx-on--after-request.from="closest button"
+		hx-on--after-request="triggerSlideOutAndRemove(event, this.querySelector('.task-card-slide-wrapper'))"
 	>
-		<div
-			id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
-			class="w-full transition-transform duration-500 relative
+		<div class="task-card-slide-wrapper">
+			<div
+				id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
+				class="task-card-child w-full transition-transform duration-500 relative
              [transform-style:preserve-3d]"
-		>
-			@TaskCardFront(task)
-			@cardBack(task)
+			>
+				@TaskCardFront(task)
+				@cardBack(task)
+			</div>
 		</div>
 	</div>
 }
@@ -102,7 +106,7 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 						class="w-full text-left px-4 py-2 text-sm
 					text-danger-light dark:text-danger-dark font-bold
 					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
-						hx-swap="outerHTML swap:0.8s"
+						hx-swap="none swap:1s"
 						hx-target={ fmt.Sprintf("#task-card-%d", task.Id) }
 						hx-on--before-request={ fmt.Sprintf("flipTaskCardDelete(%d)", task.Id) }
 						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
@@ -214,7 +218,7 @@ templ cardDetails(task *models.TaskView) {
 		</div>
 		if (task.Description != "") {
 			<div
-				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm" }
+				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm whitespace-pre-line" }
 			>
 				{ task.Description }
 			</div>
