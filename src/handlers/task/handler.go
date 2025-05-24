@@ -134,6 +134,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		defaultForm.Errors["Project"] = err.Error()
 	}
+	defaultForm.SetProject(taskView.ProjectId)
 	if err := templ_todo.TaskFormContent("Create", defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to render task form")

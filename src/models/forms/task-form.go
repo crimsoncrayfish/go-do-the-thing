@@ -17,6 +17,7 @@ func NewTaskForm() TaskForm {
 		Errors: make(map[string]string),
 	}
 }
+
 func NewDefaultTaskForm() TaskForm {
 	duedate := time.Now().Add(time.Duration(time.Hour * 24))
 	return TaskForm{
@@ -30,6 +31,11 @@ func NewDefaultTaskForm() TaskForm {
 func (f *TaskForm) GetErrors() map[string]string {
 	return f.Errors
 }
+
 func (f *TaskForm) SetError(name, value string) {
 	f.Errors[name] = value
+}
+
+func (f *TaskForm) SetProject(project_id int64) {
+	f.Task.ProjectId = project_id
 }
