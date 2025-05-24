@@ -84,9 +84,9 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 	switch contentType {
 	case "text/html":
-		err = templ_project.ProjectView(*projectView, activeScreens, formData, tasks).Render(r.Context(), w)
+		err = templ_project.ProjectView(*projectView, activeScreens, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
 	default:
-		err = templ_project.ProjectWithBody(*projectView, activeScreens, formData, tasks).Render(r.Context(), w)
+		err = templ_project.ProjectWithBody(*projectView, activeScreens, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
 	}
 
 	if err != nil {

@@ -12,15 +12,17 @@ import (
 templ ProjectWithBody(project models.ProjectView,
 	navbar models.NavBarObject,
 	formdata fm.ProjectForm,
+	task_form_data fm.TaskForm,
 	tasks []*models.TaskView,
 ) {
-	@ts.Main(ProjectView(project, navbar, formdata, tasks))
+	@ts.Main(ProjectView(project, navbar, formdata, task_form_data, tasks))
 }
 
 templ ProjectView(
 	project models.ProjectView,
 	navbar models.NavBarObject,
 	formdata fm.ProjectForm,
+	task_form_data fm.TaskForm,
 	tasks []*models.TaskView,
 ) {
 	@ts.NavBar(navbar)
@@ -45,6 +47,12 @@ templ ProjectView(
 			</button>
 		</div>
 		@projectContent(project)
+		<div class="mx-auto px-4 flex  items-center justify-between mb-4">
+			<div>
+				@ts.OpenFormButton("New Task", "create-task-form-container", ts.SvgPlus())
+			</div>
+		</div>
+		@templ_todo.TaskForm("/todo/item", "Create", task_form_data, map[int64]string{project.Id: project.Name})
 		@templ_todo.TaskList(tasks)
 	</div>
 }
@@ -56,7 +64,7 @@ templ projectContent(project models.ProjectView) {
 		hx-swap="outerHTML"
 		id="project-content-form"
 	>
-		<div class="mb-10 theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
+		<div class="mb-4 theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
 			<div class="flex items-center justify-between p-4 md:p-5 border-b border-border-light dark:border-border-dark rounded-t">
 				<div class="sm:flex w-full sm:justify-between items-center">
 					<div>
