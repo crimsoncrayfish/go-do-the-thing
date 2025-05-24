@@ -52,7 +52,7 @@ templ ProjectView(
 				@ts.OpenFormButton("New Task", "create-task-form-container", ts.SvgPlus())
 			</div>
 		</div>
-		@templ_todo.TaskForm("/todo/item", "Create", task_form_data, map[int64]string{project.Id: project.Name})
+		@templ_todo.TaskForm("/todo/item?source=project_page", "Create", task_form_data, map[int64]string{project.Id: project.Name})
 		@templ_todo.TaskList(tasks)
 	</div>
 }

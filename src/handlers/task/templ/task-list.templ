@@ -20,9 +20,17 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 				@ts.OpenFormButton("New Task", "create-task-form-container", ts.SvgPlus())
 			</div>
 		</div>
-		@TaskForm("/todo/item", "Create", formdata, projects)
+		@TaskForm("/todo/item?source=task_page", "Create", formdata, projects)
 		@searchBar(projects)
 		@TaskList(tasks)
+	</div>
+}
+
+templ TaskList(tasks []*m.TaskView) {
+	<div id="task-list-container" class="space-y-4">
+		for _, task := range tasks {
+			@TaskItemCard(task)
+		}
 	</div>
 	<script>
     if (!window.flipTaskCardDelete) {
@@ -53,14 +61,6 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
       };
     }
 	</script>
-}
-
-templ TaskList(tasks []*m.TaskView) {
-	<div id="task-list-container" class="space-y-4">
-		for _, task := range tasks {
-			@TaskItemCard(task)
-		}
-	</div>
 }
 
 templ searchBar(projects map[int64]string) {

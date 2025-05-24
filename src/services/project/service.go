@@ -113,7 +113,7 @@ func (s ProjectService) CreateProject(
 func (s ProjectService) UpdateProject(
 	project_id, current_user_id, owner int64,
 	name, description string,
-	startDate, dueDate *database.SqLiteTime,
+	dueDate *database.SqLiteTime,
 ) error {
 	err := s.projectUsersService.UserBelongsToProject(current_user_id, project_id)
 	if err != nil {
@@ -125,7 +125,6 @@ func (s ProjectService) UpdateProject(
 		Name:         name,
 		Description:  description,
 		Owner:        owner,
-		StartDate:    startDate,
 		DueDate:      dueDate,
 		ModifiedBy:   current_user_id,
 		ModifiedDate: database.SqLiteNow(),

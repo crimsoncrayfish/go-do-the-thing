@@ -125,6 +125,17 @@ func (s *TaskService) DeleteTask(user_id, task_id int64) error {
 	return s.tasksRepo.DeleteItem(task_id, user_id)
 }
 
+func (s *TaskService) RestoreTask(user_id, task_id int64) error {
+	// NOTE: Does this user belong to the current project
+	err := s.userBelongsToTaskProject(user_id, task_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+
+	return s.tasksRepo.RestoreItem(task_id, user_id)
+}
+
 func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	task, err := s.tasksRepo.GetItem(id)
 	if err != nil {

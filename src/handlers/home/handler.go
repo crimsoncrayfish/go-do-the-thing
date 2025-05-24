@@ -3,7 +3,7 @@ package home
 import (
 	home_templ "go-do-the-thing/src/handlers/home/templ"
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
@@ -31,7 +31,6 @@ func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 		logger: logger,
 	}
 	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
-	router.Handle("/toast/remove", mw_stack(http.HandlerFunc(handler.removeToast)))
 	router.Handle("GET /error", mw_stack(http.HandlerFunc(handler.error)))
 	router.Handle("GET /home", mw_stack(http.HandlerFunc(handler.Home)))
 }
@@ -43,7 +42,10 @@ type Screens struct {
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, source, "user auth failed unsuccessfully")
+	if err != nil {
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
 
 	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
@@ -54,7 +56,10 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 
 func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, source, "user auth failed unsuccessfully")
+	if err != nil {
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
 
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)
@@ -63,16 +68,13 @@ func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
 	templ_shared.ToastMessage("This is an error", "error").Render(r.Context(), w)
 }
 
-func (h *HomeHandler) removeToast(w http.ResponseWriter, r *http.Request) {
-	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, source, "user auth failed unsuccessfully")
-	templ_shared.EmptyToast().Render(r.Context(), w)
-}
-
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
 	_, _, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, source, "user auth failed unsuccessfully")
+	if err != nil {
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
 
 	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")

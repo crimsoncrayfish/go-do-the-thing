@@ -1,9 +1,11 @@
 package task
 
 import (
+	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
@@ -52,13 +54,14 @@ func SetupTodoHandler(
 	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItem)))
 	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItem)))
 	router.Handle("DELETE /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.deleteItem)))
+	router.Handle("POST /todo/item/restore/{id}", mw_stack(http.HandlerFunc(todoHandler.restoreItem)))
 }
 
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
@@ -130,15 +133,26 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to render no-data-row")
 		return
 	}
-	projects, err = h.project_service.GetAllProjectsForUser(current_user_id)
-	if err != nil {
-		defaultForm.Errors["Project"] = err.Error()
-	}
-	defaultForm.SetProject(taskView.ProjectId)
-	if err := templ_todo.TaskFormContent("Create", defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render task form")
-		return
+
+	source := r.URL.Query().Get("source")
+	if source == "task_page" {
+		projects, err = h.project_service.GetAllProjectsForUser(current_user_id)
+		if err != nil {
+			defaultForm.Errors["Project"] = err.Error()
+		}
+		defaultForm.SetProject(taskView.ProjectId)
+		if err := templ_todo.TaskFormContent("Create", defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			h.logger.Error(err, "failed to render task form")
+			return
+		}
+	} else {
+		defaultForm.SetProject(taskView.ProjectId)
+		if err := templ_todo.TaskFormContent("Create", defaultForm, map[int64]string{taskView.ProjectId: taskView.ProjectName}).Render(r.Context(), w); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			h.logger.Error(err, "failed to render task form")
+			return
+		}
 	}
 }
 
@@ -150,7 +164,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
@@ -255,7 +269,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
@@ -301,7 +315,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
@@ -360,7 +374,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
@@ -399,7 +413,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
@@ -425,8 +439,69 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := templ_shared.ToastActionUndo("Task Deleted", fmt.Sprintf("/todo/item/restore/%d", id), "#task-list-container", "afterbegin").Render(r.Context(), w); err != nil {
+		assert.NoError(err, source, "failed to render no data row")
+		// TODO: what should happen if the fetch fails after create
+		return
+	}
+
+	// TODO: no data card placeholder is broken
 	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
-		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
+		assert.NoError(err, source, "failed to render no data row")
+		// TODO: what should happen if the fetch fails after create
+		return
+	}
+}
+
+func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
+	// NOTE: Auth check
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+
+	// NOTE: Collect data
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		h.logger.Error(err, "failed to parse id from path")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// NOTE: Take action
+	err = h.task_service.RestoreTask(current_user_id, id)
+	if err != nil {
+		assert.NoError(err, source, "failed to restore todo item %d", id)
+		return
+	}
+
+	// NOTE: Success zone
+	hasData, err := h.task_service.GetTaskCount(current_user_id)
+	if err != nil {
+		assert.NoError(err, source, "failed to update ui")
+		return
+	}
+
+	if err := templ_shared.ToastMessage("Task Restored", "success").Render(r.Context(), w); err != nil {
+		assert.NoError(err, source, "failed to render no data row")
+		// TODO: what should happen if the fetch fails after create
+		return
+	}
+	taskView, err := h.task_service.GetTaskView(id, current_user_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to get newly created task with id %d", id)
+		return
+	}
+	if err := templ_todo.TaskItemCardOOB(taskView).Render(r.Context(), w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render task row")
+		return
+	}
+
+	// TODO: no data card placeholder is broken
+	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
