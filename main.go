@@ -22,7 +22,12 @@ import (
 
 //go:embed static
 var static embed.FS
-var faviconLocation string
+
+var (
+	faviconLocation  string
+	manifestLocation string
+	swjsLocation     string
+)
 
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, faviconLocation)
@@ -40,6 +45,8 @@ func main() {
 
 	router := http.NewServeMux()
 	faviconLocation = workingDir + "/static/img/todo.ico"
+	manifestLocation = workingDir + "/static/json/manifest.json"
+	swjsLocation = workingDir + "/static/json/manifest.json"
 
 	logger.Info("Setting Up Database")
 	dbConnection := database.Init("todo")
@@ -82,4 +89,10 @@ func main() {
 func setupStaticContent(router *http.ServeMux) {
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
+	http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, manifestLocation)
+	})
+	http.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, swjsLocation)
+	})
 }

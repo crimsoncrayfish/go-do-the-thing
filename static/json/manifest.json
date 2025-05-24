@@ -1,0 +1,20 @@
+{
+  "name": "TODO:",
+  "short_name": "todo",
+  "start_url": "/login",
+  "display": "fullscreen",
+  "background_color": "#2D1B69",
+  "theme_color": "#2D1B69",
+  "icons": [
+    {
+      "src": "/static/img/logo192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/img/logo512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
