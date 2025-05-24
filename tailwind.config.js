@@ -36,10 +36,18 @@ module.exports = {
         "tag-7": "#4ade80",
         "tag-8": "#e879f9",
         "tag-9": "#22d3ee",
-        "tag-10": "#f87171"
+        "tag-10": "#f87171",
       },
       transitionProperty: {
         "max-height": "max-height",
+      },
+      lineClamp: {
+        1: "1",
+        2: "2",
+        3: "3",
+        4: "4",
+        5: "5",
+        6: "6",
       },
     },
     fontFamily: {
@@ -50,7 +58,8 @@ module.exports = {
   },
   plugins: [
     require("flowbite/plugin"),
-    plugin(function({ matchUtilities, theme }) {
+    require("@tailwindcss/line-clamp"),
+    plugin(function ({ matchUtilities, theme }) {
       matchUtilities(
         {
           "translate-z": (value) => ({
@@ -91,5 +100,5 @@ module.exports = {
         },
       },
     },
-  }
+  },
 };

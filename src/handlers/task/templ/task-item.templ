@@ -225,7 +225,7 @@ templ taskDetails(task *models.TaskView, is_editing bool) {
 				<h2 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-2">Description</h2>
 				<div
 					id="task-description-view"
-					class={ templ.KV("hidden",is_editing), "text-text-on-light dark:text-text-on-dark" }
+					class={ templ.KV("hidden",is_editing), "text-text-on-light dark:text-text-on-dark whitespace-pre-line" }
 				>
 					if len(task.Description) > 0 {
 						{ task.Description }

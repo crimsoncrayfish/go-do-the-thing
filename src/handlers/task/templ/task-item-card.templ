@@ -218,7 +218,7 @@ templ cardDetails(task *models.TaskView) {
 		</div>
 		if (task.Description != "") {
 			<div
-				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm whitespace-pre-line" }
+				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm whitespace-pre-line line-clamp-3" }
 			>
 				{ task.Description }
 			</div>
