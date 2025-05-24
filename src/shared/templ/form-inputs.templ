@@ -36,7 +36,7 @@ templ FormPasswordInput(title, name, placeholder string) {
 	</div>
 }
 
-templ FormDatePicker(title, name string, date *database.SqLiteTime) {
+templ FormDatePicker(title, name, id string, date *database.SqLiteTime) {
 	<div>
 		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
 		<div class="mt-2 relative">
@@ -58,7 +58,7 @@ templ FormDatePicker(title, name string, date *database.SqLiteTime) {
 				name={ name }
 				value={ date.Format(constants.DateFormat) }
 				placeholder={ title }
-				id="datepicker-format"
+				id={ id }
 				datepicker
 				datepicker-format="yyyy-mm-dd"
 				class=" border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5

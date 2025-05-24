@@ -11,25 +11,28 @@ import (
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"go-do-the-thing/src/services/project_user_service"
 )
 
 type ProjectService struct {
-	logger           slog.Logger
-	projectRepo      projects_repo.ProjectsRepo
-	usersRepo        users_repo.UsersRepo
-	projectUsersRepo project_users_repo.ProjectUsersRepo
-	rolesRepo        roles_repo.RolesRepo
+	logger              slog.Logger
+	projectRepo         projects_repo.ProjectsRepo
+	usersRepo           users_repo.UsersRepo
+	projectUsersRepo    project_users_repo.ProjectUsersRepo
+	rolesRepo           roles_repo.RolesRepo
+	projectUsersService project_user_service.ProjectUserService
 }
 
 const serviceSource = "ProjectService"
 
 func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
 	return ProjectService{
-		logger:           slog.NewLogger(serviceSource),
-		projectRepo:      *repo_container.GetProjectsRepo(),
-		usersRepo:        *repo_container.GetUsersRepo(),
-		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
-		rolesRepo:        *repo_container.GetRolesRepo(),
+		logger:              slog.NewLogger(serviceSource),
+		projectRepo:         *repo_container.GetProjectsRepo(),
+		usersRepo:           *repo_container.GetUsersRepo(),
+		rolesRepo:           *repo_container.GetRolesRepo(),
+		projectUsersRepo:    *repo_container.GetProjectUsersRepo(),
+		projectUsersService: project_user_service.SetupProjectUserService(repo_container),
 	}
 }
 
@@ -107,7 +110,37 @@ func (s ProjectService) CreateProject(
 	return inserted_id, nil
 }
 
+func (s ProjectService) UpdateProject(
+	project_id, current_user_id, owner int64,
+	name, description string,
+	startDate, dueDate *database.SqLiteTime,
+) error {
+	err := s.projectUsersService.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+	project := models.Project{
+		Id:           project_id,
+		Name:         name,
+		Description:  description,
+		Owner:        owner,
+		StartDate:    startDate,
+		DueDate:      dueDate,
+		ModifiedBy:   current_user_id,
+		ModifiedDate: database.SqLiteNow(),
+		IsComplete:   false,
+	}
+
+	return s.projectRepo.UpdateProject(project)
+}
+
 func (s ProjectService) getProjectForUser(id int64, currentUserId int64) (*models.Project, error) {
+	err := s.projectUsersService.UserBelongsToProject(currentUserId, id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
 	project, err := s.projectRepo.GetProject(id)
 	if err != nil {
 		// NOTE: this should already be nicely formatted

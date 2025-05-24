@@ -241,7 +241,6 @@ templ taskDetails(task *models.TaskView, is_editing bool) {
 				<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Due Date</h3>
 				<p id="task-due-date-view" class={ templ.KV("hidden",is_editing), "text-text-on-light dark:text-text-on-dark" }>{ task.DueDate.Format(constants.PrettyDateFormat) }</p>
 				<div id="task-due-date-edit" class={ templ.KV("hidden", !is_editing) }>
-					<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">Due Date</label>
 					<div class="mt-2 relative">
 						<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 							<svg

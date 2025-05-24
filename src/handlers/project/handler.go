@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
@@ -44,6 +45,7 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 
 	router.Handle("GET /projects", mw_stack(http.HandlerFunc(projectsHandler.getProjects)))
 	router.Handle("POST /project", mw_stack(http.HandlerFunc(projectsHandler.createProject)))
+	router.Handle("PUT /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.updateProject)))
 
 	router.Handle("GET /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.getProject)))
 	router.Handle("DELETE /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.deleteProject)))
@@ -214,6 +216,90 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := templ_project.ProjectFormContent("Create", defaultForm).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render project form for user %d", currentUserId)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = templ_shared.ToastActionRedirect("Successfully created project", fmt.Sprintf("/project/%d", new_id), "Go to project", "success").Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error(err, "failed to render toast for user %d", currentUserId)
+		return
+	}
+}
+
+func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
+	// NOTE: Auth check
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, handlerSource, "user auth failed unsuccessfully")
+
+	// NOTE: Collect data
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.logger.Error(err, "not authenticated")
+		return
+	}
+	form := form_models.NewProjectForm()
+	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Project Name")
+	if err != nil {
+		form.Errors["Name"] = err.Error()
+	}
+	description := models.GetPropertyFromRequest(r, "description", "Description")
+
+	dateRaw, err := models.GetRequiredPropertyFromRequest(r, "due_date", "Due on")
+	if err != nil {
+		form.Errors["Due Date"] = err.Error()
+	}
+	due_date, err := time.Parse("2006-01-02", dateRaw)
+	if err != nil {
+		form.Errors["Due Date"] = err.Error()
+	}
+
+	form.Project = models.ProjectView{
+		Name:        name,
+		Description: description,
+		DueDate:     database.NewSqliteTime(due_date),
+	}
+
+	if len(form.Errors) > 0 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		projectView, err := h.project_service.GetProjectView(id, current_user_id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := templ_project.ProjectContentOOB(*projectView, true, form.Errors).Render(r.Context(), w); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			assert.NoError(err, handlerSource, "Failed to render template for formData")
+		}
+		return
+	}
+
+	err = h.project_service.UpdateProject(
+		id, current_user_id, current_user_id, // NOTE: for now owner is also creator
+		name, description,
+		database.SqLiteNow(), database.NewSqliteTime(due_date))
+	if err != nil {
+		w.Header().Set("HX-Retarget", "#toast-message")
+		w.WriteHeader(http.StatusInternalServerError)
+		h.logger.Error(err, "failed to update project %d for user %d", id, current_user_id)
+		err = templ_shared.ToastMessage(err.Error(), "error").Render(r.Context(), w)
+		if err != nil {
+			h.logger.Error(err, "failed to render toast", id, current_user_id)
+			return
+		}
+		return
+	}
+	projectView, err := h.project_service.GetProjectView(id, current_user_id)
+	if err != nil {
+		h.logger.Error(err, "failed to get updated added project (%d) for user %d", id, current_user_id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = templ_project.ProjectContent(*projectView, false, nil).Render(r.Context(), w)
+	if err != nil {
+		// TODO: Handle error on frontend
+		h.logger.Error(err, "Failed to execute template for the project page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

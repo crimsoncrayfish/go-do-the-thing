@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
+	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 )
 
@@ -30,6 +31,8 @@ func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 		logger: logger,
 	}
 	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
+	router.Handle("/toast/remove", mw_stack(http.HandlerFunc(handler.removeToast)))
+	router.Handle("GET /error", mw_stack(http.HandlerFunc(handler.error)))
 	router.Handle("GET /home", mw_stack(http.HandlerFunc(handler.Home)))
 }
 
@@ -47,6 +50,23 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
+	_, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, source, "user auth failed unsuccessfully")
+
+	w.Header().Set("HX-Retarget", "#toast-message")
+	w.WriteHeader(http.StatusInternalServerError)
+	h.logger.Debug("testing error")
+
+	templ_shared.ToastMessage("This is an error", "error").Render(r.Context(), w)
+}
+
+func (h *HomeHandler) removeToast(w http.ResponseWriter, r *http.Request) {
+	_, _, _, err := helpers.GetUserFromContext(r)
+	assert.NoError(err, source, "user auth failed unsuccessfully")
+	templ_shared.EmptyToast().Render(r.Context(), w)
 }
 
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {

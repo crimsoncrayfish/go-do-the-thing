@@ -170,8 +170,7 @@ const updateProject = `
 		[start_date] = ?,
 		[due_date] = ?,
 		[modified_by] = ?,
-		[modified_date] = ?,
-		[is_complete] = ?,
+		[modified_date] = ?
 	WHERE id = ?`
 
 func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
@@ -183,7 +182,7 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 		project.DueDate,
 		project.ModifiedBy,
 		project.ModifiedDate,
-		project.IsComplete,
+		project.Id,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update project: %w", err)

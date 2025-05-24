@@ -20,7 +20,7 @@ templ ProjectFormContent(formType string, formdata form_models.ProjectForm) {
 	@templ_shared.FormTextInput("Project Name", "name", "Lets do this!", formdata.Project.Name)
 	@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
 		formdata.Project.Description)
-	@templ_shared.FormDatePicker("Due on", "due_date", formdata.Project.DueDate)
+	@templ_shared.FormDatePicker("Due on", "due_date", "project-form-date-picker", formdata.Project.DueDate)
 	for _, v:= range formdata.Errors {
 		<div class="py-4 text-error">
 			{ v }

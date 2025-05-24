@@ -23,7 +23,20 @@ templ SideBar(navbar models.NavBarObject) {
 					@navBarListItem("Whats on the agenda?", navbar.ActiveScreens.IsTodoList, "/todo/items")
 					@navBarListItem("My side projects...", navbar.ActiveScreens.IsProjects, "/projects")
 					@navBarListItem("Lets form a habbit!", false, "/habbits")
-					@navBarListItem("This is an ERROR", navbar.ActiveScreens.IsError, "/error")
+					<li>
+						<a
+							hx-get="/error"
+							hx-target="body"
+							class="flex items-center p-2 text-text-on-light dark:text-text-on-dark cursor-pointer"
+						>
+							if navbar.ActiveScreens.IsError {
+								@SvgBracket()
+							} else {
+								@SvgSlash()
+							}
+							<span class="ms-3">This is an ERROR</span>
+						</a>
+					</li>
 				</ul>
 			</div>
 			<div class="absolute bottom-0 py-4 overflow-y-auto">

@@ -20,9 +20,9 @@ import (
 )
 
 type Handler struct {
-	logger         slog.Logger
-	taskService    task_service.TaskService
-	projectService projects_service.ProjectService
+	logger          slog.Logger
+	task_service    task_service.TaskService
+	project_service projects_service.ProjectService
 }
 
 var (
@@ -41,9 +41,9 @@ func SetupTodoHandler(
 
 	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
-		taskService:    taskService,
-		projectService: projectService,
-		logger:         logger,
+		task_service:    taskService,
+		project_service: projectService,
+		logger:          logger,
 	}
 
 	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItem)))
@@ -86,7 +86,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}
-	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		form.Errors["Project"] = err.Error()
 	}
@@ -105,7 +105,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	new_id, err := h.taskService.CreateTask(current_user_id, project_id, name, description, database.NewSqliteTime(due_date))
+	new_id, err := h.task_service.CreateTask(current_user_id, project_id, name, description, database.NewSqliteTime(due_date))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to create task with error")
@@ -113,7 +113,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Now handle everything
-	taskView, err := h.taskService.GetTaskView(new_id, current_user_id)
+	taskView, err := h.task_service.GetTaskView(new_id, current_user_id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to get newly created task with id %d", new_id)
@@ -130,7 +130,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to render no-data-row")
 		return
 	}
-	projects, err = h.projectService.GetAllProjectsForUser(current_user_id)
+	projects, err = h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		defaultForm.Errors["Project"] = err.Error()
 	}
@@ -189,14 +189,14 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		Description: description,
 		DueDate:     database.NewSqliteTime(date),
 	}
-	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		form.Errors["Project"] = err.Error()
 	}
 
 	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		task, err := h.taskService.GetTaskView(id, current_user_id)
+		task, err := h.task_service.GetTaskView(id, current_user_id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
@@ -210,7 +210,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	err = h.taskService.UpdateTask(
+	err = h.task_service.UpdateTask(
 		current_user_id,
 		id,
 		project_id,
@@ -225,7 +225,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// NOTE: Success zone
-	task, err := h.taskService.GetTaskView(id, current_user_id)
+	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
 		h.logger.Error(err, "failed to get updated task with id %d", task.Id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -266,7 +266,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	task, err := h.taskService.GetTaskView(id, current_user_id)
+	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
 		// TODO: Handle not found?
 		h.logger.Error(err, "failed to get task with id %d", id)
@@ -276,7 +276,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Take action
 	formData := formDataFromTask(task)
-	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		formData.Errors["Project"] = err.Error()
 	}
@@ -314,7 +314,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Act
-	err = h.taskService.UpdateTaskStatus(current_user_id, id)
+	err = h.task_service.UpdateTaskStatus(current_user_id, id)
 	if err != nil {
 		h.logger.Error(err, "failed to toggle task status for task with id %d", id)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -322,7 +322,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	task, err := h.taskService.GetTaskView(id, current_user_id)
+	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
 		// TODO: handle err types
 		h.logger.Error(err, "failed to get task with id %d", id)
@@ -331,7 +331,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	source := r.URL.Query().Get("source")
 	if source == "task_page" {
-		projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+		projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 		if err != nil {
 			defaultForm.Errors["Project"] = err.Error()
 		}
@@ -365,7 +365,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	tasks, err := h.taskService.GetTaskViewList(current_user_id)
+	tasks, err := h.task_service.GetTaskViewList(current_user_id)
 	if err != nil {
 		// TODO: some user feedback here?
 		h.logger.Error(err, "failed to get todo tasks")
@@ -373,7 +373,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := h.projectService.GetAllProjectsForUser(current_user_id)
+	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		defaultForm.Errors["Project"] = err.Error()
 	}
@@ -412,14 +412,14 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Take action
-	err = h.taskService.DeleteTask(current_user_id, id)
+	err = h.task_service.DeleteTask(current_user_id, id)
 	if err != nil {
 		assert.NoError(err, source, "failed to delete todo item")
 		return
 	}
 
 	// NOTE: Success zone
-	hasData, err := h.taskService.GetTaskCount(current_user_id)
+	hasData, err := h.task_service.GetTaskCount(current_user_id)
 	if err != nil {
 		assert.NoError(err, source, "failed to update ui")
 		return

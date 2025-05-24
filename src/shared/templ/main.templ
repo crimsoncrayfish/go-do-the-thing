@@ -6,8 +6,14 @@ templ Main(body templ.Component) {
 		@Header()
 		<body id="main-body" class="bg-primary-light dark:bg-primary-dark antialiased">
 			@body
-			@Loader()
 		</body>
+		@Loader()
+		<div
+			id="toast-container"
+			class="fixed top-4 right-4 z-[1080]"
+		>
+			@EmptyToast()
+		</div>
 		<script>
 		if ('dark-mode' in localStorage) {
 			if (localStorage.getItem('dark-mode') === 'true') {
