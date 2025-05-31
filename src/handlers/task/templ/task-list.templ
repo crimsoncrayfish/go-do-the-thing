@@ -33,80 +33,28 @@ templ TaskList(tasks []*m.TaskView) {
 		}
 	</div>
 	<script>
-function flipTaskCardDelete (id) {
-	toggleClassForId('hidden', 'task-card-back-delete-'+id)
-        const inner = document.getElementById('task-card-inner-' + id);
-        if (!inner) return;
-        inner.style.transform = 'rotateX(180deg)';
-};
 function flipTaskCardUpdateToBack(event, id) {
     const method = event.detail.requestConfig.verb.toUpperCase();
-    
-    if (method !== "POST") {
-	return
-    }
+    if (method === "POST") {
 	toggleClassForId('hidden', 'task-card-back-update-'+id)
-        const inner = document.getElementById('task-card-inner-' + id);
-        if (!inner) return;
-        inner.style.transform = 'rotateX(180deg)';
+    } else if (method === "DELETE") {
+	toggleClassForId('hidden', 'task-card-back-delete-'+id)
+    }
+    const inner = document.getElementById('task-card-inner-' + id);
+    if (!inner) return;
+    inner.style.transform = 'rotateX(180deg)';
 };
 function flipTaskCardUpdateToFront(event, id) {
     const method = event.detail.requestConfig.verb.toUpperCase();
-    
-    if (method !== "POST") {
-	return
-    }
-        const inner = document.getElementById('task-card-inner-' + id);
-        if (!inner) return;
-        inner.style.transform = 'rotateX(0deg)';
-	inner.addEventListener('transitionend', function hideBack() {
-	        toggleClassForId('hidden', 'task-card-back-update-'+id);
-	        inner.removeEventListener('transitionend', hideBack);
-	});
+    const inner = document.getElementById('task-card-inner-' + id);
+    if (!inner) return;
+    inner.style.transform = 'rotateX(0deg)';
+    inner.addEventListener('transitionend', function hideBack() {
+	toggleClassForId('hidden', 'task-card-back-update-'+id);
+	inner.removeEventListener('transitionend', hideBack);
+    });
 };
-
-function triggerSlideOutAndRemove(event, wrapperElement) {
-    if(!event.detail.successful) {
-        return;
-    }
-    const method = event.detail.requestConfig.verb.toUpperCase();
-    if (method !== "DELETE") {
-        return;
-    } else {
-        setTimeout(() => {
-            const cardElement = wrapperElement.closest('[id^="task-card-"]');
-
-            const cardHeight = cardElement.offsetHeight;
-            const cardParent = cardElement.parentNode;
-
-	    const spacer = document.createElement('div');
-            spacer.style.height = `${cardHeight}px`;
-	    spacer.style.marginBottom = '1rem';
-            spacer.style.padding = '0';
-            spacer.style.border = 'none';
-            spacer.style.transition = 'height 1s ease-in-out, margin-bottom 1s ease-in-out';
-            spacer.style.overflow = 'hidden';
-            wrapperElement.classList.add('slide-out');
-
-            const transitionDuration = parseFloat(getComputedStyle(wrapperElement).transitionDuration) * 1000 || 1000;
-            setTimeout(() => {
-                if (cardElement && cardElement.parentNode) {
-
-                    cardParent.insertBefore(spacer, cardElement);
-                    cardElement.remove();
-                    requestAnimationFrame(() => {
-                        spacer.style.height = '0';
-			spacer.style.marginBottom = '0';
-                        spacer.addEventListener('transitionend', function() {
-                            spacer.remove();
-                        });
-                    });
-                }
-            }, transitionDuration + 100);
-        }, 600);
-    }
-}
-	</script>
+</script>
 }
 
 templ searchBar(projects map[int64]string) {

@@ -1,7 +1,6 @@
 package task
 
 import (
-	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
@@ -439,17 +438,33 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_shared.ToastActionUndo("Task Deleted", fmt.Sprintf("/todo/item/restore/%d", id), "#task-list-container", "afterbegin").Render(r.Context(), w); err != nil {
+	if err := templ_shared.ToastMessage("Task Deleted", "warning").Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
-		// TODO: what should happen if the fetch fails after create
 		return
 	}
 
 	// TODO: no data card placeholder is broken
 	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
-		// TODO: what should happen if the fetch fails after create
 		return
+	}
+
+	task, err := h.task_service.GetTaskView(id, current_user_id)
+	if err != nil {
+		// TODO: handle err types
+		h.logger.Error(err, "failed to get task with id %d", id)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	source := r.URL.Query().Get("source")
+	if source == "task_page" {
+		h.logger.Debug("TODO:WHAT")
+	} else {
+		if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
+			h.logger.Error(err, "failed to render task list item")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

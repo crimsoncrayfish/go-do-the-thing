@@ -75,7 +75,6 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: frontend response
-	contentType := r.Header.Get("accept")
 	formData := formDataFromProject(*projectView)
 
 	var tasks []*models.TaskView
@@ -85,13 +84,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch contentType {
-	case "text/html":
-		err = templ_project.ProjectView(*projectView, activeScreens, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
-	default:
-		err = templ_project.ProjectWithBody(*projectView, activeScreens, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
-	}
-
+	err = templ_project.ProjectWithBody(*projectView, activeScreens, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
 	if err != nil {
 		errors.FrontendError(w, r, h.logger, err, "failed to render project %d", id)
 		return

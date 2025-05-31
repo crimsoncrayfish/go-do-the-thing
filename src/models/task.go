@@ -69,6 +69,7 @@ type TaskView struct {
 	ProjectName   string
 	InProgress    bool
 	TimeSpent     time.Duration
+	IsDeleted     bool
 }
 
 func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Project) *TaskView {
@@ -89,5 +90,6 @@ func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Proj
 		DueDate:       t.DueDate,
 		ProjectId:     t.Project,
 		ProjectName:   project.Name,
+		IsDeleted:     t.IsDeleted,
 	}
 }
