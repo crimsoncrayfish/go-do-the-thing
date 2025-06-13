@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:17
+    container_name: todo_db
+    environment:
+      POSTGRES_DB: todo_db
+      POSTGRES_USER: admin 
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # This service is responsible for applying your SQL migration files.
+  migrations_runner:
+    image: postgres:17
+    container_name: todo_db_migration_runner 
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./src/database/migrations:/migrations
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: todo_db
+      PGUSER: admin
+      PGPASSWORD: admin
+    command: |
+      /bin/sh -c '
+        echo "Waiting for database to be ready...";
+        until pg_isready -h "$$PGHOST" -p "$$PGPORT" -U "$$PGUSER"; do sleep 1; done;
+        echo "Database is ready. Applying migrations...";
+        for f in $$(find /migrations -name "*.sql" | sort -V); do
+          if [ -f "$$f" ]; then
+            echo "Applying $$f...";
+            if psql -v ON_ERROR_STOP=1 -f "$$f"; then
+              echo "Successfully applied $$f";
+            else
+              echo "Error applying $$f";
+              exit 1; # Exit the script if psql fails
+            fi;
+          fi;
+        done;
+        echo "All migrations applied (or attempted).";
+      '
+    restart: "no"
+
+volumes:
+  pgdata:

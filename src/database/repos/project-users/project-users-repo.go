@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/helpers/assert"
 	app_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 )
@@ -17,22 +16,14 @@ var repoName = "Project Users Repo"
 
 // NOTE: Depends on: [./users-repo.go, ./projects-repo.go, ../roles/roles-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {
-	_, err := database.Exec(createProjectUsersTable)
-	assert.NoError(err, repoName, "Failed to create ProjectUsers table")
+	//TODO: Cleanup
+	//_, err := database.Exec(createProjectUsersTable)
+	//assert.NoError(err, repoName, "Failed to create ProjectUsers table")
 
 	return &ProjectUsersRepo{
 		database: database,
 	}
 }
-
-const createProjectUsersTable = `CREATE TABLE IF NOT EXISTS project_users (
-	[project_id] INTEGER,
-	[user_id] INTEGER,
-	[role_id] INTEGER,
-	FOREIGN KEY (project_id) REFERENCES projects(id)
-	FOREIGN KEY (user_id) REFERENCES users(id),
-	FOREIGN KEY (role_id) REFERENCES roles(id)
-);`
 
 func scanFromRows(rows *sql.Rows, item *models.ProjectUser) error {
 	err := rows.Scan(

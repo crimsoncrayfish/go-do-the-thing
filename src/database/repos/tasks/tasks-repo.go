@@ -3,7 +3,6 @@ package tasks_repo
 import (
 	"database/sql"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 )
@@ -16,31 +15,12 @@ var repoName = "Tasks Repo"
 
 // NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TasksRepo {
-	_, err := database.Exec(createTasksTable)
-	assert.NoError(err, repoName, "Failed to create Tasks table")
+	//TODO: Cleanup
+	//_, err := database.Exec(createTasksTable)
+	//assert.NoError(err, repoName, "Failed to create Tasks table")
 
 	return &TasksRepo{database}
 }
-
-const createTasksTable = `CREATE TABLE IF NOT EXISTS items (
-	[id] INTEGER PRIMARY KEY,
-   	[name] TEXT DEFAULT '' NOT NULL,
-   	[description] TEXT,
-	[assigned_to] INTEGER,
-	[project_id] INTEGER,
-	[status] INTEGER DEFAULT 0,
-	[complete_date] INT DEFAULT 0, 
-    [due_date] INT DEFAULT 0,
-    [created_by] INTEGER,
-    [created_date] INT DEFAULT 0,
-    [modified_by] INTEGER,
-    [modified_date] INT DEFAULT 0,
-	[is_deleted] INTEGER DEFAULT 0,
-	FOREIGN KEY (assigned_to) REFERENCES users(id),
-	FOREIGN KEY (created_by) REFERENCES users(id),
-	FOREIGN KEY (modified_by) REFERENCES users(id),
-	FOREIGN KEY (project_id) REFERENCES projects(id)
-);`
 
 func scanFromRow(row *sql.Row, item *models.Task) error {
 	err := row.Scan(

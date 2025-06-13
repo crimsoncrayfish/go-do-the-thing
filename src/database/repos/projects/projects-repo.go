@@ -18,32 +18,15 @@ var repoName = "ProjectsRepo"
 
 // NOTE: Depends on: [../project-users/project-users-repo.go, ../users/users-repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
-	_, err := database.Exec(createProjectsTable)
-	assert.NoError(err, repoName, "Failed to create Projects table")
+	//TODO: Cleanup
+	//_, err := database.Exec(createProjectsTable)
+	//assert.NoError(err, repoName, "Failed to create Projects table")
 
 	return &ProjectsRepo{
 		database: database,
 		logger:   slog.NewLogger(repoName),
 	}
 }
-
-const createProjectsTable = `CREATE TABLE IF NOT EXISTS projects (
-	[id] INTEGER PRIMARY KEY,
-   	[name] TEXT DEFAULT '' NOT NULL,
-   	[description] TEXT,
-	[owner] INT,
-	[start_date] INT,
-	[due_date] INT,
-	[created_by] TEXT,
-	[created_date] INT,
-	[modified_by] TEXT,
-	[modified_date] INT,
-	[is_complete] INT,
-	[is_deleted] INT,
-	FOREIGN KEY (owner) REFERENCES users(id),
-	FOREIGN KEY (created_by) REFERENCES users(id),
-	FOREIGN KEY (modified_by) REFERENCES users(id)
-);`
 
 func scanFromRow(row *sql.Row, item *models.Project) error {
 	return row.Scan(

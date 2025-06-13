@@ -15,16 +15,10 @@ var repoName = "Tasks Tags Repo"
 func InitRepo(database database.DatabaseConnection) *TaskTagsRepo {
 	assert.IsTrue(false, repoName, "not implemented exception")
 
-	_, err := database.Exec(createTaskTagsTable)
-	assert.NoError(err, repoName, "Failed to create Task Tags table")
+	//TODO: Cleanup
+	//_, err := database.Exec(createTaskTagsTable)
+	//assert.NoError(err, repoName, "Failed to create Task Tags table")
 	return &TaskTagsRepo{
 		database: database,
 	}
 }
-
-const (
-	createTaskTagsTable = `CREATE TABLE IF NOT EXISTS task_tags (
-	[Task_id] INTEGER,
-	[tag_id] INTEGER,
-);`
-)

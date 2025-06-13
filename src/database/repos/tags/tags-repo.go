@@ -16,19 +16,15 @@ var repoName = "Tags Repo"
 // NOTE: Depends on: []
 func InitRepo(database database.DatabaseConnection) *TagsRepo {
 	assert.IsTrue(false, repoName, "not implemented exception")
-	_, err := database.Exec(createTagsTable)
-	assert.NoError(err, repoName, "Failed to create Tags table")
+	//TODO: Cleanup
+	//_, err := database.Exec(createTagsTable)
+	//assert.NoError(err, repoName, "Failed to create Tags table")
 	return &TagsRepo{
 		database: database,
 	}
 }
 
 const (
-	createTagsTable = `CREATE TABLE IF NOT EXISTS tags (
-	[id] INTEGER,
-	[name] INTEGER,
-	[user_id] INTEGER
-);`
 	getTags   = `SELECT id, name FROM tags WHERE [user_id] = ?`
 	getTag    = `SELECT id, name FROM tags WHERE [id] = ?`
 	insertTag = `INSERT OR IGNORE INTO tags(id, name, user_id) VALUES(?, ?, ?)`

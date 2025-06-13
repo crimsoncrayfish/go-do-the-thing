@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 )
@@ -19,24 +18,13 @@ var repoName = "Users Repo"
 
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
-	_, err := connection.Exec(createTable)
-	assert.NoError(err, repoName, "Failed to create Users table")
+	//TODO: Cleanup
+	//_, err := connection.Exec(createTable)
+	//assert.NoError(err, repoName, "Failed to create Users table")
 
 	logger := slog.NewLogger(repoName)
 	return &UsersRepo{db: connection, logger: logger}
 }
-
-const createTable = `CREATE TABLE IF NOT EXISTS users (
-	[id] INTEGER PRIMARY KEY,
-   	[email] TEXT UNIQUE,
-   	[full_name] TEXT DEFAULT "",
-    [session_id] TEXT DEFAULT "",
-	[session_start_time] INT DEFAULT 0,
-    [password_hash] TEXT DEFAULT "",
-	[is_deleted] INTEGER DEFAULT 0,
-	[is_admin] INTEGER DEFAULT 0,
-	[create_date] INT
-);`
 
 func scanUserFromRow(row *sql.Row, user *models.User) error {
 	return row.Scan(
