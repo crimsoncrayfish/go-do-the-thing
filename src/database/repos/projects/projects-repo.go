@@ -64,11 +64,11 @@ func scanFromRows(rows *sql.Rows, item *models.Project) error {
 
 const getProjectsByUser = `
 	SELECT 
-		projects.[id],projects.[name],projects.[description],projects.[owner],projects.[start_date],projects.[due_date],projects.[created_by],projects.[created_date],projects.[modified_by],projects.[modified_date],projects.[is_complete],projects.[is_deleted] 
+		projects.id, projects.name, projects.description, projects.owner, projects.start_date, projects.due_date, projects.created_by, projects.created_date, projects.modified_by, projects.modified_date, projects.is_complete, projects.is_deleted 
 	FROM projects 
 	JOIN project_users
 		ON projects.id = project_users.project_id
-	WHERE project_users.user_id = ?
+	WHERE project_users.user_id = $1
 	AND projects.is_deleted = 0`
 
 func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
@@ -102,12 +102,12 @@ func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 
 const getProject = `
 	SELECT 
-		[id],[name],[description],[owner],[start_date],[due_date],[created_by],[created_date],[modified_by],[modified_date],[is_complete],[is_deleted]
+		id, name, description, owner, start_date, due_date, created_by, created_date, modified_by, modified_date, is_complete, is_deleted
 	FROM projects
 	JOIN project_users
 		ON projects.id = project_users.project_id
 	WHERE 
-		projects.id = ?`
+		projects.id = $1`
 
 func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
 	row := r.database.QueryRow(getProject, projectId)
@@ -121,8 +121,8 @@ func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
 
 const deleteProject = `
 	UPDATE projects 
-	SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ?
-	WHERE id = ?`
+	SET is_deleted = 1, modified_by = $1, modified_date = $2
+	WHERE id = $3`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
 	_, err := r.database.Exec(deleteProject, currentUser, database.SqLiteNow(), id)
@@ -132,7 +132,7 @@ func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
 	return nil
 }
 
-const getProjectCount = `SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?`
+const getProjectCount = `SELECT COUNT(id) FROM items WHERE is_deleted=0 AND assigned_to=$1`
 
 func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err error) {
 	row := r.database.QueryRow(getProjectCount, currentUser)
@@ -147,14 +147,14 @@ func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err erro
 const updateProject = `
 	UPDATE projects
 	SET	
-		[name] = ?,
-		[description] = ?,
-		[owner] = ?,
-		[start_date] = ?,
-		[due_date] = ?,
-		[modified_by] = ?,
-		[modified_date] = ?
-	WHERE id = ?`
+		name = $1,
+		description = $2,
+		owner = $3,
+		start_date = $4,
+		due_date = $5,
+		modified_by = $6,
+		modified_date = $7
+	WHERE id = $8`
 
 func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 	_, err = r.database.Exec(updateProject,
@@ -176,19 +176,19 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 const insertProject = `
 	INSERT INTO projects 
 	(
-		[name],
-		[description],
-		[owner],
-		[start_date],
-		[due_date],
-		[created_by],
-		[created_date],
-		[modified_by],
-		[modified_date],
-		[is_complete],
-		[is_deleted]
+		name,
+		description,
+		owner,
+		start_date,
+		due_date,
+		created_by,
+		created_date,
+		modified_by,
+		modified_date,
+		is_complete,
+		is_deleted
 	)
-	VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 func (r *ProjectsRepo) Insert(currentUser int64, project models.Project) (id int64, err error) {
 	project.AssertHealthyNew()

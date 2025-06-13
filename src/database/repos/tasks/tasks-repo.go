@@ -68,22 +68,22 @@ func scanFromRows(rows *sql.Rows, item *models.Task) error {
 
 const getItemsByAssignedUser = `
 	SELECT 
-		[Id],
-		[name], 
-		[description],
-		[status],	
-		[assigned_to],
-		[due_date],
-		[created_by],
-		[created_date],
-		[modified_by],
-		[modified_date],
-		[is_deleted], 
-		[project_id],
-		[complete_date]
+		id,
+		name, 
+		description,
+		status,	
+		assigned_to,
+		due_date,
+		created_by,
+		created_date,
+		modified_by,
+		modified_date,
+		is_deleted, 
+		project_id,
+		complete_date
 	FROM items
-	WHERE [is_deleted] = 0 
-	AND [assigned_to] = ?`
+	WHERE is_deleted = 0 
+	AND assigned_to = $1`
 
 func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err error) {
 	rows, err := r.database.Query(getItemsByAssignedUser, userId)
@@ -117,23 +117,23 @@ func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err err
 
 const getItemsByAssignedUserAndProject = `
 	SELECT 
-		[Id],
-		[name], 
-		[description],
-		[status],	
-		[assigned_to],
-		[due_date],
-		[created_by],
-		[created_date],
-		[modified_by],
-		[modified_date],
-		[is_deleted], 
-		[project_id],
-		[complete_date]
+		id,
+		name, 
+		description,
+		status,	
+		assigned_to,
+		due_date,
+		created_by,
+		created_date,
+		modified_by,
+		modified_date,
+		is_deleted, 
+		project_id,
+		complete_date
 	FROM items
-	WHERE [is_deleted] = 0 
-	AND [assigned_to] = ?
-	AND [project_id] = ?`
+	WHERE is_deleted = 0 
+	AND assigned_to = $1
+	AND project_id = $2`
 
 func (r *TasksRepo) GetItemsForUserAndProject(user_id, project_id int64) (items []*models.Task, err error) {
 	rows, err := r.database.Query(getItemsByAssignedUserAndProject, user_id, project_id)
@@ -168,17 +168,17 @@ func (r *TasksRepo) GetItemsForUserAndProject(user_id, project_id int64) (items 
 const insertItem = `
 	INSERT INTO items 
 		(
-			[name],
-			[description],
-			[status],
-			[assigned_to],
-			[due_date],
-			[created_by],
-			[created_date],
-			[modified_by], 
-			[modified_date],
-			[project_id])
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			name,
+			description,
+			status,
+			assigned_to,
+			due_date,
+			created_by,
+			created_date,
+			modified_by, 
+			modified_date,
+			project_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 	result, err := r.database.Exec(
@@ -209,12 +209,12 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 const updateItem = `
 	UPDATE items
 	SET
-		[name] = ?,
-		[description] = ?,
-		[assigned_to] = ?,
-		[due_date] = ?,
-		[project_id] = ?
-	WHERE id = ?`
+		name = $1,
+		description = $2,
+		assigned_to = $3,
+		due_date = $4,
+		project_id = $5
+	WHERE id = $6`
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate, item.Project, item.Id)
@@ -228,11 +228,11 @@ func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 const updateItemStatus = `
 	UPDATE items 
 	SET 
-		[status] = ?,
-		[complete_date] = ?,
-		[modified_by] = ?,
-		[modified_date] = ?
-	WHERE id = ?`
+		status = $1,
+		complete_date = $2,
+		modified_by = $3,
+		modified_date = $4
+	WHERE id = $5`
 
 func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime, status, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, database.SqLiteNow(), id)
@@ -242,7 +242,7 @@ func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime
 	return nil
 }
 
-const deleteItem = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+const deleteItem = `UPDATE items SET is_deleted = 1, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(deleteItem, modifiedBy, database.SqLiteNow(), id)
@@ -252,7 +252,7 @@ func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
 	return nil
 }
 
-const restoreItem = `UPDATE items SET [is_deleted] = 0, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+const restoreItem = `UPDATE items SET is_deleted = 0, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(restoreItem, modifiedBy, database.SqLiteNow(), id)
@@ -264,21 +264,21 @@ func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
 
 const getItem = `
 	SELECT 
-		[Id], 
-		[name],
-		[description], 
-		[status],
-		[assigned_to],
-		[due_date],
-		[created_by],
-		[created_date], 
-		[modified_by],
-		[modified_date],
-		[is_deleted],
-		[project_id],
-		[complete_date]
+		id, 
+		name,
+		description, 
+		status,
+		assigned_to,
+		due_date,
+		created_by,
+		created_date, 
+		modified_by,
+		modified_date,
+		is_deleted,
+		project_id,
+		complete_date
 	FROM items
-	WHERE id = ?`
+	WHERE id = $1`
 
 func (r *TasksRepo) GetItem(id int64) (*models.Task, error) {
 	row := r.database.QueryRow(getItem, id)
@@ -290,7 +290,7 @@ func (r *TasksRepo) GetItem(id int64) (*models.Task, error) {
 	return temp, nil
 }
 
-const countItems = "SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?"
+const countItems = "SELECT COUNT(id) FROM items WHERE is_deleted=0 AND assigned_to=$1"
 
 func (r *TasksRepo) GetItemsCount(userId int64) (int64, error) {
 	row := r.database.QueryRow(countItems, userId)

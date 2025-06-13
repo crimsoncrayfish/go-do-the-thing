@@ -34,7 +34,7 @@ func scanFromRows(rows *sql.Rows, item *models.ProjectUser) error {
 	return app_errors.New(app_errors.ErrDBGenericError, "failed to scan rows: %w", err)
 }
 
-const getAllForProject = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE project_id = ?`
+const getAllForProject = `SELECT project_id, user_id, role_id FROM project_users WHERE project_id = $1`
 
 func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []models.ProjectUser, err error) {
 	rows, err := r.database.Query(getAllForProject, projectId)
@@ -66,7 +66,7 @@ func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []model
 	return projectUsers, nil
 }
 
-const getAllForUser = `SELECT [project_id], [user_id], [role_id] FROM project_users WHERE user_id = ?`
+const getAllForUser = `SELECT project_id, user_id, role_id FROM project_users WHERE user_id = $1`
 
 func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, error) {
 	rows, err := r.database.Query(getAllForUser, userId)
@@ -98,7 +98,7 @@ func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, erro
 	return projectUsers, nil
 }
 
-const insertProjectUser = `INSERT INTO project_users (project_id, user_id, role_id) VALUES (?, ?, ?)`
+const insertProjectUser = `INSERT INTO project_users (project_id, user_id, role_id) VALUES ($1, $2, $3)`
 
 func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) (int64, error) {
 	result, err := r.database.Exec(insertProjectUser, projectId, userId, roleId)
@@ -113,7 +113,7 @@ func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) (int64, error
 	return inserted_id, nil
 }
 
-const updateProjectUser = `UPDATE project_users SET [role_id] = ? WHERE [project_id] = ? AND [user_id] = ?`
+const updateProjectUser = `UPDATE project_users SET role_id = $1 WHERE project_id = $2 AND user_id = $3`
 
 func (r *ProjectUsersRepo) Update(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(updateProjectUser, roleId, projectId, userId)
@@ -124,7 +124,7 @@ func (r *ProjectUsersRepo) Update(projectId, userId, roleId int64) error {
 	return nil
 }
 
-const deleteProjectUser = `DELETE FROM project_users WHERE [project_id] = ? AND [user_id] = ?`
+const deleteProjectUser = `DELETE FROM project_users WHERE project_id = $1 AND user_id = $2`
 
 func (r *ProjectUsersRepo) Delete(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(deleteProjectUser, projectId, userId)
@@ -135,14 +135,12 @@ func (r *ProjectUsersRepo) Delete(projectId, userId, roleId int64) error {
 	return nil
 }
 
-const (
-	getAllRolesForUserProject = `
+const getAllRolesForUserProject = `
 	SELECT 
-		[role_id]
+		role_id
 	FROM project_users
-	WHERE user_id = ? AND
-	[project_id] = ?`
-)
+	WHERE user_id = $1 AND
+	project_id = $2`
 
 func (r *ProjectUsersRepo) GetProjectUserRoles(projectId, userId int64) (roleIds []int64, err error) {
 	roleIds = make([]int64, 0)
