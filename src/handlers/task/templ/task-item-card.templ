@@ -161,7 +161,16 @@ templ completeTaskButton(task *models.TaskView) {
 }
 
 templ taskStatusChip(task *models.TaskView) {
-	if (task.Status == models.Completed) {
+	if (task.IsDeleted) {
+		<span
+			class="bg-danger-light dark:bg-danger-dark
+                         text-text-on-light dark:text-text-on-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+		>
+			DELETED	
+		</span>
+	} else if (task.InProgress) {
 		<span
 			class="bg-success-light dark:bg-success-dark
                          text-text-on-light dark:text-text-on-dark
