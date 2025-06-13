@@ -25,10 +25,29 @@ func InitRepo(database database.DatabaseConnection) *TagsRepo {
 }
 
 const (
-	getTags   = `SELECT id, name FROM tags WHERE user_id = $1`
-	getTag    = `SELECT id, name FROM tags WHERE id = $1`
-	insertTag = `INSERT INTO tags(id, name, user_id) VALUES($1, $2, $3) ON CONFLICT DO NOTHING`
-	deleteTag = `DELETE FROM tags WHERE id = $1 AND user_id = $2`
+	getTags = `
+		SELECT 
+			id,
+			name 
+		FROM tags 
+		WHERE user_id = $1`
+	getTag = `
+		SELECT 
+			id,
+			name 
+		FROM tags 
+		WHERE id = $1`
+	insertTag = `
+		INSERT INTO tags (
+			id,
+			name,
+			user_id
+		) VALUES ($1, $2, $3) 
+		ON CONFLICT DO NOTHING`
+	deleteTag = `
+		DELETE FROM tags 
+		WHERE id = $1 
+		AND user_id = $2`
 )
 
 func scanTagFromRow(row *sql.Row, item *models.Tag) error {
