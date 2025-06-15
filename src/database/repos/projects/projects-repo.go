@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"time"
 )
 
 type ProjectsRepo struct {
@@ -125,7 +126,7 @@ const deleteProject = `
 	WHERE id = $3`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
-	_, err := r.database.Exec(deleteProject, currentUser, database.SqLiteNow(), id)
+	_, err := r.database.Exec(deleteProject, currentUser, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("failed to update project: %w", err)
 	}
@@ -164,7 +165,7 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 		project.StartDate,
 		project.DueDate,
 		project.ModifiedBy,
-		project.ModifiedDate,
+		time.Now(),
 		project.Id,
 	)
 	if err != nil {
@@ -202,9 +203,9 @@ func (r *ProjectsRepo) Insert(currentUser int64, project models.Project) (id int
 		project.StartDate,
 		project.DueDate,
 		currentUser,
-		database.SqLiteNow(),
+		time.Now(),
 		currentUser,
-		database.SqLiteNow(),
+		time.Now(),
 		project.IsComplete,
 		false,
 	)

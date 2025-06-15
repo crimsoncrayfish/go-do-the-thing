@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	templ_shared "go-do-the-thing/src/shared/templ"
+	"time"
 )
 
 templ TaskRow(task *models.TaskView) {
@@ -121,7 +122,7 @@ templ statusIcon(task *models.TaskView) {
 			class="text-success-light dark:text-success-dark"
 		}
 		else
-		if task.DueDate.Before(database.SqLiteNow()) {
+		if task.DueDate.Before(time.Now()) {
 			class="text-danger-light dark:text-danger-dark"
 		} else {
 			class="text-warning-light dark:text-warning-dark"

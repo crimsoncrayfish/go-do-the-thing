@@ -106,7 +106,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user.SessionId = uuid.New().String()
-	user.SessionStartTime = database.SqLiteNow()
+	user.SessionStartTime = time.Now()
 
 	if err := h.repo.UpdateSession(user.Id, user.SessionId, user.SessionStartTime); err != nil {
 		h.loginError(err, w, r, "Failed to set session id for user %d", user.Id)
@@ -152,7 +152,7 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
 
-	if err := h.repo.UpdateSession(currentUserId, "", &database.SqLiteTime{}); err != nil {
+	if err := h.repo.UpdateSession(currentUserId, "", &time.Time{}); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
 	}
 	http.SetCookie(w, &emptyAuthCookie)

@@ -177,7 +177,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	form.Project = models.ProjectView{
 		Name:        name,
 		Description: description,
-		DueDate:     database.NewSqliteTime(due_date),
+		DueDate:     &due_date,
 	}
 
 	if len(form.Errors) > 0 {
@@ -192,7 +192,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	new_id, err := h.project_service.CreateProject(
 		currentUserId, currentUserId, // NOTE: for now owner is also creator
 		name, description,
-		database.SqLiteNow(), database.NewSqliteTime(due_date))
+		time.Now(), &due_date)
 	if err != nil {
 		h.logger.Error(err, "failed to create project for user %d", currentUserId)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -261,7 +261,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	form.Project = models.ProjectView{
 		Name:        name,
 		Description: description,
-		DueDate:     database.NewSqliteTime(due_date),
+		DueDate:     &due_date,
 	}
 
 	if len(form.Errors) > 0 {
@@ -281,7 +281,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	err = h.project_service.UpdateProject(
 		id, current_user_id, current_user_id, // NOTE: for now owner is also creator
 		name, description,
-		database.NewSqliteTime(due_date))
+		time.Now(), &due_date)
 	if err != nil {
 		errors.FrontendError(w, r, h.logger, err, "failed to update project %d", id)
 		return

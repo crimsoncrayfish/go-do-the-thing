@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	ts "go-do-the-thing/src/shared/templ"
+	"time"
 )
 
 templ ProjectRow(project models.ProjectView) {
@@ -110,7 +111,7 @@ templ statusIcon(project models.ProjectView) {
 			class="text-action-400"
 		}
 		else
-		if project.DueDate.Before(database.SqLiteNow()) {
+		if project.DueDate.Before(time.Now()) {
 			class="text-error"
 		} else {
 			class="text-warn"

@@ -12,6 +12,7 @@ import (
 	"go-do-the-thing/src/models"
 	project_user_service "go-do-the-thing/src/services/project_user_service"
 	"sort"
+	"time"
 )
 
 type TaskService struct {
@@ -32,7 +33,7 @@ func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 	}
 }
 
-func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *database.SqLiteTime) (int64, error) {
+func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *time.Time) (int64, error) {
 	// NOTE: Does this user belong to the current project
 	err := s.projectUsersService.UserBelongsToProject(user_id, project_id)
 	if err != nil {
@@ -45,9 +46,9 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 		DueDate:      due_date,
 		AssignedTo:   user_id, // TODO: need to update this
 		CreatedBy:    user_id,
-		CreatedDate:  database.SqLiteNow(),
+		CreatedDate:  time.Now(),
 		ModifiedBy:   user_id,
-		ModifiedDate: database.SqLiteNow(),
+		ModifiedDate: time.Now(),
 		Project:      project_id,
 		IsDeleted:    false,
 	}
@@ -60,7 +61,7 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 	return id, nil
 }
 
-func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *database.SqLiteTime, assigned_to int64) error {
+func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *time.Time, assigned_to int64) error {
 	// NOTE: Does this user belong to the current project
 	err := s.userBelongsToTaskProject(user_id, task_id)
 	if err != nil {
@@ -79,7 +80,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		DueDate:      due_date,
 		AssignedTo:   assigned_to, // TODO: need to update this
 		ModifiedBy:   user_id,
-		ModifiedDate: database.SqLiteNow(),
+		ModifiedDate: time.Now(),
 		Project:      project_id,
 		IsDeleted:    false,
 	}

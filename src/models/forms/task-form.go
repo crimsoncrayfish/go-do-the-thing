@@ -22,7 +22,7 @@ func NewDefaultTaskForm() TaskForm {
 	duedate := time.Now().Add(time.Duration(time.Hour * 24))
 	return TaskForm{
 		Task: models.TaskView{
-			DueDate: &database.SqLiteTime{Time: &duedate},
+			DueDate: &duedate,
 		},
 		Errors: make(map[string]string),
 	}

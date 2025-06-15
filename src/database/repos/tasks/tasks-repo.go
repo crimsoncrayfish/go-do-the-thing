@@ -5,6 +5,7 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
+	"time"
 )
 
 type TasksRepo struct {
@@ -189,9 +190,9 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.AssignedTo,
 		item.DueDate,
 		item.CreatedBy,
-		database.SqLiteNow(),
+		time.Now(),
 		item.ModifiedBy,
-		database.SqLiteNow(),
+		time.Now(),
 		item.Project,
 	)
 	if err != nil {
@@ -234,8 +235,8 @@ const updateItemStatus = `
 		modified_date = $4
 	WHERE id = $5`
 
-func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime, status, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, database.SqLiteNow(), id)
+func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *time.Time, status, modifiedBy int64) (err error) {
+	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, time.Now(), id)
 	if err != nil {
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update the task: %w", err)
 	}
@@ -245,7 +246,7 @@ func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime
 const deleteItem = `UPDATE items SET is_deleted = 1, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(deleteItem, modifiedBy, database.SqLiteNow(), id)
+	_, err = r.database.Exec(deleteItem, modifiedBy, time.Now(), id)
 	if err != nil {
 		return errors.New(errors.ErrDBDeleteFailed, "failed to delete the task: %w", err)
 	}
@@ -255,7 +256,7 @@ func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
 const restoreItem = `UPDATE items SET is_deleted = 0, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(restoreItem, modifiedBy, database.SqLiteNow(), id)
+	_, err = r.database.Exec(restoreItem, modifiedBy, time.Now(), id)
 	if err != nil {
 		return errors.New(errors.ErrDBUpdateFailed, "failed to restore the task: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"time"
 )
 
 type UsersRepo struct {
@@ -61,7 +62,7 @@ const insertUser = `
 	) VALUES ($1, $2, $3, $4)`
 
 func (r *UsersRepo) Create(user *models.User) (int64, error) {
-	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, database.SqLiteNow())
+	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now())
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert user: %w", err)
 	}
@@ -105,7 +106,7 @@ const updateUserSession = `
 		session_start_time = $2 
 	WHERE id = $3`
 
-func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *database.SqLiteTime) error {
+func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *time.Time) error {
 	_, err := r.db.Exec(updateUserSession, sessionId, sessionStartTime, userId)
 	if err != nil {
 		return fmt.Errorf("failed to set user session: %w", err)

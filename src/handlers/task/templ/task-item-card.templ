@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	"go-do-the-thing/src/shared/templ"
+	"time"
 )
 
 templ TaskItemCard(task *models.TaskView) {
@@ -188,7 +189,7 @@ templ taskStatusChip(task *models.TaskView) {
 		>
 			In Progress
 		</span>
-	} else if task.DueDate.Before(database.SqLiteNow()) {
+	} else if task.DueDate.Before(time.Now()) {
 		<span
 			class="bg-danger-light dark:bg-danger-dark
 					text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
@@ -255,7 +256,7 @@ func getTaskBorderStyle(task *models.TaskView) string {
 	if task.Status == models.Completed {
 		return "shadow-lg opacity-50 border-border-light dark:border-border-dark"
 	}
-	if task.DueDate.Before(database.SqLiteNow()) {
+	if task.DueDate.Before(time.Now()) {
 		return "border-danger-light dark:border-danger-dark"
 	}
 	return "border-border-light dark:border-border-dark"
@@ -309,7 +310,7 @@ templ cardBack(task *models.TaskView) {
 	>
 		@templ_shared.LoaderSmall()
 		<span class="mt-4 text-white text-lg font-semibold">
-			Toggling status for “{ task.Name }”
+			Toggling status for "{ task.Name }"
 		</span>
 	</div>
 	<div
@@ -321,7 +322,7 @@ templ cardBack(task *models.TaskView) {
 	>
 		@templ_shared.LoaderSmall()
 		<span class="mt-4 text-white text-lg font-semibold">
-			Deleting “{ task.Name }”
+			Deleting "{ task.Name }"
 		</span>
 	</div>
 }

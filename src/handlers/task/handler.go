@@ -96,7 +96,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	form.Task = models.TaskView{
 		Name:        name,
 		Description: description,
-		DueDate:     database.NewSqliteTime(due_date),
+		DueDate:     &due_date,
 		ProjectId:   project_id,
 	}
 	if len(form.Errors) > 0 {
@@ -107,7 +107,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	new_id, err := h.task_service.CreateTask(current_user_id, project_id, name, description, database.NewSqliteTime(due_date))
+	new_id, err := h.task_service.CreateTask(current_user_id, project_id, name, description, &due_date)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err, "failed to create task with error")
@@ -200,7 +200,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	form.Task = models.TaskView{
 		Name:        name,
 		Description: description,
-		DueDate:     database.NewSqliteTime(date),
+		DueDate:     &date,
 	}
 	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
@@ -229,7 +229,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		project_id,
 		name,
 		description,
-		database.NewSqliteTime(date),
+		&date,
 		current_user_id,
 	)
 	if err != nil {

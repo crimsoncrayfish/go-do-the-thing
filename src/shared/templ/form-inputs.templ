@@ -4,6 +4,7 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/constants"
 	"strconv"
+	"time"
 )
 
 templ FormTextInput(title, name, placeholder, value string) {
@@ -36,7 +37,7 @@ templ FormPasswordInput(title, name, placeholder string) {
 	</div>
 }
 
-templ FormDatePicker(title, name, id string, date *database.SqLiteTime) {
+templ FormDatePicker(title, name, id string, date *time.Time) {
 	<div>
 		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
 		<div class="mt-2 relative">

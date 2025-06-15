@@ -22,7 +22,7 @@ func NewDefaultProjectForm() ProjectForm {
 	duedate := time.Now().Add(time.Duration(time.Hour * 24))
 	return ProjectForm{
 		Project: models.ProjectView{
-			DueDate: &database.SqLiteTime{Time: &duedate},
+			DueDate: &duedate,
 		},
 		Errors: make(map[string]string),
 	}

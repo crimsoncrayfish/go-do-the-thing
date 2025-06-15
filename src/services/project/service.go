@@ -12,6 +12,7 @@ import (
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"go-do-the-thing/src/services/project_user_service"
+	"time"
 )
 
 type ProjectService struct {
@@ -82,7 +83,7 @@ func (s ProjectService) DeleteProject(id, currentUserId int64) (hasProjects bool
 func (s ProjectService) CreateProject(
 	currentUserId, owner int64,
 	name, description string,
-	startDate, dueDate *database.SqLiteTime,
+	startDate, dueDate *time.Time,
 ) (int64, error) {
 	project := models.Project{
 		Name:         name,
@@ -91,9 +92,9 @@ func (s ProjectService) CreateProject(
 		StartDate:    startDate,
 		DueDate:      dueDate,
 		CreatedBy:    currentUserId,
-		CreatedDate:  database.SqLiteNow(),
+		CreatedDate:  time.Now(),
 		ModifiedBy:   currentUserId,
-		ModifiedDate: database.SqLiteNow(),
+		ModifiedDate: time.Now(),
 		IsComplete:   false,
 		IsDeleted:    false,
 	}
@@ -113,7 +114,7 @@ func (s ProjectService) CreateProject(
 func (s ProjectService) UpdateProject(
 	project_id, current_user_id, owner int64,
 	name, description string,
-	dueDate *database.SqLiteTime,
+	dueDate *time.Time,
 ) error {
 	err := s.projectUsersService.UserBelongsToProject(current_user_id, project_id)
 	if err != nil {
@@ -127,7 +128,7 @@ func (s ProjectService) UpdateProject(
 		Owner:        owner,
 		DueDate:      dueDate,
 		ModifiedBy:   current_user_id,
-		ModifiedDate: database.SqLiteNow(),
+		ModifiedDate: time.Now(),
 		IsComplete:   false,
 	}
 
