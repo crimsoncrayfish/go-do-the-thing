@@ -1,7 +1,6 @@
 package models
 
 import (
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"time"

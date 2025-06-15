@@ -2,7 +2,6 @@ package projects_service
 
 import (
 	"fmt"
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
@@ -85,6 +84,7 @@ func (s ProjectService) CreateProject(
 	name, description string,
 	startDate, dueDate *time.Time,
 ) (int64, error) {
+	now := time.Now()
 	project := models.Project{
 		Name:         name,
 		Description:  description,
@@ -92,9 +92,9 @@ func (s ProjectService) CreateProject(
 		StartDate:    startDate,
 		DueDate:      dueDate,
 		CreatedBy:    currentUserId,
-		CreatedDate:  time.Now(),
+		CreatedDate:  &now,
 		ModifiedBy:   currentUserId,
-		ModifiedDate: time.Now(),
+		ModifiedDate: &now,
 		IsComplete:   false,
 		IsDeleted:    false,
 	}
@@ -121,6 +121,7 @@ func (s ProjectService) UpdateProject(
 		// NOTE: Errors from function already wrapped
 		return err
 	}
+	now := time.Now()
 	project := models.Project{
 		Id:           project_id,
 		Name:         name,
@@ -128,7 +129,7 @@ func (s ProjectService) UpdateProject(
 		Owner:        owner,
 		DueDate:      dueDate,
 		ModifiedBy:   current_user_id,
-		ModifiedDate: time.Now(),
+		ModifiedDate: &now,
 		IsComplete:   false,
 	}
 

@@ -1,26 +1,25 @@
 package models
 
 import (
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"time"
 )
 
 type Task struct {
-	Id           int64       `json:"id,omitempty"`
-	Name         string      `json:"name"`
-	Description  string      `json:"description,omitempty"`
-	AssignedTo   int64       `json:"assigned_to"`
-	Status       ItemStatus  `json:"status"`
-	CompleteDate *time.Time  `json:"complete_date"`
-	DueDate      *time.Time  `json:"due_date"`
-	CreatedBy    int64       `json:"created_by"`
-	CreatedDate  *time.Time  `json:"created_date"`
-	ModifiedBy   int64       `json:"modified_by"`
-	ModifiedDate *time.Time  `json:"modified_date"`
-	IsDeleted    bool        `json:"is_deleted"`
-	Project      int64       `json:"project_id"`
+	Id           int64      `json:"id,omitempty"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description,omitempty"`
+	AssignedTo   int64      `json:"assigned_to"`
+	Status       ItemStatus `json:"status"`
+	CompleteDate *time.Time `json:"complete_date"`
+	DueDate      *time.Time `json:"due_date"`
+	CreatedBy    int64      `json:"created_by"`
+	CreatedDate  *time.Time `json:"created_date"`
+	ModifiedBy   int64      `json:"modified_by"`
+	ModifiedDate *time.Time `json:"modified_date"`
+	IsDeleted    bool       `json:"is_deleted"`
+	Project      int64      `json:"project_id"`
 }
 
 type ItemStatus int
@@ -31,11 +30,12 @@ const (
 )
 
 func (t *Task) ToggleStatus(modifiedBy int64) {
+	now := time.Now()
 	t.ModifiedBy = modifiedBy
-	t.ModifiedDate = time.Now()
+	t.ModifiedDate = &now
 	if t.Status == Scheduled {
 		t.Status = Completed
-		t.CompleteDate = time.Now()
+		t.CompleteDate = &now
 	} else {
 		t.Status = Scheduled
 		t.CompleteDate = &time.Time{}

@@ -1,7 +1,6 @@
 package form_models
 
 import (
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/models"
 	"time"
 )
@@ -31,6 +30,7 @@ func NewDefaultProjectForm() ProjectForm {
 func (f *ProjectForm) GetErrors() map[string]string {
 	return f.Errors
 }
+
 func (f *ProjectForm) SetError(name, value string) {
 	f.Errors[name] = value
 }

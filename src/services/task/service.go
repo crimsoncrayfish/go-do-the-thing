@@ -2,7 +2,6 @@ package task_service
 
 import (
 	"fmt"
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
@@ -40,15 +39,16 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 		// NOTE: Errors from function already wrapped
 		return 0, err
 	}
+	now := time.Now()
 	task := models.Task{
 		Name:         name,
 		Description:  description,
 		DueDate:      due_date,
 		AssignedTo:   user_id, // TODO: need to update this
 		CreatedBy:    user_id,
-		CreatedDate:  time.Now(),
+		CreatedDate:  &now,
 		ModifiedBy:   user_id,
-		ModifiedDate: time.Now(),
+		ModifiedDate: &now,
 		Project:      project_id,
 		IsDeleted:    false,
 	}
@@ -73,6 +73,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		// NOTE: Errors from function already wrapped
 		return err
 	}
+	now := time.Now()
 	task := models.Task{
 		Id:           task_id,
 		Name:         name,
@@ -80,7 +81,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		DueDate:      due_date,
 		AssignedTo:   assigned_to, // TODO: need to update this
 		ModifiedBy:   user_id,
-		ModifiedDate: time.Now(),
+		ModifiedDate: &now,
 		Project:      project_id,
 		IsDeleted:    false,
 	}
@@ -161,7 +162,7 @@ func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error)
 		if tasks[i].Status != tasks[j].Status {
 			return tasks[i].Status < tasks[j].Status
 		}
-		return tasks[i].DueDate.Before(tasks[j].DueDate)
+		return tasks[i].DueDate.Before(*tasks[j].DueDate)
 	})
 	return s.taskListToViewModels(tasks)
 }
@@ -175,7 +176,7 @@ func (s *TaskService) GetProjectTaskViewList(user_id, project_id int64) ([]*mode
 		if tasks[i].Status != tasks[j].Status {
 			return tasks[i].Status < tasks[j].Status
 		}
-		return tasks[i].DueDate.Before(tasks[j].DueDate)
+		return tasks[i].DueDate.Before(*tasks[j].DueDate)
 	})
 	return s.taskListToViewModels(tasks)
 }

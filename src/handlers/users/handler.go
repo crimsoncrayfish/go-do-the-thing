@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"errors"
-	"go-do-the-thing/src/database"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
@@ -104,16 +103,17 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
+	now := time.Now()
 
 	user.SessionId = uuid.New().String()
-	user.SessionStartTime = time.Now()
+	user.SessionStartTime = &now
 
 	if err := h.repo.UpdateSession(user.Id, user.SessionId, user.SessionStartTime); err != nil {
 		h.loginError(err, w, r, "Failed to set session id for user %d", user.Id)
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
-	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Time.Add(time.Duration(time.Hour*4)))
+	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
 		h.loginError(err, w, r, "failed to generate token")

@@ -2,7 +2,6 @@ package project
 
 import (
 	"fmt"
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
@@ -189,10 +188,11 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	now := time.Now()
 	new_id, err := h.project_service.CreateProject(
 		currentUserId, currentUserId, // NOTE: for now owner is also creator
 		name, description,
-		time.Now(), &due_date)
+		&now, &due_date)
 	if err != nil {
 		h.logger.Error(err, "failed to create project for user %d", currentUserId)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -281,7 +281,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	err = h.project_service.UpdateProject(
 		id, current_user_id, current_user_id, // NOTE: for now owner is also creator
 		name, description,
-		time.Now(), &due_date)
+		&due_date)
 	if err != nil {
 		errors.FrontendError(w, r, h.logger, err, "failed to update project %d", id)
 		return

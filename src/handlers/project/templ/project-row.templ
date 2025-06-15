@@ -2,7 +2,6 @@ package templ_project
 
 import (
 	"fmt"
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	ts "go-do-the-thing/src/shared/templ"
@@ -66,7 +65,7 @@ templ ProjectRowContent(project models.ProjectView) {
 			<dt class="sr-only lg:hidden">Owner</dt>
 			<dd class="font-light lg:hidden">{ project.Owner.FullName }</dd>
 			<dt class="sr-only md:hidden">Due date</dt>
-			if project.DueDate.Time != nil {
+			if project.DueDate != nil {
 				<dd class="font-light md:hidden">
 					{ project.DueDate.Format(constants.DateFormat) }
 				</dd>
