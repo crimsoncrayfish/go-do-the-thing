@@ -7,8 +7,55 @@ import (
 )
 
 templ ProjectListWithBody(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
-	@ts.Main(ProjectList(navbar, formData, projects))
+	@ts.Main(ProjectListPage(navbar, formData, projects))
 }
+
+templ ProjectListPage(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
+	@ts.NavBar(navbar)
+	<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
+		<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
+			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Items</p>
+			<div>
+				@ts.OpenFormButton("New Task", "create-project-form-container", ts.SvgPlus())
+			</div>
+		</div>
+		@ProjectForm("project", "Create", formData)
+		@ProjectList(projects)
+	</div>
+}
+
+templ ProjectList(projects []m.ProjectView) {
+	<div id="project-list-container">
+		for _, project := range projects {
+			@ProjectCard(project)
+		}
+	</div>
+	<script>
+function flipProjectCardUpdateToBack(event, id) {
+    const method = event.detail.requestConfig.verb.toUpperCase();
+    if (method === "POST") {
+	toggleClassForId('hidden', 'task-card-back-update-'+id)
+    } else if (method === "DELETE") {
+	toggleClassForId('hidden', 'task-card-back-delete-'+id)
+    }
+    const inner = document.getElementById('task-card-inner-' + id);
+    if (!inner) return;
+    inner.style.transform = 'rotateX(180deg)';
+};
+function flipProjectCardUpdateToFront(event, id) {
+    const method = event.detail.requestConfig.verb.toUpperCase();
+    const inner = document.getElementById('task-card-inner-' + id);
+    if (!inner) return;
+    inner.style.transform = 'rotateX(0deg)';
+    inner.addEventListener('transitionend', function hideBack() {
+	toggleClassForId('hidden', 'task-card-back-update-'+id);
+	inner.removeEventListener('transitionend', hideBack);
+    });
+};
+</script>
+}
+
+/*
 
 templ ProjectList(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
 	@ts.NavBar(navbar)
@@ -52,32 +99,15 @@ templ ProjectList(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.P
 				</div>
 			</div>
 		</div>
-		<div class="relative items-center overflow-x-auto ">
-			<table
-				class="w-[90%] mb-2 mx-auto bg-primary-900 text-sm text-left rtl:text-right text-primary-50 dark:text-primary-400"
-			>
-				<thead
-					class="text-xs text-primary-700 uppercase bg-primary-50 dark:bg-primary-700 dark:text-primary-400"
-				>
-					<tr>
-						<th scope="col" class="px-6 py-3">
-							<p class="hidden lg:block">Status</p>
-						</th>
-						<th scope="col" class="columns-2xl px-6 py-3">Project</th>
-						<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
-						<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Owner</th>
-						<th scope="col" class="px-6 py-3">
-							<p class="hidden lg:block">Actions</p>
-						</th>
-					</tr>
-				</thead>
-				<tbody id="project-rows" class="item-list">
-					for _, project:= range projects {
-						@ProjectRow(project)
-					}
-				</tbody>
-			</table>
+		<div class="relative items-center w-full">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-[90%] mx-auto">
+				for _, project := range projects {
+					@ProjectCard(project)
+				}
+			</div>
 			@ts.NoDataRow(true)
 		</div>
 	</div>
 }
+
+*/
