@@ -71,7 +71,7 @@ const getProjectsByUser = `
 	JOIN project_users
 		ON projects.id = project_users.project_id
 	WHERE project_users.user_id = $1
-	AND projects.is_deleted = 0`
+	AND projects.is_deleted = false`
 
 func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 	rows, err := r.database.Query(getProjectsByUser, user_id)
@@ -118,7 +118,7 @@ func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
 
 const deleteProject = `
 	UPDATE projects 
-	SET is_deleted = 1, modified_by = $1, modified_date = $2
+	SET is_deleted = true, modified_by = $1, modified_date = $2
 	WHERE id = $3`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
@@ -129,7 +129,7 @@ func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
 	return nil
 }
 
-const getProjectCount = `SELECT COUNT(id) FROM items WHERE is_deleted=0 AND assigned_to=$1`
+const getProjectCount = `SELECT COUNT(id) FROM items WHERE is_deleted=false AND assigned_to=$1`
 
 func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err error) {
 	row := r.database.QueryRow(getProjectCount, currentUser)

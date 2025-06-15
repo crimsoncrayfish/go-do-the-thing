@@ -3,7 +3,6 @@ package users_repo
 import (
 	"fmt"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
@@ -120,7 +119,7 @@ const updateUserIsAdmin = `
 	WHERE id = $2`
 
 func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
-	_, err := r.db.Exec(updateUserIsAdmin, helpers.Btoi(user.IsAdmin), user.Id)
+	_, err := r.db.Exec(updateUserIsAdmin, user.IsAdmin, user.Id)
 	if err != nil {
 		return fmt.Errorf("failed to set user as admin: %w", err)
 	}
@@ -129,7 +128,7 @@ func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
 
 const deleteUser = `
 	UPDATE users 
-	SET is_deleted = 1 
+	SET is_deleted = true 
 	WHERE id = $1`
 
 func (r *UsersRepo) Delete(user models.User) error {

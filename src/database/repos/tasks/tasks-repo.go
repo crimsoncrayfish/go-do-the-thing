@@ -84,7 +84,7 @@ const getItemsByAssignedUser = `
 		project_id,
 		complete_date
 	FROM items
-	WHERE is_deleted = 0 
+	WHERE is_deleted = false 
 	AND assigned_to = $1`
 
 func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err error) {
@@ -128,7 +128,7 @@ const getItemsByAssignedUserAndProject = `
 		project_id,
 		complete_date
 	FROM items
-	WHERE is_deleted = 0 
+	WHERE is_deleted = false 
 	AND assigned_to = $1
 	AND project_id = $2`
 
@@ -229,7 +229,7 @@ func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *time.Time, status, 
 	return nil
 }
 
-const deleteItem = `UPDATE items SET is_deleted = 1, modified_by = $1, modified_date = $2 WHERE id = $3`
+const deleteItem = `UPDATE items SET is_deleted = true, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(deleteItem, modifiedBy, time.Now(), id)
@@ -239,7 +239,7 @@ func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
 	return nil
 }
 
-const restoreItem = `UPDATE items SET is_deleted = 0, modified_by = $1, modified_date = $2 WHERE id = $3`
+const restoreItem = `UPDATE items SET is_deleted = false, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(restoreItem, modifiedBy, time.Now(), id)
@@ -277,7 +277,7 @@ func (r *TasksRepo) GetItem(id int64) (*models.Task, error) {
 	return temp, nil
 }
 
-const countItems = "SELECT COUNT(id) FROM items WHERE is_deleted=0 AND assigned_to=$1"
+const countItems = "SELECT COUNT(id) FROM items WHERE is_deleted=false AND assigned_to=$1"
 
 func (r *TasksRepo) GetItemsCount(userId int64) (int64, error) {
 	row := r.database.QueryRow(countItems, userId)

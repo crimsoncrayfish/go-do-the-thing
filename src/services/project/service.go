@@ -104,11 +104,11 @@ func (s ProjectService) CreateProject(
 		return 0, err
 	}
 
-	inserted_id, err := s.projectUsersRepo.Insert(id, currentUserId, 0)
+	err = s.projectUsersRepo.Insert(id, currentUserId, 1)
 	if err != nil {
 		return 0, err
 	}
-	return inserted_id, nil
+	return id, nil
 }
 
 func (s ProjectService) UpdateProject(
@@ -203,7 +203,6 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 	users := make(map[int64]*models.User, 3)
 	var owner *models.User
 	owner, ok := users[project.Owner]
-	s.logger.Debug("owner:%d", project.Owner)
 	if !ok {
 		owner, err = s.usersRepo.GetUserById(project.Owner)
 		if err != nil {
@@ -232,7 +231,6 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 		}
 		users[project.ModifiedBy] = modified_by
 	}
-	s.logger.Debug("owner:%v", owner)
 	projectView := project.ToViewModel(owner, created_by, modified_by)
 
 	return &projectView, nil

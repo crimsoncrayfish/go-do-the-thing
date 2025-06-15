@@ -114,16 +114,14 @@ const insertProjectUser = `
 		project_id,
 		user_id,
 		role_id
-	) VALUES ($1, $2, $3)
-	RETURNING id`
+	) VALUES ($1, $2, $3)`
 
-func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) (int64, error) {
-	var id int64
-	err := r.database.QueryRow(insertProjectUser, projectId, userId, roleId).Scan(&id)
+func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) error {
+	_, err := r.database.Exec(insertProjectUser, projectId, userId, roleId)
 	if err != nil {
-		return 0, app_errors.New(app_errors.ErrDBInsertFailed, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
+		return app_errors.New(app_errors.ErrDBInsertFailed, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
 	}
-	return id, nil
+	return nil
 }
 
 const updateProjectUser = `

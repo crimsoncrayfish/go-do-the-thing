@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   session_id          TEXT DEFAULT '',
   session_start_time  TIMESTAMP DEFAULT NULL,
   password_hash       TEXT DEFAULT '',
-  is_deleted          INTEGER DEFAULT 0,
-  is_admin            INTEGER DEFAULT 0,
+  is_deleted          BOOLEAN DEFAULT FALSE,
+  is_admin            BOOLEAN DEFAULT FALSE,
   create_date         TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS projects (
   created_date  TIMESTAMP NOT NULL DEFAULT NOW(), 
   modified_by   INTEGER,
   modified_date TIMESTAMP DEFAULT NULL, 
-  is_complete   INTEGER,
-  is_deleted    INTEGER,
+  is_complete   BOOLEAN DEFAULT FALSE,
+  is_deleted    BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (owner) REFERENCES users (id),
   FOREIGN KEY (created_by) REFERENCES users (id),
   FOREIGN KEY (modified_by) REFERENCES users (id)
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS items (
   created_date  TIMESTAMP NOT NULL DEFAULT NOW(), 
   modified_by   INTEGER,
   modified_date TIMESTAMP DEFAULT NULL, 
-  is_deleted    INTEGER DEFAULT 0,
+  is_deleted    BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (assigned_to) REFERENCES users (id),
   FOREIGN KEY (created_by) REFERENCES users (id),
   FOREIGN KEY (modified_by) REFERENCES users (id),
