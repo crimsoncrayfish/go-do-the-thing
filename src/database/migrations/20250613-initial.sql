@@ -1,4 +1,4 @@
--- INITIAL MIGRATION
+-- INITIAL MIGRATION (Updated with Date/Time Types)
 
 -- Table: users
 CREATE TABLE IF NOT EXISTS users (
@@ -6,11 +6,11 @@ CREATE TABLE IF NOT EXISTS users (
   email               TEXT UNIQUE,
   full_name           TEXT DEFAULT '',
   session_id          TEXT DEFAULT '',
-  session_start_time  INTEGER DEFAULT 0,
+  session_start_time  TIMESTAMP DEFAULT NULL,
   password_hash       TEXT DEFAULT '',
   is_deleted          INTEGER DEFAULT 0,
   is_admin            INTEGER DEFAULT 0,
-  create_date         INTEGER
+  create_date         TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Table: roles
@@ -35,12 +35,12 @@ CREATE TABLE IF NOT EXISTS projects (
   name          TEXT DEFAULT '' NOT NULL,
   description   TEXT,
   owner         INTEGER,
-  start_date    INTEGER,
-  due_date      INTEGER,
+  start_date    DATE DEFAULT NULL, 
+  due_date      DATE DEFAULT NULL, 
   created_by    INTEGER,
-  created_date  INTEGER,
+  created_date  TIMESTAMP NOT NULL DEFAULT NOW(), 
   modified_by   INTEGER,
-  modified_date INTEGER,
+  modified_date TIMESTAMP DEFAULT NULL, 
   is_complete   INTEGER,
   is_deleted    INTEGER,
   FOREIGN KEY (owner) REFERENCES users (id),
@@ -73,12 +73,12 @@ CREATE TABLE IF NOT EXISTS items (
   assigned_to   INTEGER,
   project_id    INTEGER,
   status        INTEGER DEFAULT 0,
-  complete_date INTEGER DEFAULT 0,
-  due_date      INTEGER DEFAULT 0,
+  complete_date TIMESTAMP DEFAULT NULL, 
+  due_date      TIMESTAMP DEFAULT NULL, 
   created_by    INTEGER,
-  created_date  INTEGER DEFAULT 0,
+  created_date  TIMESTAMP NOT NULL DEFAULT NOW(), 
   modified_by   INTEGER,
-  modified_date INTEGER DEFAULT 0,
+  modified_date TIMESTAMP DEFAULT NULL, 
   is_deleted    INTEGER DEFAULT 0,
   FOREIGN KEY (assigned_to) REFERENCES users (id),
   FOREIGN KEY (created_by) REFERENCES users (id),
