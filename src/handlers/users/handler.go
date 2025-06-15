@@ -80,6 +80,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		http.SetCookie(w, &emptyAuthCookie)
+		h.logger.Error(err, "failed to read user info for email %s", email)
 		if errors.Is(err, sql.ErrNoRows) {
 			h.invalidLogin(w, r, form, "User '%s' not in database", email)
 			return

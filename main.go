@@ -49,7 +49,7 @@ func main() {
 	swjsLocation = workingDir + "/static/json/manifest.json"
 
 	logger.Info("Setting Up Database")
-	connectionString := "test"
+	connectionString := "postgres://admin:admin@localhost:5432/todo_db?sslmode=disable"
 	dbConnection := database.Init(connectionString)
 	defer dbConnection.Close()
 

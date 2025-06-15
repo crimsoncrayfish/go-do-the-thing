@@ -2,6 +2,7 @@ package roles_repo
 
 import (
 	"go-do-the-thing/src/database"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 
 	"github.com/jackc/pgx/v5"
@@ -27,11 +28,15 @@ func InitRepo(database database.DatabaseConnection) *RolesRepo {
 }
 
 func scanRoleFromRows(rows pgx.Rows, item *models.Role) error {
-	return rows.Scan(
+	err := rows.Scan(
 		&item.Id,
 		&item.Name,
 		&item.Description,
 	)
+	if err != nil {
+		return errors.New(errors.ErrDBGenericError, "failed to scan role from rows: %w", err)
+	}
+	return nil
 }
 
 const getAllRoles = `SELECT id, name, description FROM roles`
@@ -39,7 +44,7 @@ const getAllRoles = `SELECT id, name, description FROM roles`
 func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
 	rows, err := r.database.Query(getAllRoles)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(errors.ErrDBReadFailed, "failed to query roles: %w", err)
 	}
 	defer rows.Close()
 
@@ -55,7 +60,7 @@ func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, err
+		return nil, errors.New(errors.ErrDBGenericError, "error while iterating roles: %w", err)
 	}
 	return roles, nil
 }

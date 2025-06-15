@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"time"
@@ -67,7 +68,7 @@ func (r *UsersRepo) Create(user *models.User) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now()).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert user: %w", err)
+		return 0, errors.New(errors.ErrDBInsertFailed, "failed to insert user: %w", err)
 	}
 	return id, nil
 }
@@ -80,7 +81,7 @@ const updateUserDetails = `
 func (r *UsersRepo) UpdateDetails(user models.User) error {
 	_, err := r.db.Exec(updateUserDetails, user.FullName, user.Id)
 	if err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
+		return errors.New(errors.ErrDBUpdateFailed, "failed to update user: %w", err)
 	}
 	return nil
 }
