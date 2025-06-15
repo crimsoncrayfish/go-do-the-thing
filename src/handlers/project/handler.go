@@ -205,7 +205,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_project.ProjectCard(*projectView).Render(r.Context(), w); err != nil {
+	if err := templ_project.ProjectCardOOB(*projectView).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render new project row (%d) for user %d", new_id, currentUserId)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
