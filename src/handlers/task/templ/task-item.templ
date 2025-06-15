@@ -7,6 +7,7 @@ import (
 	fm "go-do-the-thing/src/models/forms"
 	"go-do-the-thing/src/shared/templ"
 	ts "go-do-the-thing/src/shared/templ"
+	"time"
 )
 
 templ TaskItemWithBody(
@@ -507,5 +508,25 @@ templ taskTimeline(task *models.TaskView) {
 				</div>
 			</div>
 		</div>
+	</div>
+}
+
+templ statusIcon(task *models.TaskView) {
+	<div
+		if task.Status==models.Completed {
+			class="text-success-light dark:text-success-dark"
+		}
+		else
+		if task.DueDate.Before(time.Now()) {
+			class="text-danger-light dark:text-danger-dark"
+		} else {
+			class="text-warning-light dark:text-warning-dark"
+		}
+	>
+		if task.Status == models.Completed {
+			@templ_shared.SvgCheck()
+		} else {
+			@templ_shared.SvgWait()
+		}
 	</div>
 }

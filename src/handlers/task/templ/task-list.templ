@@ -86,34 +86,3 @@ templ searchBar(projects map[int64]string) {
 		</div>
 	</div>
 }
-
-templ TaskListTable(tasks []*m.TaskView) {
-	<div class="relative items-center overflow-x-auto ">
-		<table
-			class="mb-2 mx-auto bg-secondary-light dark:bg-secondary-dark text-sm text-left rtl:text-right text-text-on-light dark:text-text-on-dark"
-		>
-			<thead
-				class="text-xs uppercase bg-secondary-light dark:bg-secondary-dark text-text-on-light dark:text-text-on-dark"
-			>
-				<tr>
-					<th scope="col" class="px-6 py-3">
-						<p class="hidden lg:block">Status</p>
-					</th>
-					<th scope="col" class="columns-2xl px-6 py-3">Task</th>
-					<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
-					<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
-					<th scope="col" class="columns-lg hidden md:table-cell px-6 py-3">Project</th>
-					<th scope="col" class="px-6 py-3">
-						<p class="hidden lg:block">Actions</p>
-					</th>
-				</tr>
-			</thead>
-			<tbody id="task-rows" class="item-list">
-				for _, task := range tasks {
-					@TaskRow(task)
-				}
-			</tbody>
-		</table>
-		@ts.NoDataRow(len(tasks) > 0)
-	</div>
-}

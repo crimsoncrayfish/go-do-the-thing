@@ -12,6 +12,9 @@ templ ProjectCard(project models.ProjectView) {
 	<div
 		id={ fmt.Sprintf("project-card-%d", project.Id) }
 		class="relative transition-all mb-4 w-full"
+		hx-on--after-swap={ fmt.Sprintf("flipProjectCardUpdateToFront(event, %d)", project.Id) }
+		hx-on--before-request={ fmt.Sprintf("flipProjectCardUpdateToBack(event, %d)", project.Id) }
+		hx-on--after-request.from="closest button"
 	>
 		<div class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col justify-between h-full">
 			<div class="flex flex-row items-center justify-between mb-2">
