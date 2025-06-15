@@ -1,13 +1,14 @@
 package users_repo
 
 import (
-	"database/sql"
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type UsersRepo struct {
@@ -27,7 +28,7 @@ func InitRepo(connection database.DatabaseConnection) *UsersRepo {
 	return &UsersRepo{db: connection, logger: logger}
 }
 
-func scanUserFromRow(row *sql.Row, user *models.User) error {
+func scanUserFromRow(row pgx.Row, user *models.User) error {
 	return row.Scan(
 		&user.Id,
 		&user.Email,
@@ -40,7 +41,7 @@ func scanUserFromRow(row *sql.Row, user *models.User) error {
 	)
 }
 
-func scanUsersFromRows(rows *sql.Rows, user *models.User) error {
+func scanUsersFromRows(rows pgx.Rows, user *models.User) error {
 	return rows.Scan(
 		&user.Id,
 		&user.Email,
@@ -59,18 +60,16 @@ const insertUser = `
 		full_name,
 		password_hash,
 		create_date
-	) VALUES ($1, $2, $3, $4)`
+	) VALUES ($1, $2, $3, $4)
+	RETURNING id`
 
 func (r *UsersRepo) Create(user *models.User) (int64, error) {
-	result, err := r.db.Exec(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now())
+	var id int64
+	err := r.db.QueryRow(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now()).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert user: %w", err)
 	}
-	insertedId, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get inserted user id: %w", err)
-	}
-	return insertedId, nil
+	return id, nil
 }
 
 const updateUserDetails = `

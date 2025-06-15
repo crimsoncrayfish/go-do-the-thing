@@ -1,11 +1,12 @@
 package tasks_repo
 
 import (
-	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type TasksRepo struct {
@@ -23,7 +24,7 @@ func InitRepo(database database.DatabaseConnection) *TasksRepo {
 	return &TasksRepo{database}
 }
 
-func scanFromRow(row *sql.Row, item *models.Task) error {
+func scanFromRow(row pgx.Row, item *models.Task) error {
 	err := row.Scan(
 		&item.Id,
 		&item.Name,
@@ -45,7 +46,7 @@ func scanFromRow(row *sql.Row, item *models.Task) error {
 	return nil
 }
 
-func scanFromRows(rows *sql.Rows, item *models.Task) error {
+func scanFromRows(rows pgx.Rows, item *models.Task) error {
 	err := rows.Scan(
 		&item.Id,
 		&item.Name,
@@ -91,12 +92,7 @@ func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err err
 	if err != nil {
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to read items for user: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			err = errors.New(errors.ErrDBGenericError, "failed to close rows: %w", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	items = make([]*models.Task, 0)
 	for rows.Next() {
@@ -141,12 +137,7 @@ func (r *TasksRepo) GetItemsForUserAndProject(user_id, project_id int64) (items 
 	if err != nil {
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to read items for user and project: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			err = errors.New(errors.ErrDBGenericError, "failed to close rows: %w", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	items = make([]*models.Task, 0)
 	for rows.Next() {
@@ -179,10 +170,11 @@ const insertItem = `
 			modified_by, 
 			modified_date,
 			project_id)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	RETURNING id`
 
 func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
-	result, err := r.database.Exec(
+	err = r.database.QueryRow(
 		insertItem,
 		item.Name,
 		item.Description,
@@ -194,17 +186,11 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.ModifiedBy,
 		time.Now(),
 		item.Project,
-	)
+	).Scan(&id)
 	if err != nil {
 		return 0, errors.New(errors.ErrDBReadFailed, "failed to insert task: %w", err)
 	}
-
-	last_id, err := result.LastInsertId()
-	if err != nil {
-		return 0, errors.New(errors.ErrDBReadFailed, "failed to read inserted id: %w", err)
-	}
-
-	return last_id, nil
+	return id, nil
 }
 
 const updateItem = `

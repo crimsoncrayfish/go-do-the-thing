@@ -1,9 +1,10 @@
 package roles_repo
 
 import (
-	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type RolesRepo struct {
@@ -25,7 +26,7 @@ func InitRepo(database database.DatabaseConnection) *RolesRepo {
 	}
 }
 
-func scanRoleFromRows(rows *sql.Rows, item *models.Role) error {
+func scanRoleFromRows(rows pgx.Rows, item *models.Role) error {
 	return rows.Scan(
 		&item.Id,
 		&item.Name,
@@ -40,9 +41,7 @@ func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	roles = make([]models.Role, 0)
 	for rows.Next() {

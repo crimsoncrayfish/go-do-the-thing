@@ -1,11 +1,12 @@
 package project_users_repo
 
 import (
-	"database/sql"
 	"errors"
 	"go-do-the-thing/src/database"
 	app_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type ProjectUsersRepo struct {
@@ -25,7 +26,7 @@ func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {
 	}
 }
 
-func scanFromRows(rows *sql.Rows, item *models.ProjectUser) error {
+func scanFromRows(rows pgx.Rows, item *models.ProjectUser) error {
 	err := rows.Scan(
 		&item.ProjectId,
 		&item.UserId,
@@ -44,15 +45,14 @@ const getAllForProject = `
 
 func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []models.ProjectUser, err error) {
 	rows, err := r.database.Query(getAllForProject, projectId)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return make([]models.ProjectUser, 0), nil
 	}
 	if err != nil {
 		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get all project users for projectId - query failed: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		err = app_errors.New(app_errors.ErrDBGenericError, "failed to get all project users for userId - row error: %w", err)
+	defer func(rows pgx.Rows) {
+		rows.Close()
 	}(rows)
 
 	projectUsers = make([]models.ProjectUser, 0)
@@ -82,15 +82,14 @@ const getAllForUser = `
 
 func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, error) {
 	rows, err := r.database.Query(getAllForUser, userId)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return make([]models.ProjectUser, 0), nil
 	}
 	if err != nil {
 		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get all project users for userId - query failed: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		err = app_errors.New(app_errors.ErrDBGenericError, "failed to get all project users for userId - row error: %w", err)
+	defer func(rows pgx.Rows) {
+		rows.Close()
 	}(rows)
 
 	projectUsers := make([]models.ProjectUser, 0)
@@ -115,19 +114,16 @@ const insertProjectUser = `
 		project_id,
 		user_id,
 		role_id
-	) VALUES ($1, $2, $3)`
+	) VALUES ($1, $2, $3)
+	RETURNING id`
 
 func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) (int64, error) {
-	result, err := r.database.Exec(insertProjectUser, projectId, userId, roleId)
+	var id int64
+	err := r.database.QueryRow(insertProjectUser, projectId, userId, roleId).Scan(&id)
 	if err != nil {
 		return 0, app_errors.New(app_errors.ErrDBInsertFailed, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
 	}
-	inserted_id, err := result.LastInsertId()
-	if err != nil {
-		return 0, app_errors.New(app_errors.ErrDBGenericError, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
-	}
-
-	return inserted_id, nil
+	return id, nil
 }
 
 const updateProjectUser = `
@@ -169,7 +165,7 @@ const getAllRolesForUserProject = `
 func (r *ProjectUsersRepo) GetProjectUserRoles(projectId, userId int64) (roleIds []int64, err error) {
 	roleIds = make([]int64, 0)
 	rows, err := r.database.Query(getAllRolesForUserProject, userId, projectId)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return roleIds, nil
 	}
 	if err != nil {

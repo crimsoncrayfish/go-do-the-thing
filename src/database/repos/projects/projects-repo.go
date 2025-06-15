@@ -1,13 +1,14 @@
 package projects_repo
 
 import (
-	"database/sql"
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type ProjectsRepo struct {
@@ -29,7 +30,7 @@ func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
 	}
 }
 
-func scanFromRow(row *sql.Row, item *models.Project) error {
+func scanFromRow(row pgx.Row, item *models.Project) error {
 	return row.Scan(
 		&item.Id,
 		&item.Name,
@@ -46,7 +47,7 @@ func scanFromRow(row *sql.Row, item *models.Project) error {
 	)
 }
 
-func scanFromRows(rows *sql.Rows, item *models.Project) error {
+func scanFromRows(rows pgx.Rows, item *models.Project) error {
 	return rows.Scan(
 		&item.Id,
 		&item.Name,
@@ -77,12 +78,7 @@ func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get project list, query failed: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			err = fmt.Errorf("failed to close rows object: %w", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	items := make([]models.Project, 0)
 	for rows.Next() {
@@ -189,13 +185,14 @@ const insertProject = `
 		is_complete,
 		is_deleted
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	RETURNING id`
 
 func (r *ProjectsRepo) Insert(currentUser int64, project models.Project) (id int64, err error) {
 	project.AssertHealthyNew()
 	assert.NotEqual(currentUser, 0, repoName, "currentUser")
 
-	result, err := r.database.Exec(
+	err = r.database.QueryRow(
 		insertProject,
 		project.Name,
 		project.Description,
@@ -208,12 +205,7 @@ func (r *ProjectsRepo) Insert(currentUser int64, project models.Project) (id int
 		time.Now(),
 		project.IsComplete,
 		false,
-	)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create new project: %w", err)
-	}
-
-	id, err = result.LastInsertId()
+	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create new project: %w", err)
 	}

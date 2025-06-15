@@ -49,8 +49,9 @@ func main() {
 	swjsLocation = workingDir + "/static/json/manifest.json"
 
 	logger.Info("Setting Up Database")
-	dbConnection := database.Init("todo")
-	defer dbConnection.Connection.Close()
+	connectionString := "test"
+	dbConnection := database.Init(connectionString)
+	defer dbConnection.Close()
 
 	reposContainer := repos.NewContainer(dbConnection)
 
