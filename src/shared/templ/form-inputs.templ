@@ -6,6 +6,39 @@ import (
 	"time"
 )
 
+templ FormContainer(postTo string, content templ.Component) {
+	<div
+		id="create-form-container"
+		class="bg-secondary-light dark:bg-secondary-dark rounded-xl border border-border-light mb-0 dark:border-border-dark shadow-lg mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out mb-0"
+	>
+		<div
+			class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full"
+		>
+			<div class="relative rounded-lg shadow">
+				<div
+					class="flex items-center justify-between p-4 md:p-5 rounded-t"
+				>
+					<p class="font-bold text-text-on-light text-xl dark:text-text-on-dark">TODO:</p>
+					<button
+						class="text-text-on-light dark:text-text-on-dark"
+						onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-form-container');swapClassForId('opacity-0', 'opacity-100','create-form-container');"
+					>
+						@SvgClose()
+					</button>
+				</div>
+				<div id="create-project-form">
+					<form
+						hx-post={ postTo }
+						class="px-5 pt-5 pb-1 mb-0"
+					>
+						@content
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
 templ FormTextInput(title, name, placeholder, value string) {
 	<div>
 		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">

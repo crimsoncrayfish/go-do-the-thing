@@ -115,6 +115,18 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: frontend response
+	project_view, err := h.project_service.GetProjectView(id, currentUserId)
+	if err != nil {
+		h.logger.Error(err, "failed to find project")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := templ_project.ProjectCardFront(*project_view).Render(r.Context(), w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render task row")
+		return
+	}
 	if err := templ_shared.NoDataRowOOB(hasProjects).Render(r.Context(), w); err != nil {
 		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
 		h.logger.Error(err, "failed to set no-data status")
@@ -181,7 +193,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		if err := templ_project.ProjectFormContent("Create", form).Render(r.Context(), w); err != nil {
+		if err := templ_project.ProjectFormContent(form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			assert.NoError(err, handlerSource, "Failed to render template for formData")
 		}
@@ -215,7 +227,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err := templ_project.ProjectFormContent("Create", defaultForm).Render(r.Context(), w); err != nil {
+	if err := templ_project.ProjectFormContent(defaultForm).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render project form for user %d", currentUserId)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -75,6 +75,7 @@ func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {
 		ModifiedDate: p.ModifiedDate,
 		ModifiedBy:   modifiedBy.ToViewModel(),
 		DueDate:      p.DueDate,
+		IsDeleted:    p.IsDeleted,
 	}
 }
 

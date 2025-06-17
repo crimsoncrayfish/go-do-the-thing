@@ -49,10 +49,10 @@ templ ProjectView(
 		@ProjectContent(project, false, map[string]string{})
 		<div class="mx-auto px-4 flex  items-center justify-between mb-4">
 			<div>
-				@ts.OpenFormButton("New Task", "create-task-form-container", ts.SvgPlus())
+				@ts.OpenFormButton("New Task", ts.SvgPlus())
 			</div>
 		</div>
-		@templ_todo.TaskForm("/todo/item?source=project_page", "Create", task_form_data, map[int64]string{project.Id: project.Name})
+		@ts.FormContainer("/todo/item?source=project_page", templ_todo.TaskFormContent(task_form_data, map[int64]string{project.Id: project.Name}))
 		@templ_todo.TaskList(tasks)
 	</div>
 }

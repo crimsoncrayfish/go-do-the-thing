@@ -99,7 +99,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		ProjectId:   project_id,
 	}
 	if len(form.Errors) > 0 {
-		if err := templ_todo.TaskFormContent("Create", form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent(form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			assert.NoError(err, source, "Failed to render template for formData")
 		}
@@ -139,14 +139,14 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 			defaultForm.Errors["Project"] = err.Error()
 		}
 		defaultForm.SetProject(taskView.ProjectId)
-		if err := templ_todo.TaskFormContent("Create", defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent(defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			h.logger.Error(err, "failed to render task form")
 			return
 		}
 	} else {
 		defaultForm.SetProject(taskView.ProjectId)
-		if err := templ_todo.TaskFormContent("Create", defaultForm, map[int64]string{taskView.ProjectId: taskView.ProjectName}).Render(r.Context(), w); err != nil {
+		if err := templ_todo.TaskFormContent(defaultForm, map[int64]string{taskView.ProjectId: taskView.ProjectName}).Render(r.Context(), w); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			h.logger.Error(err, "failed to render task form")
 			return
@@ -251,7 +251,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formData := formDataFromTask(task)
-	if err := templ_todo.TaskFormContent("Update", formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskFormContent(formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render form content after update")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -431,19 +431,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	hasData, err := h.task_service.GetTaskCount(current_user_id)
-	if err != nil {
-		assert.NoError(err, source, "failed to update ui")
-		return
-	}
-
 	if err := templ_shared.ToastMessage("Task Deleted", "warning").Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render no data row")
-		return
-	}
-
-	// TODO: no data card placeholder is broken
-	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		return
 	}

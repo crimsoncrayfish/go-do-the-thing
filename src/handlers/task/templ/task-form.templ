@@ -5,40 +5,7 @@ import (
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
-templ TaskForm(postTo string, formType string, formdata form_models.TaskForm, projects map[int64]string) {
-	<div
-		id="create-task-form-container"
-		class="bg-secondary-light dark:bg-secondary-dark rounded-xl border border-border-light mb-0 dark:border-border-dark shadow-lg mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out"
-	>
-		<div
-			class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full"
-		>
-			<div class="relative rounded-lg shadow">
-				<div
-					class="flex items-center justify-between p-4 md:p-5 rounded-t"
-				>
-					<p class="font-bold text-text-on-light text-xl dark:text-text-on-dark">TODO:</p>
-					<button
-						class="text-text-on-light dark:text-text-on-dark"
-						onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-					>
-						@templ_shared.SvgClose()
-					</button>
-				</div>
-				<div id="create-task-form">
-					<form
-						hx-post={ postTo }
-						class="px-5 pt-5 pb-1 mb-0"
-					>
-						@TaskFormContent(formType, formdata, projects)
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-}
-
-templ TaskFormContent(formType string, formdata form_models.TaskForm, projects map[int64]string) {
+templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) {
 	<div class="space-y-5 mb-5">
 		@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
 		@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
@@ -55,7 +22,7 @@ templ TaskFormContent(formType string, formdata form_models.TaskForm, projects m
 		type="submit"
 		class=" bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
 	>
-		{ formType } Task
+		Create Task
 		@templ_shared.SvgPlus()
 	</button>
 }

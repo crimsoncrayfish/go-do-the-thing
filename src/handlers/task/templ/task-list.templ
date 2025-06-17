@@ -15,12 +15,12 @@ templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskV
 	@ts.NavBar(navbar)
 	<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 		<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
-			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Items</p>
+			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Tasks</p>
 			<div>
-				@ts.OpenFormButton("New Task", "create-task-form-container", ts.SvgPlus())
+				@ts.OpenFormButton("New Task", ts.SvgPlus())
 			</div>
 		</div>
-		@TaskForm("/todo/item?source=task_page", "Create", formdata, projects)
+		@ts.FormContainer("/todo/item?source=task_page", TaskFormContent(formdata, projects))
 		@searchBar(projects)
 		@TaskList(tasks)
 	</div>
