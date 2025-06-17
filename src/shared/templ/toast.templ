@@ -1,0 +1,229 @@
+package templ_shared
+
+templ ToastMessage(message string, toastType string) {
+	<div
+		id="toast-message"
+		class={
+			"opacity-0 p-6 border relative min-h-[80px]",
+			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
+			"duration-500 ease-in-out theme-transition transition-opacity",
+			"bg-secondary-light dark:bg-secondary-dark",
+			templ.KV(
+				"border-success-light dark:border-success-dark text-white",
+				toastType == "success",
+			),
+			templ.KV(
+				"border-danger-light dark:border-danger-dark text-white",
+				toastType == "error",
+			),
+			templ.KV(
+				"border-warning-light dark:border-warning-dark text-white",
+				toastType == "warning",
+			),
+			templ.KV(
+				"border-info-light dark:border-info-dark text-white",
+				toastType == "info",
+			),
+		}
+		hx-swap-oob="true"
+		hx-swap="outerHTML"
+		hx-target="#toast-message"
+		hx-on--load="showAndHideToast('toast-message')"
+	>
+		<div class="pr-4 my-auto text-base leading-snug">{ message }</div>
+		<button
+			class="absolute top-1 right-1 text-text-on-light dark:text-text-on-dark hover:text-accent-light dark:hover:text-accent-dark focus:outline-none pt-1 pl-1"
+			aria-label="Close notification"
+			onclick="hideToast('toast-message')"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+			</svg>
+		</button>
+		<div
+			class={
+				"absolute bottom-0 left-0 h-1 w-full",
+				templ.KV("bg-success-light dark:bg-success-dark", toastType == "success"),
+				templ.KV("bg-danger-light dark:bg-danger-dark", toastType == "error"),
+				templ.KV("bg-warning-light dark:bg-warning-dark", toastType == "warning"),
+				templ.KV("bg-info-light dark:bg-info-dark", toastType == "info"),
+			}
+			style="transform-origin: left; animation: shrinkX 5s linear forwards;"
+		></div>
+	</div>
+}
+
+templ ToastActionRedirect(message, url, action_text, toastType string) {
+	<div
+		id="toast-message"
+		class={
+			"opacity-0 p-6 border relative min-h-[80px]",
+			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
+			"duration-500 ease-in-out theme-transition transition-opacity",
+			"bg-secondary-light dark:bg-secondary-dark",
+			templ.KV(
+				"border-success-light dark:border-success-dark text-white",
+				toastType == "success",
+			),
+			templ.KV(
+				"border-danger-light dark:border-danger-dark text-white",
+				toastType == "error",
+			),
+			templ.KV(
+				"border-warning-light dark:border-warning-dark text-white",
+				toastType == "warning",
+			),
+			templ.KV(
+				"border-info-light dark:border-info-dark text-white",
+				toastType == "info",
+			),
+		}
+		hx-swap-oob="true"
+		hx-swap="outerHTML"
+		hx-target="#toast-message"
+		hx-on--load="showAndHideToast('toast-message')"
+	>
+		<div class="flex flex-col">
+			<div class="pr-4 my-auto text-base leading-snug">{ message }</div>
+			<div class="flex justify-end">
+				<a
+					type="button"
+					hx-swap-oob="true"
+					hx-get={ url }
+					hx-replace-url="true"
+					hx-target="body"
+					class={
+						"cursor-pointer text-sm font-medium px-3 py-1 rounded-md transition-colors",
+						templ.KV("bg-success-light hover:bg-success-light/80 text-white", toastType == "success"),
+						templ.KV("bg-danger-light hover:bg-danger-light/80 text-white", toastType == "error"),
+						templ.KV("bg-warning-light hover:bg-warning-light/80 text-white", toastType == "warning"),
+						templ.KV("bg-info-light hover:bg-info-light/80 text-white", toastType == "info"),
+					}
+				>
+					{ action_text }
+				</a>
+			</div>
+		</div>
+		<button
+			class="cursor-pointer absolute top-1 right-1 text-text-on-light dark:text-text-on-dark hover:text-accent-light dark:hover:text-accent-dark focus:outline-none pt-1 pl-1"
+			aria-label="Close notification"
+			onclick="hideToast('toast-message')"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+			</svg>
+		</button>
+		<div
+			class={
+				"absolute bottom-0 left-0 h-1 w-full",
+				templ.KV("bg-success-light dark:bg-success-dark", toastType == "success"),
+				templ.KV("bg-danger-light dark:bg-danger-dark", toastType == "error"),
+				templ.KV("bg-warning-light dark:bg-warning-dark", toastType == "warning"),
+				templ.KV("bg-info-light dark:bg-info-dark", toastType == "info"),
+			}
+			style="transform-origin: left; animation: shrinkX 5s linear forwards;"
+		></div>
+	</div>
+}
+
+templ ToastActionUndo(message, url, target, swapmode string) {
+	<div
+		id="toast-message"
+		class={
+			"opacity-0 p-6 border relative items-center min-h-[80px]",
+			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
+			"duration-500 ease-in-out theme-transition transition-opacity",
+			"bg-secondary-light dark:bg-secondary-dark",
+			"border-success-light dark:border-success-dark text-white",
+		}
+		hx-swap-oob="true"
+		hx-swap="outerHTML"
+		hx-target="#toast-message"
+		hx-on--load="showAndHideToast('toast-message')"
+	>
+		<div class="flex items-center justify-between">
+			<div class="pr-6 my-auto text-base leading-snug">{ message }</div>
+			<a
+				type="button"
+				hx-post={ url }
+				hx-swap-oob="true"
+				hx-target={ target }
+				hx-swap={ swapmode }
+				class={
+					"shrink-0 text-sm font-semibold px-4 py-1 rounded-lg transition-all duration-200 ease-in-out cursor-pointer",
+					"bg-accent-light dark:bg-accent-dark hover:bg-accent-light/90 dark:hover:bg-accent-dark/90 focus:ring-2 focus:ring-accent-light/50 dark:focus:ring-accent-dark/50 text-text-on-accent dark:text-text-on-accent",
+					"shadow-md hover:shadow-lg active:shadow-sm",
+					"inline-flex items-center justify-center shrink-0",
+				}
+			>
+				Undo?
+			</a>
+		</div>
+		<button
+			class="absolute top-1 right-1 text-text-on-light dark:text-text-on-dark hover:text-accent-light dark:hover:text-accent-dark focus:outline-none pt-1 pl-1"
+			aria-label="Close notification"
+			onclick="hideToast('toast-message')"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+			</svg>
+		</button>
+		<div
+			class={
+				"absolute bottom-0 left-0 h-1 w-full",
+				"bg-success-light dark:bg-success-dark",
+			}
+			style="transform-origin: left; animation: shrinkX 5s linear forwards;"
+		></div>
+	</div>
+}
+
+templ EmptyToast() {
+	<div
+		id="toast-message"
+		class="opacity-0"
+		hx-swap="outerHTML"
+		hx-target="#toast-message"
+	></div>
+	<script>
+let showToastTimer = null;
+let hideToastTimer = null;
+
+function hideToast(toastId) {
+  const toast = document.getElementById(toastId);
+  if (toast) {
+    clearTimeout(showToastTimer);
+    clearTimeout(hideToastTimer);
+
+    toast.classList.remove('opacity-100');
+    toast.classList.add('opacity-0');
+
+    setTimeout(() => {
+      toast.classList.remove('flex');
+      toast.classList.add('hidden');
+    }, 500);
+  }
+}
+
+function showAndHideToast(toastId) {
+  const toast = document.getElementById(toastId);
+  if (toast) {
+    clearTimeout(showToastTimer);
+    clearTimeout(hideToastTimer);
+
+    showToastTimer = setTimeout(() => {
+      toast.classList.remove('hidden');
+      toast.classList.add('flex'); 
+      setTimeout(() => {
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
+      }, 10);
+    }, 10);
+
+    hideToastTimer = setTimeout(() => {
+      hideToast(toastId);
+    }, 5000);
+  }
+}
+	</script>
+}

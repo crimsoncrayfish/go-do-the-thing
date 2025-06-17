@@ -1,82 +1,43 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
+	"context"
 	"go-do-the-thing/src/helpers/assert"
-	"strconv"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DatabaseConnection struct {
-	Connection *sql.DB
+	pool *pgxpool.Pool
 }
 
 var source = "Database"
 
-func Init(name string) DatabaseConnection {
-	dbname := "./" + name + ".db"
-	db, err := sql.Open("sqlite3", dbname)
-	assert.NoError(err, source, "failed to start the database")
-
-	return DatabaseConnection{db}
+func Init(connectionString string) DatabaseConnection {
+	conf, err := pgxpool.ParseConfig(connectionString)
+	assert.NoError(err, source, "Failed to parse connectionstring")
+	pool, err := pgxpool.NewWithConfig(context.Background(), conf)
+	assert.NoError(err, source, "Failed to connect to db")
+	return DatabaseConnection{pool}
 }
 
-func (db DatabaseConnection) QueryRow(query string, args ...any) *sql.Row {
-	assert.NotNil(db.Connection, source, "the db connection should not be nil")
-	return db.Connection.QueryRow(query, args...)
+func (db DatabaseConnection) Close() {
+	db.pool.Close()
 }
 
-func (db DatabaseConnection) Query(query string, args ...any) (*sql.Rows, error) {
-	assert.NotNil(db.Connection, source, "the db connection should not be nil")
-	return db.Connection.Query(query, args...)
+func (db DatabaseConnection) QueryRow(query string, args ...any) pgx.Row {
+	assert.NotNil(db.pool, source, "the db connection should not be nil")
+	return db.pool.QueryRow(context.Background(), query, args...)
 }
 
-func (db DatabaseConnection) Exec(query string, args ...any) (sql.Result, error) {
-	assert.NotNil(db.Connection, source, "the db connection should not be nil")
-	return db.Connection.Exec(query, args...)
+func (db DatabaseConnection) Query(query string, args ...any) (pgx.Rows, error) {
+	assert.NotNil(db.pool, source, "the db connection should not be nil")
+	return db.pool.Query(context.Background(), query, args...)
 }
 
-func (db DatabaseConnection) DoesColumnExistOnTable(table, column string) (bool, error) {
-	assert.NotNil(db.Connection, source, "the db connection should not be nil")
-	queryString := fmt.Sprintf(checkIfColumnExists, table, column)
-	query, err := db.Connection.Prepare(queryString)
-	if err != nil {
-		return false, err
-	}
-	defer query.Close()
-
-	var countString string
-	err = query.QueryRow().Scan(&countString)
-	if err != nil {
-		return false, err
-	}
-	count, err := strconv.Atoi(countString)
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
+func (db DatabaseConnection) Exec(query string, args ...any) (pgconn.CommandTag, error) {
+	assert.NotNil(db.pool, source, "the db connection should not be nil")
+	return db.pool.Exec(context.Background(), query, args...)
 }
-
-func (db DatabaseConnection) AddColumnToTable(tableName, columnName, columnType string) error {
-	assert.NotNil(db.Connection, source, "the db connection should not be nil")
-	update := fmt.Sprintf(migrationAddColumn, tableName, columnName, columnType)
-
-	exists, err := db.DoesColumnExistOnTable(tableName, columnName)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-	_, err = db.Connection.Exec(update)
-
-	return err
-}
-
-const (
-	migrationAddColumn  = `ALTER TABLE %s ADD %s %s`
-	migrationDropColumn = `ALTER TABLE %s DROP %s`
-	checkIfColumnExists = `SELECT COUNT(*) AS CNTREC FROM pragma_table_info('%s') WHERE name='%s'`
-)

@@ -3,12 +3,12 @@ package users
 import (
 	"database/sql"
 	"errors"
-	"go-do-the-thing/src/database"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
+	fe_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -80,18 +80,19 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		// NOTE: Not a valid user but Shhhh! dont tell them
 		// TODO: Keep track of accounts that have invalid logins and lock them after a set amount of login attempts
 		http.SetCookie(w, &emptyAuthCookie)
+		h.logger.Error(err, "failed to read user info for email %s", email)
 		if errors.Is(err, sql.ErrNoRows) {
 			h.invalidLogin(w, r, form, "User '%s' not in database", email)
 			return
 		}
-		h.loginError(err, w, r, form, "Failed to read user from DB with email %s", email)
+		h.loginError(err, w, r, "Failed to read user from DB with email %s", email)
 		return
 	}
 
 	passwordHash, err := h.repo.GetUserPassword(user.Id)
 	if err != nil {
 		http.SetCookie(w, &emptyAuthCookie)
-		h.loginError(err, w, r, form, "Failed to read password for user %d", user.Id)
+		h.loginError(err, w, r, "Failed to read password for user %d", user.Id)
 		return
 	}
 
@@ -103,19 +104,20 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
+	now := time.Now()
 
 	user.SessionId = uuid.New().String()
-	user.SessionStartTime = database.SqLiteNow()
+	user.SessionStartTime = &now
 
 	if err := h.repo.UpdateSession(user.Id, user.SessionId, user.SessionStartTime); err != nil {
-		h.loginError(err, w, r, form, "Failed to set session id for user %d", user.Id)
+		h.loginError(err, w, r, "Failed to set session id for user %d", user.Id)
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
-	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Time.Add(time.Duration(time.Hour*4)))
+	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		// NOTE: Failed to create a token. Hmmm. Should probably throw internalServerErr
-		h.loginError(err, w, r, form, "failed to generate token")
+		h.loginError(err, w, r, "failed to generate token")
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
@@ -124,14 +126,8 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 	handlers.Redirect("/", w)
 }
 
-func (h Handler) loginError(err error, w http.ResponseWriter, r *http.Request, form form_models.LoginForm, message string, params ...any) {
-	h.logger.Error(err, message, params...)
-	form.SetError("Failed Login", "Something went wrong on the server. Please try again.")
-	http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-	if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render task login form content")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+func (h Handler) loginError(err error, w http.ResponseWriter, r *http.Request, message string, params ...any) {
+	fe_errors.FrontendError(w, r, h.logger, err, message, params...)
 }
 
 func (h Handler) invalidLogin(w http.ResponseWriter, r *http.Request, form form_models.LoginForm, message string, params ...any) {
@@ -157,7 +153,7 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
 
-	if err := h.repo.UpdateSession(currentUserId, "", &database.SqLiteTime{}); err != nil {
+	if err := h.repo.UpdateSession(currentUserId, "", &time.Time{}); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
 	}
 	http.SetCookie(w, &emptyAuthCookie)

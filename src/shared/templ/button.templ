@@ -1,0 +1,104 @@
+package templ_shared
+
+// OpenFormButton is a function you call from your page.
+// It returns a templ.Component that, when rendered, emits
+// the <button> with your click‐handler and icon+label inside.
+templ OpenFormButton(
+	label string,
+	icon templ.Component,
+) {
+	<button
+		onclick={ templ.JSFuncCall(
+      "swapClassesForId",
+      templ.JSExpression(`["opacity-0","max-h-0", "mb-0"]`),
+      templ.JSExpression(`["opacity-100","max-h-[50rem]", "mb-4"]`),
+      "create-form-container",
+    ) }
+		class=" bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
+	>
+		@icon
+		&nbsp;{ label }
+	</button>
+}
+
+templ CheckMarkButton() {
+	<button
+		class="theme-transition bg-transparent text-success-light
+                       dark:text-success-dark hover:text-white font-bold p-2
+                       rounded-full shadow-md focus:outline-none
+                       focus:ring-2 focus:ring-success-light
+                       focus:dark:ring-success-dark focus:ring-opacity-50
+                       flex items-center justify-center w-10 h-10
+                       border border-success-light
+                       dark:border-success-dark"
+		aria-label="Mark as Complete"
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke-width="1.5"
+			stroke="currentColor"
+			class="w-6 h-6"
+		>
+			<path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				d="m4.5 12.75 6 6 9-13.5"
+			></path>
+		</svg>
+	</button>
+}
+
+templ StopButton() {
+	<button
+		class="theme-transition bg-danger-light
+                       dark:bg-danger-dark hover:opacity-80
+                       text-white font-bold p-2 rounded-full shadow-md
+                       focus:outline-none focus:ring-2
+                       focus:ring-danger-light focus:dark:ring-danger-dark
+                       focus:ring-opacity-50 flex items-center
+                       justify-center"
+		aria-label="Stop Task"
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			height="24"
+			viewBox="0 0 24 24"
+			width="24"
+			fill="currentColor"
+		>
+			<path d="M6 6h12v12H6V6z"></path>
+		</svg>
+	</button>
+}
+
+templ StartButton() {
+	<button
+		class="theme-transition 
+	bg-success-light dark:bg-success-dark 
+	hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 
+	focus:ring-success-light dark:focus:ring-success-dark
+	focus:ring-opacity-50 flex items-center justify-center"
+		aria-label="Start Task"
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653z"></path>
+		</svg>
+	</button>
+}
+
+templ DeleteButton(on_click_fn string, targetID int64) {
+	<button
+		class="theme-transition bg-primary-light
+                       dark:bg-primary-dark hover:opacity-80
+                       text-text-on-light dark:text-text-on-dark
+                       font-bold p-2 rounded-full shadow-md
+                       focus:outline-none focus:ring-2
+                       focus:ring-text-light focus:dark:ring-text-dark
+                       focus:ring-opacity-50 flex items-center
+                       justify-center"
+		aria-label="Delete Task"
+		onclick={ templ.JSFuncCall(on_click_fn, targetID) }
+	></button>
+}

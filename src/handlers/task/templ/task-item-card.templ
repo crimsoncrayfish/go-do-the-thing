@@ -1,0 +1,327 @@
+package templ_todo
+
+import (
+	"fmt"
+	"go-do-the-thing/src/helpers/constants"
+	"go-do-the-thing/src/models"
+	"go-do-the-thing/src/shared/templ"
+	"time"
+)
+
+templ TaskItemCard(task *models.TaskView) {
+	<div
+		id={ fmt.Sprintf("task-card-%d", task.Id) }
+		class="relative [perspective:1000px]
+           overflow-visible z-0
+           focus-within:z-10 transition-all mb-4"
+		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.Id) }
+		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.Id) }
+		hx-on--after-request.from="closest button"
+	>
+		<div class="task-card-slide-wrapper">
+			<div
+				id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
+				class="task-card-child w-full transition-transform duration-500 relative
+             [transform-style:preserve-3d]"
+			>
+				@TaskCardFront(task)
+				@cardBack(task)
+			</div>
+		</div>
+	</div>
+}
+
+templ TaskItemCardOOB(task *models.TaskView) {
+	<div id="task-list-container" hx-swap-oob="afterbegin">
+		@TaskItemCard(task)
+	</div>
+}
+
+templ TaskCardFront(task *models.TaskView) {
+	<div
+		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
+		class={
+			getPosAnd3dStyles(),
+			getTaskBorderStyle(task),
+			getThemingStyles(task),
+		}
+	>
+		@cardStatus(task)
+		@cardDetails(task)
+		@cardActions(task)
+	</div>
+}
+
+templ cardStatus(task *models.TaskView) {
+	<div class="hidden sm:flex pr-8 pl-4 items-center justify-center ">
+		if (task.IsDeleted) {
+			@templ_shared.SvgBin()
+		} else {
+			@completeTaskButton(task)
+		}
+	</div>
+}
+
+templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
+	<div tabindex="0" class="relative group">
+		<button
+			if (task.Status == models.Completed || task.IsDeleted) {
+				disabled
+			}
+			aria-haspopup="true"
+			aria-expanded="false"
+			class="theme-transition bg-primary-light dark:bg-primary-dark
+             hover:opacity-80 text-text-on-light dark:text-text-on-dark
+             font-bold p-2 rounded-full shadow-md focus:outline-none
+             focus:ring-2 focus:ring-text-light dark:focus:ring-text-dark
+             focus:ring-opacity-50 flex items-center justify-center"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					d="M12 6v.01M12 12v.01M12 18v.01"
+				></path>
+			</svg>
+			<span class="sr-only">Open task actions</span>
+		</button>
+		<div
+			class={ templ.KV( "hidden" , task.Status == models.Completed),
+			"origin-top-left absolute left-0 sm:right-0 sm:left-auto mt-2 w-40 rounded-md",
+			"border-primary-light dark:border-primary-dark",
+			"shadow-lg bg-primary-light dark:bg-primary-dark ring-1 ring-black",
+			"ring-opacity-5 opacity-0 invisible group-focus-within:opacity-100",
+			"group-focus-within:visible transition-all z-50" }
+		>
+			<ul class="py-1 w-full">
+				<li class="w-full">
+					@editButton
+				</li>
+				<li>
+					<button
+						class="w-full text-left px-4 py-2 text-sm
+					text-danger-light dark:text-danger-dark font-bold
+					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
+						hx-swap="outerHTML swap:0.8s"
+						hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
+						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+						aria-label="Delete Task"
+					>
+						@templ_shared.SvgBin()
+						<p class="pl-4">Delete</p>
+					</button>
+				</li>
+			</ul>
+		</div>
+	</div>
+}
+
+templ editFromList(task *models.TaskView) {
+	<button
+		class={ " w-full text-left px-4 py-2 text-sm",
+								"text-text-on-light dark:text-text-on-dark",
+								"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center" }
+		hx-swap="outerHTML"
+		hx-target="body"
+		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
+		hx-replace-url="true"
+		aria-label="Edit Task"
+	>
+		@templ_shared.SvgEdit()
+		<p class="pl-4">Edit</p>
+	</button>
+}
+
+templ completeTaskButton(task *models.TaskView) {
+	<button
+		class={ templ.KV( "bg-transparent text-success-light dark:text-success-dark" , task.Status != models.Completed),
+				templ.KV( "bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark" , task.Status == models.Completed),
+				"theme-transition",
+				"hover:text-white font-bold p-2",
+				"rounded-full shadow-md focus:outline-none",
+				"focus:ring-2 focus:ring-success-light",
+				"focus:dark:ring-success-dark focus:ring-opacity-50",
+				"flex items-center justify-center w-10 h-10",
+				"border border-success-light",
+				"dark:border-success-dark" }
+		aria-label="Mark as Complete"
+		hx-swap="outerHTML swap:0.8s"
+		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
+		hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }
+	>
+		@templ_shared.SvgCheck()
+	</button>
+}
+
+templ taskStatusChip(task *models.TaskView) {
+	if (task.IsDeleted) {
+		<span
+			class="bg-danger-light dark:bg-danger-dark
+                         text-text-on-light dark:text-text-on-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+		>
+			DELETED	
+		</span>
+	} else if (task.InProgress) {
+		<span
+			class="bg-success-light dark:bg-success-dark
+                         text-text-on-light dark:text-text-on-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+		>
+			Complete
+		</span>
+	} else if (task.InProgress) {
+		<span
+			class="bg-accent-light dark:bg-accent-dark
+                         text-primary-light dark:text-primary-dark
+                         text-xs font-bold py-1 px-3 rounded-full
+                         shadow-sm mb-1 sm:mb-0"
+		>
+			In Progress
+		</span>
+	} else if task.DueDate.Before(time.Now()) {
+		<span
+			class="bg-danger-light dark:bg-danger-dark
+					text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
+		>
+			Over Due
+		</span>
+	} else {
+		<span
+			class="bg-primary-light dark:bg-primary-dark
+					text-text-on-light dark:text-text-on-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0"
+		>
+			Pending
+		</span>
+	}
+}
+
+templ cardDetails(task *models.TaskView) {
+	<div class="sm:px-4 flex flex-col w-full justify-around space-y-4 pb-4 sm:pb-0 sm:border-x border-border-light dark:border-border-dark">
+		<div
+			class="flex flex-row items-start
+                       justify-between"
+		>
+			@taskStatusChip(task)
+			<span
+				class="text-sm text-text-on-light dark:text-text-on-dark"
+			>
+				Due: { task.DueDate.Format(constants.DateFormat) }
+			</span>
+		</div>
+		<div
+			class="flex flex-col-reverse md:flex-row md:justify-between md:items-center"
+		>
+			<p class={ templ.KV("line-through",task.Status == models.Completed),"font-bold text-lg md:mb-0" }>
+				if (task.IsDeleted) {
+					<span><strong>[DELETED] </strong>{ task.Name }</span>
+				} else {
+					{ task.Name }
+				}
+			</p>
+			<div class="flex items-center space-x-2">
+				@templ_shared.SvgTag(task.ProjectId)
+				<span>{ task.ProjectName }</span>
+			</div>
+		</div>
+		if (task.Description != "") {
+			<div
+				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm whitespace-pre-line line-clamp-3" }
+			>
+				{ task.Description }
+			</div>
+		}
+		if (task.TimeSpent > 0) {
+			<div
+				class="text-sm text-text-on-light
+                       dark:text-text-on-dark"
+			>
+				{ task.TimeSpent }
+			</div>
+		}
+	</div>
+}
+
+func getTaskBorderStyle(task *models.TaskView) string {
+	if task.Status == models.Completed {
+		return "shadow-lg opacity-50 border-border-light dark:border-border-dark"
+	}
+	if task.DueDate.Before(time.Now()) {
+		return "border-danger-light dark:border-danger-dark"
+	}
+	return "border-border-light dark:border-border-dark"
+}
+func getPosAnd3dStyles() string {
+	return "relative [backface-visibility:hidden] overflow-visible z-0"
+}
+func getThemingStyles(task *models.TaskView) string {
+	if task.IsDeleted {
+		return "opacity-50 line-through theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col sm:flex-row"
+	}
+	return " theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col sm:flex-row"
+}
+
+templ cardActions(task *models.TaskView) {
+	<div
+		class=" flex sm:pl-8 pr-4 items-center 
+		     space-x-4 sm:space-x-0 lg:space-x-4 sm:space-y-4 lg:space-y-0
+                     justify-start sm:justify-center lg:justify-end
+                     sm:flex-col lg:flex-row"
+	>
+		<button
+			class="theme-transition 
+			bg-success-light dark:bg-success-dark 
+			hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 
+			focus:ring-success-light dark:focus:ring-success-dark
+			focus:ring-opacity-50 flex items-center justify-center"
+			aria-label="Start Task"
+		>
+			@templ_shared.SvgPlay()
+		</button>
+		<div
+			class="flex items-center justify-start
+           sm:justify-center lg:justify-end"
+		>
+			@editDeleteMenu(task, editFromList(task))
+		</div>
+		<div class="sm:hidden ml-auto">
+			@completeTaskButton(task)
+		</div>
+	</div>
+}
+
+templ cardBack(task *models.TaskView) {
+	<div
+		id={ fmt.Sprintf("task-card-back-update-%d", task.Id) }
+		class="hidden absolute inset-0 bg-success-light dark:bg-success-dark
+         rounded-xl p-6 shadow-lg flex flex-col items-center
+         justify-center [backface-visibility:hidden]
+         [transform:rotateX(180deg)]"
+	>
+		@templ_shared.LoaderSmall()
+		<span class="mt-4 text-white text-lg font-semibold">
+			Toggling status for "{ task.Name }"
+		</span>
+	</div>
+	<div
+		id={ fmt.Sprintf("task-card-back-delete-%d", task.Id) }
+		class="hidden absolute inset-0 bg-danger-light dark:bg-danger-dark
+         rounded-xl p-6 shadow-lg flex flex-col items-center
+         justify-center [backface-visibility:hidden]
+         [transform:rotateX(180deg)]"
+	>
+		@templ_shared.LoaderSmall()
+		<span class="mt-4 text-white text-lg font-semibold">
+			Deleting "{ task.Name }"
+		</span>
+	</div>
+}

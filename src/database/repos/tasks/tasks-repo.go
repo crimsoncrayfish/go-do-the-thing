@@ -1,11 +1,12 @@
 package tasks_repo
 
 import (
-	"database/sql"
 	"go-do-the-thing/src/database"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type TasksRepo struct {
@@ -16,33 +17,14 @@ var repoName = "Tasks Repo"
 
 // NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
 func InitRepo(database database.DatabaseConnection) *TasksRepo {
-	_, err := database.Exec(createTasksTable)
-	assert.NoError(err, repoName, "Failed to create Tasks table")
+	//TODO: Cleanup
+	//_, err := database.Exec(createTasksTable)
+	//assert.NoError(err, repoName, "Failed to create Tasks table")
 
 	return &TasksRepo{database}
 }
 
-const createTasksTable = `CREATE TABLE IF NOT EXISTS items (
-	[id] INTEGER PRIMARY KEY,
-   	[name] TEXT DEFAULT '' NOT NULL,
-   	[description] TEXT,
-	[assigned_to] INTEGER,
-	[project_id] INTEGER,
-	[status] INTEGER DEFAULT 0,
-	[complete_date] INT DEFAULT 0, 
-    [due_date] INT DEFAULT 0,
-    [created_by] INTEGER,
-    [created_date] INT DEFAULT 0,
-    [modified_by] INTEGER,
-    [modified_date] INT DEFAULT 0,
-	[is_deleted] INTEGER DEFAULT 0,
-	FOREIGN KEY (assigned_to) REFERENCES users(id),
-	FOREIGN KEY (created_by) REFERENCES users(id),
-	FOREIGN KEY (modified_by) REFERENCES users(id),
-	FOREIGN KEY (project_id) REFERENCES projects(id)
-);`
-
-func scanFromRow(row *sql.Row, item *models.Task) error {
+func scanFromRow(row pgx.Row, item *models.Task) error {
 	err := row.Scan(
 		&item.Id,
 		&item.Name,
@@ -64,7 +46,7 @@ func scanFromRow(row *sql.Row, item *models.Task) error {
 	return nil
 }
 
-func scanFromRows(rows *sql.Rows, item *models.Task) error {
+func scanFromRows(rows pgx.Rows, item *models.Task) error {
 	err := rows.Scan(
 		&item.Id,
 		&item.Name,
@@ -88,34 +70,29 @@ func scanFromRows(rows *sql.Rows, item *models.Task) error {
 
 const getItemsByAssignedUser = `
 	SELECT 
-		[Id],
-		[name], 
-		[description],
-		[status],	
-		[assigned_to],
-		[due_date],
-		[created_by],
-		[created_date],
-		[modified_by],
-		[modified_date],
-		[is_deleted], 
-		[project_id],
-		[complete_date]
+		id,
+		name, 
+		description,
+		status,	
+		assigned_to,
+		due_date,
+		created_by,
+		created_date,
+		modified_by,
+		modified_date,
+		is_deleted, 
+		project_id,
+		complete_date
 	FROM items
-	WHERE [is_deleted] = 0 
-	AND [assigned_to] = ?`
+	WHERE is_deleted = false 
+	AND assigned_to = $1`
 
 func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err error) {
 	rows, err := r.database.Query(getItemsByAssignedUser, userId)
 	if err != nil {
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to read items for user: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			err = errors.New(errors.ErrDBGenericError, "failed to close rows: %w", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	items = make([]*models.Task, 0)
 	for rows.Next() {
@@ -137,35 +114,30 @@ func (r *TasksRepo) GetItemsForUser(userId int64) (items []*models.Task, err err
 
 const getItemsByAssignedUserAndProject = `
 	SELECT 
-		[Id],
-		[name], 
-		[description],
-		[status],	
-		[assigned_to],
-		[due_date],
-		[created_by],
-		[created_date],
-		[modified_by],
-		[modified_date],
-		[is_deleted], 
-		[project_id],
-		[complete_date]
+		id,
+		name, 
+		description,
+		status,	
+		assigned_to,
+		due_date,
+		created_by,
+		created_date,
+		modified_by,
+		modified_date,
+		is_deleted, 
+		project_id,
+		complete_date
 	FROM items
-	WHERE [is_deleted] = 0 
-	AND [assigned_to] = ?
-	AND [project_id] = ?`
+	WHERE is_deleted = false 
+	AND assigned_to = $1
+	AND project_id = $2`
 
 func (r *TasksRepo) GetItemsForUserAndProject(user_id, project_id int64) (items []*models.Task, err error) {
 	rows, err := r.database.Query(getItemsByAssignedUserAndProject, user_id, project_id)
 	if err != nil {
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to read items for user and project: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			err = errors.New(errors.ErrDBGenericError, "failed to close rows: %w", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	items = make([]*models.Task, 0)
 	for rows.Next() {
@@ -188,20 +160,21 @@ func (r *TasksRepo) GetItemsForUserAndProject(user_id, project_id int64) (items 
 const insertItem = `
 	INSERT INTO items 
 		(
-			[name],
-			[description],
-			[status],
-			[assigned_to],
-			[due_date],
-			[created_by],
-			[created_date],
-			[modified_by], 
-			[modified_date],
-			[project_id])
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			name,
+			description,
+			status,
+			assigned_to,
+			due_date,
+			created_by,
+			created_date,
+			modified_by, 
+			modified_date,
+			project_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	RETURNING id`
 
 func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
-	result, err := r.database.Exec(
+	err = r.database.QueryRow(
 		insertItem,
 		item.Name,
 		item.Description,
@@ -209,32 +182,26 @@ func (r *TasksRepo) InsertItem(item models.Task) (id int64, err error) {
 		item.AssignedTo,
 		item.DueDate,
 		item.CreatedBy,
-		database.SqLiteNow(),
+		time.Now(),
 		item.ModifiedBy,
-		database.SqLiteNow(),
+		time.Now(),
 		item.Project,
-	)
+	).Scan(&id)
 	if err != nil {
 		return 0, errors.New(errors.ErrDBReadFailed, "failed to insert task: %w", err)
 	}
-
-	last_id, err := result.LastInsertId()
-	if err != nil {
-		return 0, errors.New(errors.ErrDBReadFailed, "failed to read inserted id: %w", err)
-	}
-
-	return last_id, nil
+	return id, nil
 }
 
 const updateItem = `
 	UPDATE items
 	SET
-		[name] = ?,
-		[description] = ?,
-		[assigned_to] = ?,
-		[due_date] = ?,
-		[project_id] = ?
-	WHERE id = ?`
+		name = $1,
+		description = $2,
+		assigned_to = $3,
+		due_date = $4,
+		project_id = $5
+	WHERE id = $6`
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate, item.Project, item.Id)
@@ -248,34 +215,34 @@ func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 const updateItemStatus = `
 	UPDATE items 
 	SET 
-		[status] = ?,
-		[complete_date] = ?,
-		[modified_by] = ?,
-		[modified_date] = ?
-	WHERE id = ?`
+		status = $1,
+		complete_date = $2,
+		modified_by = $3,
+		modified_date = $4
+	WHERE id = $5`
 
-func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *database.SqLiteTime, status, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, database.SqLiteNow(), id)
+func (r *TasksRepo) UpdateItemStatus(id int64, completeDate *time.Time, status, modifiedBy int64) (err error) {
+	_, err = r.database.Exec(updateItemStatus, status, completeDate, modifiedBy, time.Now(), id)
 	if err != nil {
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update the task: %w", err)
 	}
 	return nil
 }
 
-const deleteItem = `UPDATE items SET [is_deleted] = 1, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+const deleteItem = `UPDATE items SET is_deleted = true, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) DeleteItem(id, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(deleteItem, modifiedBy, database.SqLiteNow(), id)
+	_, err = r.database.Exec(deleteItem, modifiedBy, time.Now(), id)
 	if err != nil {
 		return errors.New(errors.ErrDBDeleteFailed, "failed to delete the task: %w", err)
 	}
 	return nil
 }
 
-const restoreItem = `UPDATE items SET [is_deleted] = 0, [modified_by] = ?, [modified_date] = ? WHERE id = ?`
+const restoreItem = `UPDATE items SET is_deleted = false, modified_by = $1, modified_date = $2 WHERE id = $3`
 
 func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
-	_, err = r.database.Exec(restoreItem, modifiedBy, database.SqLiteNow(), id)
+	_, err = r.database.Exec(restoreItem, modifiedBy, time.Now(), id)
 	if err != nil {
 		return errors.New(errors.ErrDBUpdateFailed, "failed to restore the task: %w", err)
 	}
@@ -284,21 +251,21 @@ func (r *TasksRepo) RestoreItem(id, modifiedBy int64) (err error) {
 
 const getItem = `
 	SELECT 
-		[Id], 
-		[name],
-		[description], 
-		[status],
-		[assigned_to],
-		[due_date],
-		[created_by],
-		[created_date], 
-		[modified_by],
-		[modified_date],
-		[is_deleted],
-		[project_id],
-		[complete_date]
+		id, 
+		name,
+		description, 
+		status,
+		assigned_to,
+		due_date,
+		created_by,
+		created_date, 
+		modified_by,
+		modified_date,
+		is_deleted,
+		project_id,
+		complete_date
 	FROM items
-	WHERE id = ?`
+	WHERE id = $1`
 
 func (r *TasksRepo) GetItem(id int64) (*models.Task, error) {
 	row := r.database.QueryRow(getItem, id)
@@ -310,7 +277,7 @@ func (r *TasksRepo) GetItem(id int64) (*models.Task, error) {
 	return temp, nil
 }
 
-const countItems = "SELECT COUNT(id) FROM items WHERE [is_deleted]=0 AND [assigned_to]=?"
+const countItems = "SELECT COUNT(id) FROM items WHERE is_deleted=false AND assigned_to=$1"
 
 func (r *TasksRepo) GetItemsCount(userId int64) (int64, error) {
 	row := r.database.QueryRow(countItems, userId)

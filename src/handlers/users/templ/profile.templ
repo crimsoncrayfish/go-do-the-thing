@@ -6,17 +6,10 @@ import (
 )
 
 templ Profile(form form_models.ProfileEditForm) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@templ_shared.Header()
-		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-			@ProfileEditForm(form)
-		</body>
-	</html>
+	@templ_shared.Main(ProfileEditForm(form))
 }
 
 templ ProfileEditForm(form form_models.ProfileEditForm) {
-	@templ_shared.Loader()
 	<div id="signup-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
 		<div
 			class="w-full bg-primary-50 rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-primary-800 dark:border-primary-700"

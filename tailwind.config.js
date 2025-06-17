@@ -6,36 +6,48 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: "#f8fafc",
-          100: "#f1f5f9",
-          200: "#e2e8f0",
-          300: "#cbd5e1",
-          400: "#94a3b8",
-          500: "#64748b",
-          600: "#475569",
-          700: "#334155",
-          800: "#1e293b",
-          900: "#0f172a",
-          950: "#020617",
-        },
+        "primary-dark": "#2D1B69",
+        "secondary-dark": "#392B7D",
+        "accent-dark": "#B197FC",
+        "success-dark": "#5580CC",
+        "danger-dark": "#ED4E4E",
+        "warning-dark": "#FFB86C",
+        "border-dark": "#4B3B8E",
+
+        "primary-light": "#F5F3FF",
+        "secondary-light": "#EDE9FE",
+        "accent-light": "#8B5CF6",
+        "success-light": "#7C3AED",
+        "danger-light": "#E11D48",
+        "warning-light": "#D97706",
+        "border-light": "#C4B5FD",
+
+        "text-on-light": "#5B21B6",
+        "text-on-dark": "#D5CCF7",
         transparent: "transparent",
         current: "currentColor",
-        "action-800": "#166534",
-        "action-700": "#15803d",
-        "action-600": "#16a34a",
-        "action-500": "#22c55e",
-        "action-400": "#4ade80",
-        "action-300": "#86efac",
-        error: "#ef4444",
-        warn: "#eab308",
         link: "#3b82f6",
         "tag-1": "#c084fc",
         "tag-2": "#f472b6",
         "tag-3": "#fb923c",
+        "tag-4": "#60a5fa",
+        "tag-5": "#a78bfa",
+        "tag-6": "#fcd34d",
+        "tag-7": "#4ade80",
+        "tag-8": "#e879f9",
+        "tag-9": "#22d3ee",
+        "tag-10": "#f87171",
       },
       transitionProperty: {
         "max-height": "max-height",
+      },
+      lineClamp: {
+        1: "1",
+        2: "2",
+        3: "3",
+        4: "4",
+        5: "5",
+        6: "6",
       },
     },
     fontFamily: {
@@ -46,6 +58,7 @@ module.exports = {
   },
   plugins: [
     require("flowbite/plugin"),
+    require("@tailwindcss/line-clamp"),
     plugin(function ({ matchUtilities, theme }) {
       matchUtilities(
         {
@@ -61,22 +74,28 @@ module.exports = {
   flowbite: {
     theme: {
       light: {
-        // re-map Flowbite’s “primary” to your `primary-500`
-        primary: "#64748b",
-        // you can also override datepicker-specific tokens if you like:
         datepicker: {
           cell: {
-            hover: "primary-100",
-            selected: "primary-500",
+            hover: "bg-accent-light",
+            selected: "bg-secondary-light",
+          },
+          controls: {
+            prevBtn: "hover:bg-secondary-light",
+            nextBtn: "hover:bg-secondary-light",
+            viewSwitch: "hover:bg-secondary-light",
           },
         },
       },
       dark: {
-        primary: "#334155",
         datepicker: {
           cell: {
-            hover: "primary-800",
-            selected: "primary-600",
+            hover: "dark:bg-accent-dark",
+            selected: "dark:bg-secondary-dark",
+          },
+          controls: {
+            prevBtn: "dark:hover:bg-secondary-dark",
+            nextBtn: "dark:hover:bg-secondary-dark",
+            viewSwitch: "dark:hover:bg-secondary-dark",
           },
         },
       },

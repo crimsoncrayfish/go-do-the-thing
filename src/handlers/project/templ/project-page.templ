@@ -1,119 +1,190 @@
 package templ_project
 
 import (
-"fmt"
-"go-do-the-thing/src/handlers/task/templ"
-"go-do-the-thing/src/helpers/constants"
-"go-do-the-thing/src/models"
-fm "go-do-the-thing/src/models/forms"
-ts "go-do-the-thing/src/shared/templ"
+	"fmt"
+	"go-do-the-thing/src/handlers/task/templ"
+	"go-do-the-thing/src/helpers/constants"
+	"go-do-the-thing/src/models"
+	fm "go-do-the-thing/src/models/forms"
+	ts "go-do-the-thing/src/shared/templ"
 )
 
 templ ProjectWithBody(project models.ProjectView,
-navbar models.NavBarObject,
-formdata fm.ProjectForm,
-tasks []*models.TaskView,
+	navbar models.NavBarObject,
+	formdata fm.ProjectForm,
+	task_form_data fm.TaskForm,
+	tasks []*models.TaskView,
 ) {
-<!DOCTYPE html>
-<html lang="en">
-@ts.Header()
-
-<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-	@ProjectView(project, navbar, formdata, tasks)
-</body>
-
-</html>
+	@ts.Main(ProjectView(project, navbar, formdata, task_form_data, tasks))
 }
 
 templ ProjectView(
-project models.ProjectView,
-navbar models.NavBarObject,
-formdata fm.ProjectForm,
-tasks []*models.TaskView,
+	project models.ProjectView,
+	navbar models.NavBarObject,
+	formdata fm.ProjectForm,
+	task_form_data fm.TaskForm,
+	tasks []*models.TaskView,
 ) {
-@ts.NavBar(navbar)
-@ts.Loader()
-<div id="project-view" class="w-full m-auto px-1 lg:px-[10%] pt-5 text-primary-900 dark:text-primary-50">
-	<div class="lg:w-[90%] flex w-full justify-between items-center">
-		<div class="flex items-center">
-			<button hx-get="/projects" hx-replace-url="true" hx-target="body" class="text-action-700 hover:text-primary-50 mr-5 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                        dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                        dark:focus:ring-action-800 flex items-center">
+	@ts.NavBar(navbar)
+	<div class="px-1 my-4 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
+		<div class="flex justify-between items-center mb-4">
+			<button
+				hx-get="/projects"
+				hx-replace-url="true"
+				hx-target="body"
+				class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity flex items-center gap-2"
+			>
 				@ts.SvgBack()
 				Back
 			</button>
+			<button
+				onclick="toggleProjectEdit()"
+				id="edit-project-button"
+				class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark rounded-full font-medium transition-all px-4 py-2 flex items-center gap-2"
+			>
+				@ts.SvgEdit()
+				Edit
+			</button>
 		</div>
-		<button onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-project-form-container');swapClassForId('opacity-0', 'opacity-100','edit-project-form-container');"
-			class="float-end text-action-700 hover:text-primary-50 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                dark:focus:ring-action-800 flex items-center">
-			@ts.SvgEdit()
-			&nbsp;Edit
-		</button>
-	</div>
-	<div id="edit-project-form-container"
-		class=" max-h-0 opacity-0 transition-[opacity, max-height] pt-2 duration-500 ease-in-out">
-		<div
-			class="overflow-y-auto overflow-x-hidden z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
-			<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
-				<div
-					class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600">
-					<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
-					<button class="text-primary-900 dark:text-primary-50"
-						onclick="swapClassForId('max-h-0', 'max-h-[50rem]','edit-project-form-container');swapClassForId('opacity-0', 'opacity-100','edit-project-form-container');">
-						@ts.SvgClose()
-					</button>
-				</div>
-				@ProjectForm(fmt.Sprintf("/project/%d", project.Id), "Update", formdata)
+		@ProjectContent(project, false, map[string]string{})
+		<div class="mx-auto px-4 flex  items-center justify-between mb-4">
+			<div>
+				@ts.OpenFormButton("New Task", ts.SvgPlus())
 			</div>
 		</div>
+		@ts.FormContainer("/todo/item?source=project_page", templ_todo.TaskFormContent(task_form_data, map[int64]string{project.Id: project.Name}))
+		@templ_todo.TaskList(tasks)
 	</div>
-	@projectContent(project)
-	@templ_todo.TaskListTable(tasks)
-</div>
 }
 
-templ projectContent(project models.ProjectView) {
-<div id="project-content" class="mb-10">
-	<div
-		class="overflow-y-auto overflow-x-hidden mt-2 z-50 justify-center items-center bg-opacity-40 w-full md:inset-0 max-h-full">
-		<div class="relative bg-primary-50 shadow dark:bg-primary-700">
-			<div
-				class="flex items-center justify-between p-4 md:p-5 border-b rounded-lg rounded-t dark:border-primary-600">
+templ ProjectContent(project models.ProjectView, is_editing bool, errors map[string]string) {
+	<form
+		hx-put={ fmt.Sprintf("/project/%d", project.Id) }
+		id="project-content-form"
+	>
+		<div class="mb-4 theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
+			<div class="flex items-center justify-between p-4 md:p-5 border-b border-border-light dark:border-border-dark rounded-t">
 				<div class="sm:flex w-full sm:justify-between items-center">
 					<div>
-						<div class="flex items-center">
-							@statusIcon(project)
-							<div class="mx-4 text-xl ">
-								if len(project.Name) > 0 {
+						<div class="flex items-center gap-3">
+							<div
+								id="project-title-view"
+								class={ templ.KV("hidden", is_editing) ,
+								"text-2xl font-bold" }
+							>
 								{ project.Name }
-								} else {
-								{ project.Description }
-								}
 							</div>
+							<input
+								type="text"
+								id="project-name-edit"
+								name="name"
+								class={ templ.KV("hidden", !is_editing) ,
+								"w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-2xl font-bold text-text-on-light dark:text-text-on-dark" }
+								value={ project.Name }
+							/>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<div
-			class="p-4 bg-transparent border-b dark:border-primary-600 divide-primary-900 dark:divide-primary-600">
-			if len(project.Name) > 0 {
-			{ project.Description }
-			}
-			<div class="sm:flex w-full sm:justify-between items-center">
-				<p>Assigned To: { project.Owner.FullName }</p>
-				<p class="pt-2 sm:p-0">Due on: { project.DueDate.Format(constants.DateFormat) }</p>
+			<div
+				class="p-4 bg-transparent border-b border-border-light dark:border-border-dark divide-border-light dark:divide-border-dark"
+			>
+				<div
+					id="project-description-view"
+					class={ templ.KV("hidden", is_editing) ,"mb-4 text-text-on-light dark:text-text-on-dark" }
+				>
+					if len(project.Description) > 0 {
+						{ project.Description }
+					} else {
+						"..."
+					}
+				</div>
+				<textarea
+					id="project-description-edit"
+					name="description"
+					class={ templ.KV("hidden", !is_editing) ,"w-full bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg px-4 py-2 text-text-on-light dark:text-text-on-dark min-h-[100px]" }
+				>{ project.Description }</textarea>
+				<div class="sm:flex w-full sm:justify-between items-center text-sm text-text-on-light/70 dark:text-text-on-dark/70">
+					<p>Assigned To: <span class="text-text-on-light dark:text-text-on-dark">{ project.Owner.FullName }</span></p>
+					<div>
+						<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Due Date</h3>
+						<p
+							id="project-due-date-view"
+							class={ templ.KV("hidden", is_editing) ,"text-text-on-light dark:text-text-on-dark" }
+						>{ project.DueDate.Format(constants.PrettyDateFormat) }</p>
+						<div id="project-due-date-edit" class={ templ.KV("hidden", !is_editing) }>
+							<div class="mt-2 relative">
+								<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+									<svg
+										class="w-4 h-4 text-text-on-light dark:text-text-on-dark"
+										aria-hidden="true"
+										xmlns="http://www.w3.org/2000/svg"
+										fill="currentColor"
+										viewBox="0 0 20 20"
+									>
+										<path
+											d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"
+										></path>
+									</svg>
+								</div>
+								<input
+									type="text"
+									name="due_date"
+									value={ project.DueDate.Format(constants.DateFormat) }
+									placeholder="Due Date"
+									id="datepicker-format"
+									datepicker
+									datepicker-format="yyyy-mm-dd"
+									class={ "border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5",
+							"bg-primary-light dark:bg-primary-dark dark:border-border-dark",
+							"dark:placeholder-accent-dark placeholder-accent-light",
+							"dark:text-text-on-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark" }
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="text-sm text-text-on-light/70 dark:text-text-on-dark/70">Created by: <span class="text-text-on-light dark:text-text-on-dark">{ project.CreatedBy.FullName }</span></div>
+				<div class="text-sm text-text-on-light/70 dark:text-text-on-dark/70">Created on: <span class="text-text-on-light dark:text-text-on-dark">{ project.CreatedDate.Format(constants.PrettyDateFormat) }</span></div>
 			</div>
-			<div>Created by: { project.CreatedBy.FullName }</div>
-			<div>Created on: { project.CreatedDate.String() }</div>
+			@projectEditActions()
 		</div>
-	</div>
-</div>
+	</form>
 }
 
-templ ProjectContentOOB(project models.ProjectView) {
-<div id="project-content" hx-swap-oob="true">
-	@projectContent(project)
-</div>
+templ ProjectContentOOB(project models.ProjectView, is_editing bool, errors map[string]string) {
+	<div id="project-content" hx-swap-oob="true">
+		@ProjectContent(project, is_editing, errors)
+	</div>
+}
+
+templ projectEditActions() {
+	<script>
+        function toggleProjectEdit() {
+            toggleClassForId('hidden','project-title-view');
+            toggleClassForId('hidden','project-description-view');
+            toggleClassForId('hidden','project-due-date-view');
+
+            toggleClassForId('hidden','project-name-edit');
+            toggleClassForId('hidden','project-description-edit');
+            toggleClassForId('hidden','project-due-date-edit');
+
+            toggleClassForId('hidden','project-edit-actions');
+        }
+	</script>
+	<div id="project-edit-actions" class="hidden mt-6 flex justify-end gap-2">
+		<button
+			type="button"
+			onclick="toggleProjectEdit()"
+			class="px-4 py-2 rounded-lg border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors"
+		>
+			Cancel
+		</button>
+		<button
+			type="submit"
+			class="px-4 py-2 rounded-lg bg-accent-light dark:bg-accent-dark text-primary-light dark:text-primary-dark hover:opacity-80 transition-opacity"
+		>
+			Save Changes
+		</button>
+	</div>
 }

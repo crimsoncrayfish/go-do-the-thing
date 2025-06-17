@@ -1,9 +1,9 @@
 package models
 
 import (
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/assert"
+	"time"
 )
 
 type Project struct {
@@ -11,12 +11,12 @@ type Project struct {
 	Name         string
 	Description  string
 	Owner        int64
-	StartDate    *database.SqLiteTime
-	DueDate      *database.SqLiteTime
+	StartDate    *time.Time
+	DueDate      *time.Time
 	CreatedBy    int64
-	CreatedDate  *database.SqLiteTime
+	CreatedDate  *time.Time
 	ModifiedBy   int64
-	ModifiedDate *database.SqLiteTime
+	ModifiedDate *time.Time
 	IsComplete   bool
 	IsDeleted    bool
 }
@@ -49,12 +49,12 @@ type ProjectView struct {
 	Name         string
 	Description  string
 	Owner        UserView
-	StartDate    *database.SqLiteTime
-	DueDate      *database.SqLiteTime
+	StartDate    *time.Time
+	DueDate      *time.Time
 	CreatedBy    UserView
-	CreatedDate  *database.SqLiteTime
+	CreatedDate  *time.Time
 	ModifiedBy   UserView
-	ModifiedDate *database.SqLiteTime
+	ModifiedDate *time.Time
 	IsComplete   bool
 	IsDeleted    bool
 }
@@ -75,6 +75,7 @@ func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {
 		ModifiedDate: p.ModifiedDate,
 		ModifiedBy:   modifiedBy.ToViewModel(),
 		DueDate:      p.DueDate,
+		IsDeleted:    p.IsDeleted,
 	}
 }
 

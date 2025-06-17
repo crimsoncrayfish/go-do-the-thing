@@ -1,10 +1,11 @@
 package tags_repo
 
 import (
-	"database/sql"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type TagsRepo struct {
@@ -16,33 +17,44 @@ var repoName = "Tags Repo"
 // NOTE: Depends on: []
 func InitRepo(database database.DatabaseConnection) *TagsRepo {
 	assert.IsTrue(false, repoName, "not implemented exception")
-	_, err := database.Exec(createTagsTable)
-	assert.NoError(err, repoName, "Failed to create Tags table")
 	return &TagsRepo{
 		database: database,
 	}
 }
 
 const (
-	createTagsTable = `CREATE TABLE IF NOT EXISTS tags (
-	[id] INTEGER,
-	[name] INTEGER,
-	[user_id] INTEGER
-);`
-	getTags   = `SELECT id, name FROM tags WHERE [user_id] = ?`
-	getTag    = `SELECT id, name FROM tags WHERE [id] = ?`
-	insertTag = `INSERT OR IGNORE INTO tags(id, name, user_id) VALUES(?, ?, ?)`
-	deleteTag = `DELETE FROM tags WHERE [id] = ?, [user_id] = ?`
+	getTags = `
+		SELECT 
+			id,
+			name 
+		FROM tags 
+		WHERE user_id = $1`
+	getTag = `
+		SELECT 
+			id,
+			name 
+		FROM tags 
+		WHERE id = $1`
+	insertTag = `
+		INSERT INTO tags (
+			name,
+			user_id
+		) VALUES ($1, $2)
+		RETURNING id`
+	deleteTag = `
+		DELETE FROM tags 
+		WHERE id = $1 
+		AND user_id = $2`
 )
 
-func scanTagFromRow(row *sql.Row, item *models.Tag) error {
+func scanTagFromRow(row pgx.Row, item *models.Tag) error {
 	return row.Scan(
 		&item.Id,
 		&item.Name,
 	)
 }
 
-func scanTagFromRows(rows *sql.Rows, item *models.Tag) error {
+func scanTagFromRows(rows pgx.Rows, item *models.Tag) error {
 	return rows.Scan(
 		&item.Id,
 		&item.Name,
@@ -54,9 +66,7 @@ func (r *TagsRepo) GetAll(user_id int) (tags []models.Tag, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	tags = make([]models.Tag, 0)
 	for rows.Next() {
@@ -73,4 +83,28 @@ func (r *TagsRepo) GetAll(user_id int) (tags []models.Tag, err error) {
 		return nil, err
 	}
 	return tags, nil
+}
+
+func (r *TagsRepo) Get(id int) (*models.Tag, error) {
+	row := r.database.QueryRow(getTag, id)
+	tag := &models.Tag{}
+	err := scanTagFromRow(row, tag)
+	if err != nil {
+		return nil, err
+	}
+	return tag, nil
+}
+
+func (r *TagsRepo) Insert(name string, user_id int) (int64, error) {
+	var id int64
+	err := r.database.QueryRow(insertTag, name, user_id).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (r *TagsRepo) Delete(id, user_id int) error {
+	_, err := r.database.Exec(deleteTag, id, user_id)
+	return err
 }

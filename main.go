@@ -22,7 +22,12 @@ import (
 
 //go:embed static
 var static embed.FS
-var faviconLocation string
+
+var (
+	faviconLocation  string
+	manifestLocation string
+	swjsLocation     string
+)
 
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, faviconLocation)
@@ -40,10 +45,13 @@ func main() {
 
 	router := http.NewServeMux()
 	faviconLocation = workingDir + "/static/img/todo.ico"
+	manifestLocation = workingDir + "/static/json/manifest.json"
+	swjsLocation = workingDir + "/static/json/manifest.json"
 
 	logger.Info("Setting Up Database")
-	dbConnection := database.Init("todo")
-	defer dbConnection.Connection.Close()
+	connectionString := "postgres://admin:admin@localhost:5432/todo_db?sslmode=disable"
+	dbConnection := database.Init(connectionString)
+	defer dbConnection.Close()
 
 	reposContainer := repos.NewContainer(dbConnection)
 
@@ -67,7 +75,7 @@ func main() {
 
 	// This is for https
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    ":8079",
 		Handler: router,
 	}
 
@@ -82,4 +90,10 @@ func main() {
 func setupStaticContent(router *http.ServeMux) {
 	router.Handle("/static/", http.FileServer(http.FS(static)))
 	router.HandleFunc("/favicon.ico", faviconHandler)
+	http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, manifestLocation)
+	})
+	http.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, swjsLocation)
+	})
 }

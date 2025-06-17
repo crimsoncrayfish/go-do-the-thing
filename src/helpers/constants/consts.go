@@ -1,9 +1,14 @@
 package constants
 
-const DateTimeFormat = "2006-01-02 15:04:05"
-const DateFormat = "2006-01-02"
+const (
+	DateTimeFormat   = "2006-01-02 15:04:05"
+	DateFormat       = "2006-01-02"
+	PrettyDateFormat = "2 January 2006"
+)
 
-const AuthContext = "auth.middleware.context"
-const AuthUserId = "security.middleware.userId"
-const AuthUserEmail = "security.middleware.userEmail"
-const AuthUserName = "security.middleware.userName"
+const (
+	AuthContext   = "auth.middleware.context"
+	AuthUserId    = "security.middleware.userId"
+	AuthUserEmail = "security.middleware.userEmail"
+	AuthUserName  = "security.middleware.userName"
+)

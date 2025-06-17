@@ -1,0 +1,31 @@
+package templ_shared
+
+templ Main(body templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@Header()
+		<body id="main-body" class="bg-primary-light dark:bg-primary-dark antialiased">
+			@body
+		</body>
+		@Loader()
+		<div
+			id="toast-container"
+			class="fixed top-4 right-4 z-[1080]"
+		>
+			@EmptyToast()
+		</div>
+		<script>
+		if ('dark-mode' in localStorage) {
+			if (localStorage.getItem('dark-mode') === 'true') {
+				document.querySelector('html').classList.add('dark');
+			} else {
+				document.querySelector('html').classList.remove('dark');
+			}
+		} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+			document.querySelector('html').classList.add('dark');
+		} else {
+			document.querySelector('html').classList.remove('dark');
+		}
+		</script>
+	</html>
+}

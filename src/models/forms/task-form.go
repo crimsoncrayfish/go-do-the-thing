@@ -1,7 +1,6 @@
 package form_models
 
 import (
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/models"
 	"time"
 )
@@ -17,11 +16,12 @@ func NewTaskForm() TaskForm {
 		Errors: make(map[string]string),
 	}
 }
+
 func NewDefaultTaskForm() TaskForm {
 	duedate := time.Now().Add(time.Duration(time.Hour * 24))
 	return TaskForm{
 		Task: models.TaskView{
-			DueDate: &database.SqLiteTime{Time: &duedate},
+			DueDate: &duedate,
 		},
 		Errors: make(map[string]string),
 	}
@@ -30,6 +30,11 @@ func NewDefaultTaskForm() TaskForm {
 func (f *TaskForm) GetErrors() map[string]string {
 	return f.Errors
 }
+
 func (f *TaskForm) SetError(name, value string) {
 	f.Errors[name] = value
+}
+
+func (f *TaskForm) SetProject(project_id int64) {
+	f.Task.ProjectId = project_id
 }

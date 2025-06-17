@@ -3,93 +3,86 @@ package templ_todo
 import (
 	m "go-do-the-thing/src/models"
 	mf "go-do-the-thing/src/models/forms"
+	"go-do-the-thing/src/shared/templ"
 	ts "go-do-the-thing/src/shared/templ"
 )
 
 templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
-	<!DOCTYPE html>
-	<html lang="en">
-		@ts.Header()
-		<body id="main-body" class="bg-primary-50 dark:bg-primary-900 antialiased">
-			@TaskListPage(navbar, formdata, tasks, projects)
-		</body>
-	</html>
+	@ts.Main(TaskListPage(navbar, formdata, tasks, projects))
 }
 
 templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
 	@ts.NavBar(navbar)
-	@ts.Loader()
-	<div class="px-1 xl:px-[10%] w-full text-primary-900 dark:text-primary-50">
-		<div class="mx-auto pt-5 px-5 py-5 flex items-center justify-between">
-			<p class="text-xl text-primary-900 dark:text-primary-50">TODO: Items</p>
+	<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
+		<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
+			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Tasks</p>
 			<div>
-				<button
-					type="button"
-					onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-					class="text-action-700 hover:text-primary-50 border border-action-700 hover:bg-action-800 focus:ring-4
-                        focus:outline-none focus:ring-action-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
-                        me-2 mb-2 dark:border-action-500 dark:text-action-500 dark:hover:text-primary-50 dark:hover:bg-action-600
-                        dark:focus:ring-action-800 flex items-center"
-				>
-					Add Task
-					@ts.SvgPlus()
-				</button>
+				@ts.OpenFormButton("New Task", ts.SvgPlus())
 			</div>
 		</div>
-		<div
-			id="create-task-form-container"
-			class="mx-auto max-h-0 overflow-y-hidden opacity-0 transition-[max-height, opacity] duration-500 ease-in-out"
-		>
-			<div
-				class="overflow-y-auto overflow-x-hidden z-50 mb-5 justify-center items-center bg-opacity-40 w-full md:inset-0 h-full"
-			>
-				<div class="relative bg-primary-50 rounded-lg shadow dark:bg-primary-700">
-					<div
-						class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-primary-600"
-					>
-						<p class="text-primary-900 text-xl dark:text-primary-50">TODO:</p>
-						<button
-							class="text-primary-900 dark:text-primary-50"
-							onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-task-form-container');swapClassForId('opacity-0', 'opacity-100','create-task-form-container');"
-						>
-							@ts.SvgClose()
-						</button>
-					</div>
-					@TaskForm("item", "Create", formdata, projects)
-				</div>
-			</div>
-		</div>
-		@TaskListTable(tasks)
+		@ts.FormContainer("/todo/item?source=task_page", TaskFormContent(formdata, projects))
+		@searchBar(projects)
+		@TaskList(tasks)
 	</div>
 }
 
-templ TaskListTable(tasks []*m.TaskView) {
-	<div class="relative items-center overflow-x-auto ">
-		<table
-			class="mb-2 mx-auto bg-primary-900 text-sm text-left rtl:text-right text-primary-50 dark:text-primary-400"
+templ TaskList(tasks []*m.TaskView) {
+	<div id="task-list-container">
+		for _, task := range tasks {
+			@TaskItemCard(task)
+		}
+	</div>
+	<script>
+function flipTaskCardUpdateToBack(event, id) {
+    const method = event.detail.requestConfig.verb.toUpperCase();
+    if (method === "POST") {
+	toggleClassForId('hidden', 'task-card-back-update-'+id)
+    } else if (method === "DELETE") {
+	toggleClassForId('hidden', 'task-card-back-delete-'+id)
+    }
+    const inner = document.getElementById('task-card-inner-' + id);
+    if (!inner) return;
+    inner.style.transform = 'rotateX(180deg)';
+};
+function flipTaskCardUpdateToFront(event, id) {
+    const method = event.detail.requestConfig.verb.toUpperCase();
+    const inner = document.getElementById('task-card-inner-' + id);
+    if (!inner) return;
+    inner.style.transform = 'rotateX(0deg)';
+    inner.addEventListener('transitionend', function hideBack() {
+	toggleClassForId('hidden', 'task-card-back-update-'+id);
+	inner.removeEventListener('transitionend', hideBack);
+    });
+};
+</script>
+}
+
+templ searchBar(projects map[int64]string) {
+	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 pb-4 px-4 pt-2 border border-border-light dark:border-border-dark rounded-lg">
+		<form
+			hx-get="/tasks"
+			hx-trigger="submit, keyup delay:500ms changed"
+			hx-target="#task-list"
+			hx-swap="innerHTML"
+			class="grid grid-cols-1 md:grid-cols-3 gap-4"
 		>
-			<thead
-				class="text-xs text-primary-700 uppercase bg-primary-50 dark:bg-primary-700 dark:text-primary-400"
-			>
-				<tr>
-					<th scope="col" class="px-6 py-3">
-						<p class="hidden lg:block">Status</p>
-					</th>
-					<th scope="col" class="columns-2xl px-6 py-3">Task</th>
-					<th scope="col" class="columns-2xl hidden md:table-cell px-6 py-3">Due Date</th>
-					<th scope="col" class="columns-lg hidden lg:table-cell px-6 py-3">Assignee</th>
-					<th scope="col" class="columns-lg hidden md:table-cell px-6 py-3">Project</th>
-					<th scope="col" class="px-6 py-3">
-						<p class="hidden lg:block">Actions</p>
-					</th>
-				</tr>
-			</thead>
-			<tbody id="task-rows" class="item-list">
-				for _, task := range tasks {
-					@TaskRow(task)
-				}
-			</tbody>
-		</table>
-		@ts.NoDataRow(len(tasks) > 0)
+			@templ_shared.FormTextInput("", "Search", "Search...", "")
+			@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
+			@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
+		</form>
+		<div class="flex flex-wrap gap-2 pt-2">
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				All
+			</button>
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				Completed
+			</button>
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				Incomplete
+			</button>
+			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+				Overdue
+			</button>
+		</div>
 	</div>
 }

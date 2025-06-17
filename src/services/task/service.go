@@ -2,52 +2,53 @@ package task_service
 
 import (
 	"fmt"
-	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
-	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
+	project_user_service "go-do-the-thing/src/services/project_user_service"
 	"sort"
+	"time"
 )
 
 type TaskService struct {
-	tasksRepo        tasks_repo.TasksRepo
-	usersRepo        users_repo.UsersRepo
-	projectRepo      projects_repo.ProjectsRepo
-	projectUsersRepo project_users_repo.ProjectUsersRepo
+	tasksRepo           tasks_repo.TasksRepo
+	usersRepo           users_repo.UsersRepo
+	projectRepo         projects_repo.ProjectsRepo
+	projectUsersService project_user_service.ProjectUserService
 }
 
 const serviceSource = "TaskService"
 
 func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 	return TaskService{
-		tasksRepo:        *repo_container.GetTasksRepo(),
-		usersRepo:        *repo_container.GetUsersRepo(),
-		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
-		projectRepo:      *repo_container.GetProjectsRepo(),
+		tasksRepo:           *repo_container.GetTasksRepo(),
+		usersRepo:           *repo_container.GetUsersRepo(),
+		projectRepo:         *repo_container.GetProjectsRepo(),
+		projectUsersService: project_user_service.SetupProjectUserService(repo_container),
 	}
 }
 
-func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *database.SqLiteTime) (int64, error) {
+func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *time.Time) (int64, error) {
 	// NOTE: Does this user belong to the current project
-	err := s.userBelongsToProject(user_id, project_id)
+	err := s.projectUsersService.UserBelongsToProject(user_id, project_id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return 0, err
 	}
+	now := time.Now()
 	task := models.Task{
 		Name:         name,
 		Description:  description,
 		DueDate:      due_date,
 		AssignedTo:   user_id, // TODO: need to update this
 		CreatedBy:    user_id,
-		CreatedDate:  database.SqLiteNow(),
+		CreatedDate:  &now,
 		ModifiedBy:   user_id,
-		ModifiedDate: database.SqLiteNow(),
+		ModifiedDate: &now,
 		Project:      project_id,
 		IsDeleted:    false,
 	}
@@ -60,18 +61,19 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 	return id, nil
 }
 
-func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *database.SqLiteTime, assigned_to int64) error {
+func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *time.Time, assigned_to int64) error {
 	// NOTE: Does this user belong to the current project
 	err := s.userBelongsToTaskProject(user_id, task_id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return err
 	}
-	err = s.userBelongsToProject(user_id, project_id)
+	err = s.projectUsersService.UserBelongsToProject(user_id, project_id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return err
 	}
+	now := time.Now()
 	task := models.Task{
 		Id:           task_id,
 		Name:         name,
@@ -79,7 +81,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		DueDate:      due_date,
 		AssignedTo:   assigned_to, // TODO: need to update this
 		ModifiedBy:   user_id,
-		ModifiedDate: database.SqLiteNow(),
+		ModifiedDate: &now,
 		Project:      project_id,
 		IsDeleted:    false,
 	}
@@ -125,13 +127,24 @@ func (s *TaskService) DeleteTask(user_id, task_id int64) error {
 	return s.tasksRepo.DeleteItem(task_id, user_id)
 }
 
+func (s *TaskService) RestoreTask(user_id, task_id int64) error {
+	// NOTE: Does this user belong to the current project
+	err := s.userBelongsToTaskProject(user_id, task_id)
+	if err != nil {
+		// NOTE: Errors from function already wrapped
+		return err
+	}
+
+	return s.tasksRepo.RestoreItem(task_id, user_id)
+}
+
 func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	task, err := s.tasksRepo.GetItem(id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return nil, err
 	}
-	err = s.userBelongsToProject(user_id, task.Project)
+	err = s.projectUsersService.UserBelongsToProject(user_id, task.Project)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return nil, err
@@ -149,7 +162,7 @@ func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error)
 		if tasks[i].Status != tasks[j].Status {
 			return tasks[i].Status < tasks[j].Status
 		}
-		return tasks[i].DueDate.Before(tasks[j].DueDate)
+		return tasks[i].DueDate.Before(*tasks[j].DueDate)
 	})
 	return s.taskListToViewModels(tasks)
 }
@@ -163,7 +176,7 @@ func (s *TaskService) GetProjectTaskViewList(user_id, project_id int64) ([]*mode
 		if tasks[i].Status != tasks[j].Status {
 			return tasks[i].Status < tasks[j].Status
 		}
-		return tasks[i].DueDate.Before(tasks[j].DueDate)
+		return tasks[i].DueDate.Before(*tasks[j].DueDate)
 	})
 	return s.taskListToViewModels(tasks)
 }
@@ -291,18 +304,5 @@ func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err erro
 		// NOTE: Take action
 		return err
 	}
-	return s.userBelongsToProject(user_id, task.Project)
-}
-
-func (s *TaskService) userBelongsToProject(user_id, project_id int64) (err error) {
-	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
-	if err != nil {
-		// NOTE: Errors from repo are wrapped
-		return err
-	}
-	// TODO: Move this logic to the project_users_service and expose it to both the projects service and the tasks service???
-	if len(roles) == 0 {
-		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
-	}
-	return nil
+	return s.projectUsersService.UserBelongsToProject(user_id, task.Project)
 }
