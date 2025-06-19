@@ -293,18 +293,27 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 		formData.Errors["Project"] = err.Error()
 	}
 
-	contentType := r.Header.Get("accept")
-	if contentType == "text/html" {
-		if err = templ_todo.TaskItem(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+	source := r.URL.Query().Get("source")
+	if source == "list" {
+		if err = templ_todo.TaskItemContentOOBTargetList(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render task item with id %d", id)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskItemWithBody(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task item with id %d", id)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		contentType := r.Header.Get("accept")
+		if contentType == "text/html" {
+			if err = templ_todo.TaskItem(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+				h.logger.Error(err, "failed to render task item with id %d", id)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			if err = templ_todo.TaskItemWithBody(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+				h.logger.Error(err, "failed to render task item with id %d", id)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 }

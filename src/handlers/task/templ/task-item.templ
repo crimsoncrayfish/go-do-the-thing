@@ -34,6 +34,15 @@ templ TaskItemContent(task *models.TaskView, projects map[int64]string) {
 	</div>
 }
 
+templ TaskItemContentOOBTargetList(task *models.TaskView, projects map[int64]string) {
+	<div
+		class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg"
+	>
+		@taskHeader(task)
+		@taskForm(task, projects, map[string]string{}, false)
+	</div>
+}
+
 templ TaskItemContentOOB(task *models.TaskView, projects map[int64]string) {
 	@TaskItemContentWithErrors(task, projects, map[string]string{}, false)
 }

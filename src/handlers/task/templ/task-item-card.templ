@@ -125,13 +125,15 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 
 templ editFromList(task *models.TaskView) {
 	<button
-		class={ " w-full text-left px-4 py-2 text-sm",
-								"text-text-on-light dark:text-text-on-dark",
-								"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center" }
-		hx-swap="outerHTML"
-		hx-target="body"
-		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		hx-replace-url="true"
+		class={
+			"w-full text-left px-4 py-2 text-sm",
+			"text-text-on-light dark:text-text-on-dark",
+			"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center",
+		}
+		hx-get={ templ.URL(fmt.Sprintf("/todo/item/%d?source=list", task.Id)) }
+		hx-target="#edit-panel-content"
+		hx-swap="innerHTML"
+		hx-on:htmx:after-request="openEditPanel()"
 		aria-label="Edit Task"
 	>
 		@templ_shared.SvgEdit()
