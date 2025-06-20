@@ -13,8 +13,8 @@ templ TaskListWithBody(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.T
 
 templ TaskListPage(navbar m.NavBarObject, formdata mf.TaskForm, tasks []*m.TaskView, projects map[int64]string) {
 	@ts.NavBar(navbar)
-	<div class="grid grid-cols-1 h-[calc(100vh-4rem)]">
-		<div id="main-content" class="col-span-1 h-full transition-all duration-300 ease-in-out overflow-y-auto">
+	<div id="main-layout" class="grid grid-cols-[100%_0%] h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-300 ease-in-out">
+		<div id="main-content" class="overflow-y-auto transition-opacity duration-300 ease-in-out">
 			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 				<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
 					<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Tasks</p>
@@ -101,11 +101,10 @@ templ searchBar(projects map[int64]string) {
 templ EditPanel(task m.TaskView) {
 	<div
 		id="edit-panel"
-		class="fixed top-[5rem] right-0 h-[calc(100vh-5rem)] transition-all duration-300 ease-in-out overflow-hidden bg-secondary-light dark:bg-secondary-dark shadow-lg transform translate-x-full"
-		style="width: 0;"
+		class="bg-secondary-light dark:bg-secondary-dark shadow-lg overflow-hidden w-full"
 	>
-		<div class="w-full h-full p-6 overflow-y-auto transition-all duration-300">
-			<div class="flex justify-between items-center mb-6">
+		<div class="w-full h-full flex flex-col">
+			<div class="flex justify-between items-center mb-6 p-6">
 				<div class="flex items-center gap-4">
 					<button
 						onclick="togglePanelWidth()"
@@ -125,8 +124,12 @@ templ EditPanel(task m.TaskView) {
 					@ts.SvgClose()
 				</button>
 			</div>
-			<div id="edit-panel-content" class="space-y-4">
-				<div class="flex justify-center items-center h-24">
+			<div class="relative flex-1 min-h-0 p-6">
+				<div id="edit-panel-content" class="space-y-4 h-full overflow-y-auto">
+					<!-- HTMX will swap this content -->
+				</div>
+				<!-- Loader overlay, hidden by default -->
+				<div id="edit-panel-loader" class="absolute inset-0 flex justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 hidden">
 					<div class="loader-bounce flex space-x-2">
 						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
 						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
@@ -148,45 +151,50 @@ templ EditPanel(task m.TaskView) {
 	</div>
 	<script>
 	function openEditPanel() {
-		const panel = document.getElementById('edit-panel');
+		const layout = document.getElementById('main-layout');
 		const mainContent = document.getElementById('main-content');
-		panel.classList.remove('translate-x-full');
-		panel.style.width = '50vw';
-		mainContent.style.marginRight = '50vw';
+		layout.classList.remove('grid-cols-[100%_0%]', 'grid-cols-[0%_100%]');
+		layout.classList.add('grid-cols-[50%_50%]');
+		mainContent.classList.remove('opacity-0');
+		// Show loader overlay
+		const loader = document.getElementById('edit-panel-loader');
+		if (loader) loader.classList.remove('hidden');
 	}
-	function closeEditPanel() {
-		const panel = document.getElementById('edit-panel');
-		const mainContent = document.getElementById('main-content');
-		panel.classList.add('translate-x-full');
-		panel.style.width = '0';
-		mainContent.style.marginRight = '0';
-		panel.style.width = '0';
-		mainContent.style.display = 'block';
-		document.getElementById('expand-button').classList.remove('rotate-180');
-		document.getElementById('panel-content').classList.remove('w-screen');
-		document.getElementById('panel-content').classList.add('w-[50vw]');
-	}
-		function togglePanelWidth() {
-			const panel = document.getElementById('edit-panel');
-			const mainContent = document.getElementById('main-content');
-			const expandButton = document.getElementById('expand-button');
-			const panelContent = document.getElementById('panel-content');
-			
-			if (panel.style.width === '50vw') {
-				// Expand to full width
-				panel.style.width = '100vw';
-				mainContent.style.display = 'none';
-				expandButton.classList.add('rotate-180');
-				panelContent.classList.remove('w-[50vw]');
-				panelContent.classList.add('w-screen');
-			} else {
-				// Collapse to 50% width
-				panel.style.width = '50vw';
-				mainContent.style.display = 'block';
-				expandButton.classList.remove('rotate-180');
-				panelContent.classList.remove('w-screen');
-				panelContent.classList.add('w-[50vw]');
-			}
+
+	document.body.addEventListener('htmx:afterSwap', function(evt) {
+		if (evt.target && evt.target.id === 'edit-panel-content') {
+			const loader = document.getElementById('edit-panel-loader');
+			if (loader) loader.classList.add('hidden');
 		}
+	});
+
+	function closeEditPanel() {
+		const layout = document.getElementById('main-layout');
+		const mainContent = document.getElementById('main-content');
+		const expandButton = document.getElementById('expand-button');
+		layout.classList.remove('grid-cols-[50%_50%]', 'grid-cols-[0%_100%]');
+		layout.classList.add('grid-cols-[100%_0%]');
+		expandButton.classList.remove('rotate-180');
+		mainContent.classList.remove('opacity-0');
+		// Optionally clear panel content here
+	}
+	function togglePanelWidth() {
+		const layout = document.getElementById('main-layout');
+		const mainContent = document.getElementById('main-content');
+		const expandButton = document.getElementById('expand-button');
+		if (layout.classList.contains('grid-cols-[50%_50%]')) {
+			// Expand to full width
+			layout.classList.remove('grid-cols-[50%_50%]');
+			layout.classList.add('grid-cols-[0%_100%]');
+			expandButton.classList.add('rotate-180');
+			mainContent.classList.add('opacity-0');
+		} else {
+			// Collapse to 50% width
+			layout.classList.remove('grid-cols-[0%_100%]');
+			layout.classList.add('grid-cols-[50%_50%]');
+			expandButton.classList.remove('rotate-180');
+			mainContent.classList.remove('opacity-0');
+		}
+	}
 	</script>
 }
