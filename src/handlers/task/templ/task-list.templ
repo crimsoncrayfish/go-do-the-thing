@@ -126,7 +126,23 @@ templ EditPanel(task m.TaskView) {
 				</button>
 			</div>
 			<div id="edit-panel-content" class="space-y-4">
-				<p class="text-text-on-light dark:text-text-on-dark">Edit panel content will go here...</p>
+				<div class="flex justify-center items-center h-24">
+					<div class="loader-bounce flex space-x-2">
+						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
+						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
+						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.4s"></div>
+					</div>
+				</div>
+				<style>
+				@keyframes bounce-balls {
+					0%, 80%, 100% { transform: translateY(0); }
+					40% { transform: translateY(-20px); }
+				}
+				.animate-bounce-balls {
+					display: inline-block;
+					animation: bounce-balls 1.2s infinite both;
+				}
+				</style>
 			</div>
 		</div>
 	</div>
