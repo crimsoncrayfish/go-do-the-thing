@@ -129,7 +129,7 @@ templ EditPanel(task m.TaskView) {
 					<!-- HTMX will swap this content -->
 				</div>
 				<!-- Loader overlay, hidden by default -->
-				<div id="edit-panel-loader" class="absolute inset-0 flex justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 hidden">
+				<div id="edit-panel-loader" class="absolute inset-0 justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
 					<div class="loader-bounce flex space-x-2">
 						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
 						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
@@ -156,17 +156,7 @@ templ EditPanel(task m.TaskView) {
 		layout.classList.remove('grid-cols-[100%_0%]', 'grid-cols-[0%_100%]');
 		layout.classList.add('grid-cols-[50%_50%]');
 		mainContent.classList.remove('opacity-0');
-		// Show loader overlay
-		const loader = document.getElementById('edit-panel-loader');
-		if (loader) loader.classList.remove('hidden');
 	}
-
-	document.body.addEventListener('htmx:afterSwap', function(evt) {
-		if (evt.target && evt.target.id === 'edit-panel-content') {
-			const loader = document.getElementById('edit-panel-loader');
-			if (loader) loader.classList.add('hidden');
-		}
-	});
 
 	function closeEditPanel() {
 		const layout = document.getElementById('main-layout');
@@ -176,8 +166,8 @@ templ EditPanel(task m.TaskView) {
 		layout.classList.add('grid-cols-[100%_0%]');
 		expandButton.classList.remove('rotate-180');
 		mainContent.classList.remove('opacity-0');
-		// Optionally clear panel content here
 	}
+
 	function togglePanelWidth() {
 		const layout = document.getElementById('main-layout');
 		const mainContent = document.getElementById('main-content');

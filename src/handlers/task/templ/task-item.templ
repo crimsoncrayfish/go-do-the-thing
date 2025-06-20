@@ -59,6 +59,7 @@ templ taskForm(task *models.TaskView, projects map[int64]string, errors map[stri
 		hx-target="#edit-panel-content"
 		hx-swap="innerHTML"
 		hx-post={ fmt.Sprintf("/todo/item/%d", task.Id) }
+		hx-indicator="#edit-panel-loader"
 	>
 		@taskTitleAndTimer(task, projects, is_editing)
 		<hr class="h-px my-8 border-0 bg-border-light dark:border-border-dark "/>

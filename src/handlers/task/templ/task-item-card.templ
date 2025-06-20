@@ -135,6 +135,7 @@ templ editFromList(task *models.TaskView) {
 		hx-target="#edit-panel-content"
 		hx-swap="innerHTML"
 		hx-on:click="openEditPanel()"
+		hx-indicator="#edit-panel-loader"
 		aria-label="Edit Task"
 	>
 		@templ_shared.SvgEdit()

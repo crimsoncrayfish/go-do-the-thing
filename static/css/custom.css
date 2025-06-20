@@ -98,3 +98,16 @@
   from { transform: scaleX(1); }
   to { transform: scaleX(0); }
 }
+
+.htmx-indicator {
+    display: none;
+}
+
+.my-indicator {
+    display: none;
+}
+
+.htmx-request .my-indicator,
+.htmx-request.my-indicator {
+    display: flex;
+}

@@ -4,6 +4,8 @@
 /* 1) Bring in Flowbite’s defaults (components layer) */
 @import "flowbite";
 
+@import "custom.css";
+
 @tailwind utilities;
 
 /* 2) Everything in utilities layer so it overrides Flowbite */
