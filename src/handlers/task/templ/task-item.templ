@@ -56,6 +56,8 @@ templ TaskItemContentWithErrors(task *models.TaskView, projects map[int64]string
 
 templ taskForm(task *models.TaskView, projects map[int64]string, errors map[string]string, is_editing bool) {
 	<form
+		hx-target="#edit-panel-content"
+		hx-swap="innerHTML"
 		hx-post={ fmt.Sprintf("/todo/item/%d", task.Id) }
 	>
 		@taskTitleAndTimer(task, projects, is_editing)
@@ -78,14 +80,6 @@ templ taskForm(task *models.TaskView, projects map[int64]string, errors map[stri
 templ taskHeader(task *models.TaskView) {
 	<div class="flex justify-between items-start mb-4">
 		<div class="flex items-center gap-3">
-			<button
-				hx-get="/todo/items"
-				hx-replace-url="true"
-				hx-target="body"
-				class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity"
-			>
-				@templ_shared.SvgBack()
-			</button>
 			@taskStatusChip(task)
 		</div>
 		<div class="flex gap-2">
@@ -191,7 +185,7 @@ templ taskTitleAndTimer(task *models.TaskView, projects map[int64]string, is_edi
 				@statusIcon(task)
 				<p
 					id="task-title-view"
-					class={ templ.KV("hidden",is_editing), "text-2xl ml-2 font-bold" }
+					class={ templ.KV("hidden",is_editing), "text-text-on-ligh dark:text-text-on-dark text-2xl ml-2 font-bold" }
 				>
 					{ task.Name }
 				</p>
@@ -223,7 +217,7 @@ templ taskTitleAndTimer(task *models.TaskView, projects map[int64]string, is_edi
 		</div>
 		<div class="mb-4">
 			<div class="text-text-on-light dark:text-text-on-dark text-sm">Time Elapsed</div>
-			<div id="detail-timer" class="text-xl font-semibold">02:37:05</div>
+			<div id="detail-timer" class="text-text-on-ligh dark:text-text-on-dark text-xl font-semibold">02:37:05</div>
 		</div>
 	</div>
 }

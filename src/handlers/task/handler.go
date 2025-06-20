@@ -244,15 +244,13 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_todo.TaskItemContentOOB(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+	if err := templ_todo.TaskItemContentOOBTargetList(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render new task row with id %d", task.Id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	formData := formDataFromTask(task)
-	if err := templ_todo.TaskFormContent(formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render form content after update")
+	if err = templ_todo.TaskItemCard(task).Render(r.Context(), w); err != nil {
+		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

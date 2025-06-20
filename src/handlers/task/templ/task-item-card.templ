@@ -10,6 +10,7 @@ import (
 
 templ TaskItemCard(task *models.TaskView) {
 	<div
+		hx-swap-oob="true"
 		id={ fmt.Sprintf("task-card-%d", task.Id) }
 		class="relative [perspective:1000px]
            overflow-visible z-0
