@@ -104,7 +104,7 @@ templ EditPanel(task m.TaskView) {
 		class="bg-secondary-light dark:bg-secondary-dark shadow-lg overflow-hidden w-full"
 	>
 		<div class="w-full h-full flex flex-col">
-			<div class="flex justify-between items-center mb-6 p-6">
+			<div class="flex justify-between items-center p-4">
 				<div class="flex items-center gap-4">
 					<button
 						onclick="togglePanelWidth()"
@@ -124,11 +124,8 @@ templ EditPanel(task m.TaskView) {
 					@ts.SvgClose()
 				</button>
 			</div>
-			<div class="relative flex-1 min-h-0 p-6">
-				<div id="edit-panel-content" class="space-y-4 h-full overflow-y-auto">
-					<!-- HTMX will swap this content -->
-				</div>
-				<!-- Loader overlay, hidden by default -->
+			<div class="relative flex-1 min-h-0 px-4 pb-4">
+				<div id="edit-panel-content" class="space-y-4 h-full overflow-y-auto"></div>
 				<div id="edit-panel-loader" class="absolute inset-0 justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
 					<div class="loader-bounce flex space-x-2">
 						<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
