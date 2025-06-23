@@ -15,7 +15,7 @@ type TasksRepo struct {
 
 var repoName = "Tasks Repo"
 
-// NOTE: Depends on: [./projects-repo.go, ./users-repo.go]
+// NOTE: Depends on: [./projects_repo.go, ./users_repo.go]
 func InitRepo(database database.DatabaseConnection) *TasksRepo {
 	//TODO: Cleanup
 	//_, err := database.Exec(createTasksTable)

@@ -18,7 +18,7 @@ type ProjectsRepo struct {
 
 var repoName = "ProjectsRepo"
 
-// NOTE: Depends on: [../project-users/project-users-repo.go, ../users/users-repo.go]
+// NOTE: Depends on: [../project-users/project_users_repo.go, ../users/users_repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
 	//TODO: Cleanup
 	//_, err := database.Exec(createProjectsTable)

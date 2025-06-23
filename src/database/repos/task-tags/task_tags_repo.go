@@ -11,7 +11,7 @@ type TaskTagsRepo struct {
 
 var repoName = "Tasks Tags Repo"
 
-// NOTE: Depends on: [./tags-repo.go, ./users-repo.go]
+// NOTE: Depends on: [./tags_repo.go, ./users_repo.go]
 func InitRepo(database database.DatabaseConnection) *TaskTagsRepo {
 	assert.IsTrue(false, repoName, "not implemented exception")
 

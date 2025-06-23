@@ -14,6 +14,7 @@ import (
 	"go-do-the-thing/src/middleware"
 	projectService "go-do-the-thing/src/services/project"
 	taskService "go-do-the-thing/src/services/task"
+	user_service "go-do-the-thing/src/services/user"
 	"net/http"
 	"os"
 )
@@ -61,7 +62,8 @@ func main() {
 	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
-	users.SetupUserHandler(*reposContainer.GetUsersRepo(), router, middleware_full, middleware_no_auth, jwtHandler)
+	user_service_instance := user_service.SetupUserService(reposContainer)
+	users.SetupUserHandler(router, middleware_full, middleware_no_auth, jwtHandler, user_service_instance)
 
 	task_service := taskService.SetupTaskService(reposContainer)
 	project_service := projectService.SetupProjectService(reposContainer)
