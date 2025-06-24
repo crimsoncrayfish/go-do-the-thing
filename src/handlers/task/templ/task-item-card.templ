@@ -10,7 +10,6 @@ import (
 
 templ TaskItemCard(task *models.TaskView) {
 	<div
-		hx-swap-oob="true"
 		id={ fmt.Sprintf("task-card-%d", task.Id) }
 		class="relative [perspective:1000px]
            overflow-visible z-0
@@ -56,7 +55,7 @@ templ TaskCardFront(task *models.TaskView) {
 templ cardStatus(task *models.TaskView) {
 	<div class="hidden sm:flex pr-8 pl-4 items-center justify-center ">
 		if (task.IsDeleted) {
-			@templ_shared.SvgBin()
+			@restoreTaskButton(task)
 		} else {
 			@completeTaskButton(task)
 		}
@@ -143,6 +142,27 @@ templ editFromList(task *models.TaskView) {
 	</button>
 }
 
+templ restoreTaskButton(task *models.TaskView) {
+	<button
+		class={ templ.KV( "bg-transparent text-success-light dark:text-success-dark" , task.Status != models.Completed),
+				templ.KV( "bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark" , task.Status == models.Completed),
+				"theme-transition",
+				"hover:text-white font-bold p-2",
+				"rounded-full shadow-md focus:outline-none",
+				"focus:ring-2 focus:ring-success-light",
+				"focus:dark:ring-success-dark focus:ring-opacity-50",
+				"flex items-center justify-center w-10 h-10",
+				"border border-success-light",
+				"dark:border-success-dark" }
+		aria-label="Mark as Complete"
+		hx-swap="outerHTML swap:0.8s"
+		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
+		hx-post={ fmt.Sprintf("/todo/item/restore/%d", task.Id) }
+	>
+		@templ_shared.SvgBin()
+	</button>
+}
+
 templ completeTaskButton(task *models.TaskView) {
 	<button
 		class={ templ.KV( "bg-transparent text-success-light dark:text-success-dark" , task.Status != models.Completed),
@@ -174,7 +194,7 @@ templ taskStatusChip(task *models.TaskView) {
 		>
 			DELETED	
 		</span>
-	} else if (task.InProgress) {
+	} else if (task.Status == models.Completed) {
 		<span
 			class="bg-success-light dark:bg-success-dark
                          text-text-on-light dark:text-text-on-dark

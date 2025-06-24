@@ -25,6 +25,7 @@ func (p *Project) AssertHealthyNew() {
 	source := "Model.Project"
 
 	assert.NotNil(p, source, "project model struct not healthy - project is nil")
+	assert.NotEqual(p.Owner, 0, source, "project model struct not healthy - project owner not set")
 
 	assert.NotEqual(p.Name, "", source, "Name")
 	assert.NotEqual(p.Description, "", source, "Description")

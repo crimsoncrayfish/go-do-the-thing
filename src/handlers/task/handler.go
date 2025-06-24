@@ -486,34 +486,28 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	hasData, err := h.task_service.GetTaskCount(current_user_id)
-	if err != nil {
-		assert.NoError(err, source, "failed to update ui")
-		return
-	}
-
 	if err := templ_shared.ToastMessage("Task Restored", "success").Render(r.Context(), w); err != nil {
 		assert.NoError(err, source, "failed to render no data row")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}
-	taskView, err := h.task_service.GetTaskView(id, current_user_id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to get newly created task with id %d", id)
-		return
-	}
-	if err := templ_todo.TaskItemCardOOB(taskView).Render(r.Context(), w); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render task row")
-		return
-	}
 
-	// TODO: no data card placeholder is broken
-	if err := templ_shared.NoDataRowOOB(hasData > 0).Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render no data row")
-		// TODO: what should happen if the fetch fails after create
+	task, err := h.task_service.GetTaskView(id, current_user_id)
+	if err != nil {
+		// TODO: handle err types
+		h.logger.Error(err, "failed to get task with id %d", id)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+	source := r.URL.Query().Get("source")
+	if source == "task_page" {
+		h.logger.Debug("TODO:WHAT")
+	} else {
+		if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
+			h.logger.Error(err, "failed to render task list item")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

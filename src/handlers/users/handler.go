@@ -11,9 +11,9 @@ import (
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	form_models "go-do-the-thing/src/models/forms"
+	user_service "go-do-the-thing/src/services/user"
 	"net/http"
 	"time"
-	user_service "go-do-the-thing/src/services/user"
 )
 
 type Handler struct {
@@ -61,6 +61,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		form.Errors["password"] = err.Error()
 	}
 	if len(form.Errors) > 0 {
+		h.logger.Info("LoginUI: invalid form input - email: %s, errors: %v", email, form.Errors)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -69,8 +70,10 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
+	h.logger.Info("LoginUI: login attempt - email: %s", email)
 	user, sessionId, err := h.userService.AuthenticateUser(email, password)
 	if err != nil {
+		h.logger.Error(err, "LoginUI: login failed - email: %s", email)
 		form.Errors["login"] = err.Error()
 		w.WriteHeader(http.StatusUnauthorized)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
@@ -79,6 +82,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
+	h.logger.Info("LoginUI: login succeeded - email: %s, user_id: %d", email, user.Id)
 	tokenString, err := h.security.NewToken(user.Email, sessionId, user.SessionStartTime.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		http.SetCookie(w, &emptyAuthCookie)

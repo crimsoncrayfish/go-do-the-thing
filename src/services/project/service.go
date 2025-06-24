@@ -99,7 +99,7 @@ func (s ProjectService) CreateProject(
 		IsDeleted:    false,
 	}
 
-	id, err := s.projectRepo.Insert(currentUserId, project)
+	id, err := s.projectRepo.Insert(project)
 	if err != nil {
 		return 0, err
 	}
