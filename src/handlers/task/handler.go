@@ -233,8 +233,10 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		h.logger.Error(err, "failed to update task with id %d", id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if err := templ_shared.ToastMessage("Failed to update task", "error").Render(r.Context(), w); err != nil {
+			assert.NoError(err, source, "failed to render toast")
+			return
+		}
 	}
 	// NOTE: Success zone
 	task, err := h.task_service.GetTaskView(id, current_user_id)
@@ -249,7 +251,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err = templ_todo.TaskItemCard(task).Render(r.Context(), w); err != nil {
+	if err = templ_todo.TaskCardFrontOOB(task).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -439,7 +441,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Success zone
 	if err := templ_shared.ToastMessage("Task Deleted", "warning").Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render no data row")
+		assert.NoError(err, source, "failed to render toast")
 		return
 	}
 
@@ -487,7 +489,7 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 
 	// NOTE: Success zone
 	if err := templ_shared.ToastMessage("Task Restored", "success").Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render no data row")
+		assert.NoError(err, source, "failed to render toast")
 		// TODO: what should happen if the fetch fails after create
 		return
 	}

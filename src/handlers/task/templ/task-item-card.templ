@@ -37,6 +37,22 @@ templ TaskItemCardOOB(task *models.TaskView) {
 	</div>
 }
 
+templ TaskCardFrontOOB(task *models.TaskView) {
+	<div
+		hx-swap-oob="true"
+		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
+		class={
+			getPosAnd3dStyles(),
+			getTaskBorderStyle(task),
+			getThemingStyles(task),
+		}
+	>
+		@cardStatus(task)
+		@cardDetails(task)
+		@cardActions(task)
+	</div>
+}
+
 templ TaskCardFront(task *models.TaskView) {
 	<div
 		id={ fmt.Sprintf("task-card-front-%d", task.Id) }

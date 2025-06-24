@@ -85,35 +85,43 @@ templ taskHeader(task *models.TaskView) {
 		</div>
 		<div class="flex gap-2">
 			if (task.InProgress) {
-				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+				<button
+					id="start-stop-button"
+					class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
+				>
 					@templ_shared.SvgPause()
-					<span class="hidden md:inline">Pause</span>
+					<span id="start-stop-label" class="hidden xl:inline">Pause</span>
 				</button>
 			} else {
-				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+				<button
+					id="start-stop-button"
+					class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
+				>
 					@templ_shared.SvgPlay()
-					<span class="hidden md:inline">Start</span>
+					<span id="start-stop-label" class="hidden xl:inline">Start</span>
 				</button>
 			}
 			if (task.Status != models.Completed) {
 				<button
+					id="complete-task-button"
 					hx-swap="outerHTML"
 					hx-target="#task-content"
 					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
-					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
 				>
 					@templ_shared.SvgCheck()
-					<span class="hidden md:inline">Mark as Complete</span>
+					<span id="complete-task-label" class="hidden xl:inline">Mark as Complete</span>
 				</button>
 			} else {
 				<button
+					id="complete-task-button"
 					hx-swap="outerHTML"
 					hx-target="#task-content"
 					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
-					class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+					class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
 				>
 					@templ_shared.SvgClose()
-					<span class="hidden md:inline">Mark as Incomplete</span>
+					<span id="complete-task-label" class="hidden xl:inline">Mark as Incomplete</span>
 				</button>
 			}
 			@editDeleteMenuItemPage(task, editFromTask())

@@ -163,7 +163,7 @@ const updateItem = `SELECT sp_update_item($1, $2, $3, $4, $5, $6)`
 
 func (r *TasksRepo) UpdateItem(item models.Task) (err error) {
 	r.logger.Debug("UpdateItem called - sql: %s, params: %+v", updateItem, item)
-	_, err = r.database.Exec(updateItem, item.Name, item.Description, item.AssignedTo, item.DueDate, item.Project, item.Id)
+	_, err = r.database.Exec(updateItem, item.Id, item.Name, item.Description, item.AssignedTo, item.DueDate, item.Project)
 	if err != nil {
 		r.logger.Error(err, "failed to update the task - sql: %s, params: %+v", updateItem, item)
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update the task: %w", err)
