@@ -39,6 +39,18 @@ templ ProjectCardFront(project models.ProjectView) {
 	</div>
 }
 
+templ ProjectCardFrontOOB(project models.ProjectView) {
+	<div
+		hx-swap-oob="true"
+		id={ fmt.Sprintf("project-card-front-%d", project.Id) }
+		class={ getProjectBorderStyle(project), getProjectThemingStyles(project) }
+	>
+		@projectStatus(project)
+		@projectDetails(project)
+		@projectActions(project)
+	</div>
+}
+
 templ projectStatus(project models.ProjectView) {
 	<div class="hidden sm:flex pr-8 pl-4 items-center justify-center">
 		@projectStatusIcon(project)

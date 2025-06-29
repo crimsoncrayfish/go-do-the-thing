@@ -315,10 +315,15 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templ_project.ProjectContent(*projectView, false, nil).Render(r.Context(), w)
+	err = templ_project.ProjectContentOOB(*projectView, false, nil).Render(r.Context(), w)
 	if err != nil {
 		// TODO: Handle error on frontend
 		h.logger.Error(err, "Failed to execute template for the project page")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := templ_project.ProjectCardFrontOOB(*projectView).Render(r.Context(), w); err != nil {
+		h.logger.Error(err, "failed to render project card OOB")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -140,6 +140,7 @@ const updateProject = `SELECT sp_update_project($1, $2, $3, $4, $5, $6, $7, $8)`
 func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 	r.logger.Debug("UpdateProject called - sql: %s, params: %+v", updateProject, project)
 	_, err = r.database.Exec(updateProject,
+		project.Id,
 		project.Name,
 		project.Description,
 		project.Owner,
