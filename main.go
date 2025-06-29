@@ -62,12 +62,11 @@ func main() {
 	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
-	user_service_instance := user_service.SetupUserService(reposContainer)
-	users.SetupUserHandler(router, middleware_full, middleware_no_auth, jwtHandler, user_service_instance)
-
+	user_service := user_service.SetupUserService(reposContainer)
 	task_service := taskService.SetupTaskService(reposContainer)
 	project_service := projectService.SetupProjectService(reposContainer)
 
+	users.SetupUserHandler(router, middleware_full, middleware_no_auth, jwtHandler, project_service, task_service, &user_service)
 	project.SetupProjectHandler(project_service, task_service, router, middleware_full)
 
 	task.SetupTodoHandler(task_service, project_service, router, middleware_full)

@@ -11,15 +11,19 @@ import (
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	form_models "go-do-the-thing/src/models/forms"
+	projects_service "go-do-the-thing/src/services/project"
+	task_service "go-do-the-thing/src/services/task"
 	user_service "go-do-the-thing/src/services/user"
 	"net/http"
 	"time"
 )
 
 type Handler struct {
-	security    security.JwtHandler
-	userService *user_service.UserService
-	logger      slog.Logger
+	security       security.JwtHandler
+	userService    *user_service.UserService
+	projectService projects_service.ProjectService
+	taskService    task_service.TaskService
+	logger         slog.Logger
 }
 
 var source = "UsersHandler"
@@ -29,15 +33,19 @@ func SetupUserHandler(
 	mw middleware.Middleware,
 	mw_no_auth middleware.Middleware,
 	security security.JwtHandler,
+	projectService projects_service.ProjectService,
+	taskService task_service.TaskService,
 	userService *user_service.UserService,
 ) {
 	logger := slog.NewLogger(source)
 	logger.Info("Setting up users")
 
 	handler := &Handler{
-		security:    security,
-		userService: userService,
-		logger:      logger,
+		security:       security,
+		userService:    userService,
+		logger:         logger,
+		projectService: projectService,
+		taskService:    taskService,
 	}
 
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
@@ -157,7 +165,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := h.userService.RegisterUser(name, email, password, password2)
 	if err != nil {
-		form.SetError("register", err.Error())
+		form.SetError("register", "failed to register user") // TODO: this is a security risk
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
@@ -165,7 +173,23 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	h.logger.Info("Successfully created user %s", user.Email)
+	now := time.Now()
+	next_year := now.Add(time.Duration(time.Hour * 24 * 365))
+	project_id, err := h.projectService.CreateProject(
+		user.Id, user.Id,
+		"My First Project", "This is my default project",
+		&now, &next_year,
+	)
+	if err != nil {
+		h.logger.Error(err, "failed to create initial project")
+	} else {
+		_, err := h.taskService.CreateTask(user.Id, project_id, "My First Task", "Complete my first task", &next_year)
+		if err != nil {
+			h.logger.Error(err, "failed to create initial project")
+		}
+	}
+
+	h.logger.Debug("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email
 	if err := templ_users.LoginFormOOB(loginForm).Render(r.Context(), w); err != nil {

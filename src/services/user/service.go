@@ -21,8 +21,8 @@ type UserService struct {
 
 const serviceSource = "UserService"
 
-func SetupUserService(repo_container *repos.RepoContainer) *UserService {
-	return &UserService{
+func SetupUserService(repo_container *repos.RepoContainer) UserService {
+	return UserService{
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
 		logger:           slog.NewLogger(serviceSource),
@@ -84,10 +84,11 @@ func (s *UserService) RegisterUser(name, email, password, password2 string) (*mo
 		IsDeleted:    false,
 		IsAdmin:      false,
 	}
-	_, err = s.usersRepo.Create(user)
+	user_id, err := s.usersRepo.Create(user)
 	if err != nil {
 		return nil, err
 	}
+	user.Id = user_id
 	return user, nil
 }
 
