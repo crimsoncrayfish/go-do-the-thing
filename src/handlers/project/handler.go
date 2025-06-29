@@ -73,7 +73,17 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// NOTE: frontend response
+	// NOTE: Check if this is an edit panel request
+	source := r.URL.Query().Get("source")
+	if source == "list" {
+		if err = templ_project.ProjectContentOOB(*projectView, false, map[string]string{}).Render(r.Context(), w); err != nil {
+			errors.FrontendError(w, r, h.logger, err, "failed to render project content for id %d", id)
+			return
+		}
+		return
+	}
+
+	// NOTE: frontend response for full page
 	formData := formDataFromProject(*projectView)
 
 	var tasks []*models.TaskView

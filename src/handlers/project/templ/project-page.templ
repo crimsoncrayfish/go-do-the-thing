@@ -153,7 +153,7 @@ templ ProjectContent(project models.ProjectView, is_editing bool, errors map[str
 }
 
 templ ProjectContentOOB(project models.ProjectView, is_editing bool, errors map[string]string) {
-	<div id="project-content" hx-swap-oob="true">
+	<div>
 		@ProjectContent(project, is_editing, errors)
 	</div>
 }

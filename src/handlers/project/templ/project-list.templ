@@ -13,8 +13,8 @@ templ ProjectListWithBody(navbar m.NavBarObject, formData mf.ProjectForm, projec
 
 templ ProjectListPage(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
 	@ts.NavBar(navbar)
-	<div class="grid grid-cols-1 h-[calc(100vh-4rem)]">
-		<div id="main-content" class="col-span-1 h-full transition-all duration-300 ease-in-out overflow-y-auto">
+	<div id="main-layout" class="grid grid-cols-[100%_0%] h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-300 ease-in-out">
+		<div id="main-content" class="overflow-y-auto transition-opacity duration-300 ease-in-out">
 			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 				<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
 					<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Projects</p>
@@ -26,7 +26,7 @@ templ ProjectListPage(navbar m.NavBarObject, formData mf.ProjectForm, projects [
 				@ProjectList(projects)
 			</div>
 		</div>
-		@EditPanel(m.ProjectView{})
+		@ts.EditPanel("Edit Project", ProjectEditContent(m.ProjectView{}))
 	</div>
 }
 
@@ -39,10 +39,13 @@ templ ProjectList(projects []m.ProjectView) {
 	<script>
 function flipProjectCardUpdateToBack(event, id) {
     const method = event.detail.requestConfig.verb.toUpperCase();
+    if (method === "GET") {
+        return;
+    }
     if (method === "POST") {
-	toggleClassForId('hidden', 'project-card-back-update-'+id)
+        toggleClassForId('hidden', 'project-card-back-update-'+id)
     } else if (method === "DELETE") {
-	toggleClassForId('hidden', 'project-card-back-delete-'+id)
+        toggleClassForId('hidden', 'project-card-back-delete-'+id)
     }
     const inner = document.getElementById('project-card-inner-' + id);
     if (!inner) return;
@@ -62,81 +65,9 @@ function flipProjectCardUpdateToFront(event, id) {
 </script>
 }
 
-templ EditPanel(project m.ProjectView) {
-	<div
-		id="edit-panel"
-		class="fixed top-[5rem] right-0 h-[calc(100vh-5rem)] transition-all duration-300 ease-in-out overflow-hidden bg-secondary-light dark:bg-secondary-dark shadow-lg transform translate-x-full"
-		style="width: 0;"
-	>
-		<div id="panel-content" class="w-[50vw] h-full p-6 overflow-y-auto transition-all duration-300">
-			<div class="flex justify-between items-center mb-6">
-				<div class="flex items-center gap-4">
-					<button
-						onclick="togglePanelWidth()"
-						class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-transform duration-300"
-						id="expand-button"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-						</svg>
-					</button>
-					<h2 class="text-2xl font-bold text-text-on-light dark:text-text-on-dark">Edit Project</h2>
-				</div>
-				<button
-					onclick="toggleEditPanel()"
-					class="text-text-on-light dark:text-text-on-dark hover:opacity-80"
-				>
-					@ts.SvgClose()
-				</button>
-			</div>
-			<div class="space-y-4">
-				<p class="text-text-on-light dark:text-text-on-dark">Edit panel content will go here...</p>
-			</div>
-		</div>
+templ ProjectEditContent(project m.ProjectView) {
+	<div class="space-y-4">
+		<p class="text-text-on-light dark:text-text-on-dark">Edit panel content will go here...</p>
+		<p class="text-text-on-light dark:text-text-on-dark">Project: {project.Name}</p>
 	</div>
-	<script>
-		function toggleEditPanel() {
-			const panel = document.getElementById('edit-panel');
-			const mainContent = document.getElementById('main-content');
-			
-			if (panel.style.width === '0px') {
-				panel.classList.remove('translate-x-full');
-				panel.style.width = '50vw';
-				mainContent.style.marginRight = '50vw';
-			} else {
-				panel.classList.add('translate-x-full');
-				panel.style.width = '0';
-				mainContent.style.marginRight = '0';
-				// Reset to 50% width when closing
-				panel.style.width = '0';
-				mainContent.style.display = 'block';
-				document.getElementById('expand-button').classList.remove('rotate-180');
-				document.getElementById('panel-content').classList.remove('w-screen');
-				document.getElementById('panel-content').classList.add('w-[50vw]');
-			}
-		}
-
-		function togglePanelWidth() {
-			const panel = document.getElementById('edit-panel');
-			const mainContent = document.getElementById('main-content');
-			const expandButton = document.getElementById('expand-button');
-			const panelContent = document.getElementById('panel-content');
-			
-			if (panel.style.width === '50vw') {
-				// Expand to full width
-				panel.style.width = '100vw';
-				mainContent.style.display = 'none';
-				expandButton.classList.add('rotate-180');
-				panelContent.classList.remove('w-[50vw]');
-				panelContent.classList.add('w-screen');
-			} else {
-				// Collapse to 50% width
-				panel.style.width = '50vw';
-				mainContent.style.display = 'block';
-				expandButton.classList.remove('rotate-180');
-				panelContent.classList.remove('w-screen');
-				panelContent.classList.add('w-[50vw]');
-			}
-		}
-	</script>
 }
