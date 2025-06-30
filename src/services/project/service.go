@@ -6,33 +6,33 @@ import (
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	roles_repo "go-do-the-thing/src/database/repos/roles"
+	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
-	"go-do-the-thing/src/services/project_user_service"
 	"time"
 )
 
 type ProjectService struct {
-	logger              slog.Logger
-	projectRepo         projects_repo.ProjectsRepo
-	usersRepo           users_repo.UsersRepo
-	projectUsersRepo    project_users_repo.ProjectUsersRepo
-	rolesRepo           roles_repo.RolesRepo
-	projectUsersService project_user_service.ProjectUserService
+	logger           slog.Logger
+	projectRepo      projects_repo.ProjectsRepo
+	usersRepo        users_repo.UsersRepo
+	projectUsersRepo project_users_repo.ProjectUsersRepo
+	rolesRepo        roles_repo.RolesRepo
+	taskRepo         tasks_repo.TasksRepo
 }
 
 const serviceSource = "ProjectService"
 
 func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
 	return ProjectService{
-		logger:              slog.NewLogger(serviceSource),
-		projectRepo:         *repo_container.GetProjectsRepo(),
-		usersRepo:           *repo_container.GetUsersRepo(),
-		rolesRepo:           *repo_container.GetRolesRepo(),
-		projectUsersRepo:    *repo_container.GetProjectUsersRepo(),
-		projectUsersService: project_user_service.SetupProjectUserService(repo_container),
+		logger:           slog.NewLogger(serviceSource),
+		projectRepo:      *repo_container.GetProjectsRepo(),
+		usersRepo:        *repo_container.GetUsersRepo(),
+		rolesRepo:        *repo_container.GetRolesRepo(),
+		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
 	}
 }
 
@@ -116,7 +116,7 @@ func (s ProjectService) UpdateProject(
 	name, description string,
 	dueDate *time.Time,
 ) error {
-	err := s.projectUsersService.UserBelongsToProject(current_user_id, project_id)
+	err := s.UserBelongsToProject(current_user_id, project_id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return err
@@ -137,7 +137,7 @@ func (s ProjectService) UpdateProject(
 }
 
 func (s ProjectService) getProjectForUser(id int64, currentUserId int64) (*models.Project, error) {
-	err := s.projectUsersService.UserBelongsToProject(currentUserId, id)
+	err := s.UserBelongsToProject(currentUserId, id)
 	if err != nil {
 		// NOTE: this should already be nicely formatted
 		return nil, err
@@ -193,7 +193,16 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 		assert.NotNil(createdBy, serviceSource, fmt.Sprintf("project creator cant be nil - modifier id %d", project.ModifiedBy))
 
 		// Convert to ViewModel
-		projectViews[i] = project.ToViewModel(owner, createdBy, modifiedBy)
+		view := project.ToViewModel(owner, createdBy, modifiedBy)
+		completed, total, err := s.taskRepo.GetProjectTaskCompletion(project.Id)
+		if err != nil {
+			view.CompletedTasks = 0
+			view.TotalTasks = 0
+		} else {
+			view.CompletedTasks = completed
+			view.TotalTasks = total
+		}
+		projectViews[i] = view
 	}
 
 	return projectViews, nil
@@ -231,7 +240,26 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 		}
 		users[project.ModifiedBy] = modified_by
 	}
-	projectView := project.ToViewModel(owner, created_by, modified_by)
+	view := project.ToViewModel(owner, created_by, modified_by)
+	completed, total, err := s.taskRepo.GetProjectTaskCompletion(project.Id)
+	if err != nil {
+		view.CompletedTasks = 0
+		view.TotalTasks = 0
+	} else {
+		view.CompletedTasks = completed
+		view.TotalTasks = total
+	}
+	return &view, nil
+}
 
-	return &projectView, nil
+func (s *ProjectService) UserBelongsToProject(user_id, project_id int64) (err error) {
+	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
+	if err != nil {
+		// NOTE: Errors from repo are wrapped
+		return err
+	}
+	if len(roles) == 0 {
+		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
+	}
+	return nil
 }

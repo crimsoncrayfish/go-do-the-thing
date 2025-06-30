@@ -46,18 +46,20 @@ func (p *Project) AssertHealthy() {
 }
 
 type ProjectView struct {
-	Id           int64
-	Name         string
-	Description  string
-	Owner        UserView
-	StartDate    *time.Time
-	DueDate      *time.Time
-	CreatedBy    UserView
-	CreatedDate  *time.Time
-	ModifiedBy   UserView
-	ModifiedDate *time.Time
-	IsComplete   bool
-	IsDeleted    bool
+	Id             int64
+	Name           string
+	Description    string
+	Owner          UserView
+	StartDate      *time.Time
+	DueDate        *time.Time
+	CreatedBy      UserView
+	CreatedDate    *time.Time
+	ModifiedBy     UserView
+	ModifiedDate   *time.Time
+	IsComplete     bool
+	IsDeleted      bool
+	CompletedTasks int64
+	TotalTasks     int64
 }
 
 func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {

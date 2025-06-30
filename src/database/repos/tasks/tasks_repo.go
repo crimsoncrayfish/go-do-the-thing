@@ -240,3 +240,21 @@ func (r *TasksRepo) GetItemsCount(userId int64) (int64, error) {
 	r.logger.Debug("GetItemsCount succeeded - count: %d, params: %v", count, userId)
 	return count, nil
 }
+
+// Returns (completed, total, error)
+func (r *TasksRepo) GetProjectTaskCompletion(projectId int64) (int64, int64, error) {
+	const totalQuery = `SELECT COUNT(*) FROM items WHERE project_id = $1 AND is_deleted = FALSE`
+	const completedQuery = `SELECT COUNT(*) FROM items WHERE project_id = $1 AND is_deleted = FALSE AND status = 1`
+	var total, completed int64
+	err := r.database.QueryRow(totalQuery, projectId).Scan(&total)
+	if err != nil {
+		r.logger.Error(err, "failed to count total tasks for project", projectId)
+		return 0, 0, err
+	}
+	err = r.database.QueryRow(completedQuery, projectId).Scan(&completed)
+	if err != nil {
+		r.logger.Error(err, "failed to count completed tasks for project", projectId)
+		return completed, total, err
+	}
+	return completed, total, nil
+}

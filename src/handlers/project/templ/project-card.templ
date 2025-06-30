@@ -31,11 +31,25 @@ templ ProjectCard(project models.ProjectView) {
 templ ProjectCardFront(project models.ProjectView) {
 	<div
 		id={ fmt.Sprintf("project-card-front-%d", project.Id) }
-		class={ getProjectBorderStyle(project), getProjectThemingStyles(project) }
+		class={ getProjectBorderStyle(project), getProjectThemingStyles(project), "flex flex-col h-full pt-4 rounded-xl overflow-hidden" }
 	>
-		@projectStatus(project)
-		@projectDetails(project)
-		@projectActions(project)
+		<div class="flex-1 w-full px-4 pb-4">
+			<div class="flex flex-row w-full items-stretch">
+				@projectStatus(project)
+				@projectDetails(project)
+				@projectActions(project)
+			</div>
+		</div>
+		if (project.TotalTasks > 0) {
+			<div class="w-full">
+				<div class="w-full h-1 bg-border-light dark:bg-border-dark overflow-hidden">
+					<div
+						class="h-1 bg-success-light dark:bg-success-dark transition-all duration-500"
+						style={ fmt.Sprintf("width: %.2f%%;", float64(project.CompletedTasks)/float64(project.TotalTasks)*100) }
+					></div>
+				</div>
+			</div>
+		}
 	</div>
 }
 
@@ -157,9 +171,9 @@ func getProjectBorderStyle(project models.ProjectView) string {
 
 func getProjectThemingStyles(project models.ProjectView) string {
 	if project.IsDeleted {
-		return "theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-danger-light dark:border-danger-dark shadow-lg flex flex-col sm:flex-row opacity-50"
+		return "theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl border border-danger-light dark:border-danger-dark shadow-lg opacity-50"
 	}
-	return "theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col sm:flex-row"
+	return "theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl border border-border-light dark:border-border-dark shadow-lg"
 }
 
 templ projectStatusIcon(project models.ProjectView) {
