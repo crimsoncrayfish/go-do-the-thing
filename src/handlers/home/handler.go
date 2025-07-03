@@ -15,18 +15,11 @@ type HomeHandler struct {
 	logger slog.Logger
 }
 
-var activeScreens Screens
-
 var source = "HomeHandler"
 
 func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger(source)
-	logger.Info("Setting up the Home screen")
-	activeScreens = Screens{
-		models.NavBarObject{
-			ActiveScreens: models.ActiveScreens{IsHome: true},
-		},
-	}
+	logger.Info("Setting up the Home Handler")
 	handler := &HomeHandler{
 		logger: logger,
 	}
@@ -35,19 +28,15 @@ func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 	router.Handle("GET /home", mw_stack(http.HandlerFunc(handler.Home)))
 }
 
-type Screens struct {
-	NavBar models.NavBarObject
-}
-
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, _, _, err := helpers.GetUserFromContext(r)
+	_, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
+	if err := home_templ.Index(models.ScreenHome).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,7 +44,7 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
-	_, _, _, err := helpers.GetUserFromContext(r)
+	_, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -70,13 +59,13 @@ func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
 
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, _, _, err := helpers.GetUserFromContext(r)
+	_, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	if err := home_templ.Index(activeScreens.NavBar).Render(r.Context(), w); err != nil {
+	if err := home_templ.Index(models.ScreenHome).Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "Failed to execute template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

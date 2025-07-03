@@ -10,7 +10,7 @@ import (
 
 func FrontendError(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
 	// TODO: What if the error occurs during login/register
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, _ := helpers.GetUserFromContext(r)
 	assert.NoError(err, "FrontendError", "user auth failed unsuccessfully")
 
 	w.Header().Set("HX-Retarget", "#toast-message")

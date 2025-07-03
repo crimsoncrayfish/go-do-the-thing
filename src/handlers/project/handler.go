@@ -26,8 +26,6 @@ type Handler struct {
 	task_service    task_service.TaskService
 }
 
-var activeScreens models.NavBarObject
-
 var (
 	handlerSource = "ProjectHandler"
 	defaultForm   = form_models.NewDefaultProjectForm()
@@ -36,7 +34,6 @@ var (
 func SetupProjectHandler(service project_service.ProjectService, task_service task_service.TaskService, router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger(handlerSource)
 
-	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsProjects: true}}
 	projectsHandler := &Handler{
 		project_service: service,
 		task_service:    task_service,
@@ -53,7 +50,7 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -67,7 +64,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: service call
-	projectView, err := h.project_service.GetProjectView(id, currentUserId)
+	projectView, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
 		errors.FrontendErrorNotFound(w, r, h.logger, err, "failed to find project %d", id)
 		return
@@ -87,22 +84,24 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	formData := formDataFromProject(*projectView)
 
 	var tasks []*models.TaskView
-	tasks, err = h.task_service.GetProjectTaskViewList(currentUserId, projectView.Id)
+	tasks, err = h.task_service.GetProjectTaskViewList(current_user_id, projectView.Id)
 	if err != nil {
-		errors.FrontendError(w, r, h.logger, err, "failed to get the tasks for project %d", id)
+		h.logger.Error(err, "failed to get tasks for project %d", id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = templ_project.ProjectWithBody(*projectView, activeScreens, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
+	err = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
 	if err != nil {
-		errors.FrontendError(w, r, h.logger, err, "failed to render project %d", id)
+		h.logger.Error(err, "failed to render project page for id %d", id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -117,7 +116,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: service call
-	hasProjects, err := h.project_service.DeleteProject(id, currentUserId)
+	hasProjects, err := h.project_service.DeleteProject(id, current_user_id)
 	if err != nil {
 		h.logger.Error(err, "failed to delete project")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -125,7 +124,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: frontend response
-	project_view, err := h.project_service.GetProjectView(id, currentUserId)
+	project_view, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
 		h.logger.Error(err, "failed to find project")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -147,24 +146,24 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
 	// NOTE: service call
-	pList, err := h.project_service.GetAllProjectsForUser(currentUserId)
+	pList, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get projects for user %d", currentUserId)
+		h.logger.Error(err, "failed to get projects for user %d", current_user_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// NOTE: frontend response
 	form := form_models.NewDefaultProjectForm()
-	err = templ_project.ProjectListWithBody(activeScreens, form, pList).Render(r.Context(), w)
+	err = templ_project.ProjectListWithBody(models.ScreenProjects, form, pList).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to get projects for user %d", currentUserId)
+		h.logger.Error(err, "failed to render project list page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -172,7 +171,7 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	currentUserId, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -212,46 +211,47 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now()
 	new_id, err := h.project_service.CreateProject(
-		currentUserId, currentUserId, // NOTE: for now owner is also creator
+		current_user_id,
+		current_user_id,
 		name, description,
 		&now, &due_date)
 	if err != nil {
-		h.logger.Error(err, "failed to create project for user %d", currentUserId)
+		h.logger.Error(err, "failed to create project for user %d", current_user_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	projectView, err := h.project_service.GetProjectView(new_id, currentUserId)
+	projectView, err := h.project_service.GetProjectView(new_id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get newly added project (%d) for user %d", new_id, currentUserId)
+		h.logger.Error(err, "failed to get newly added project (%d) for user %d", new_id, current_user_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := templ_project.ProjectCardOOB(*projectView).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render new project row (%d) for user %d", new_id, currentUserId)
+		h.logger.Error(err, "failed to render new project row (%d) for user %d", new_id, current_user_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render no data row for user %d", currentUserId)
+		h.logger.Error(err, "failed to render no data row for user %d", current_user_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := templ_project.ProjectFormContent(defaultForm).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render project form for user %d", currentUserId)
+		h.logger.Error(err, "failed to render project form for user %d", current_user_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	err = templ_shared.ToastActionRedirect("Successfully created project", fmt.Sprintf("/project/%d", new_id), "Go to project", "success").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render toast for user %d", currentUserId)
+		h.logger.Error(err, "failed to render toast for user %d", current_user_id)
 		return
 	}
 }
 
 func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return

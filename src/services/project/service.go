@@ -33,6 +33,7 @@ func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
 		usersRepo:        *repo_container.GetUsersRepo(),
 		rolesRepo:        *repo_container.GetRolesRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
+		taskRepo:         *repo_container.GetTasksRepo(),
 	}
 }
 

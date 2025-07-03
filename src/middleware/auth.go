@@ -47,7 +47,7 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 			return
 		}
 
-		//Validate token expiry time
+		// Validate token expiry time
 		exp := claims["expiry"]
 		if exp == "" {
 			redirectOnErr(w, r, a.Logger, errors.New("no expiry on token"), "/login", "Invalid token, expiry time missing")
@@ -67,7 +67,7 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 		expDate, err := time.Parse(constants.DateTimeFormat, exp.(string))
 		if err != nil {
 			redirectOnErr(w, r, a.Logger, err, "/login", "Token expiry malformed %s", exp)
-			//TODO : redo this to pass in params for message
+			// TODO : redo this to pass in params for message
 			return
 		}
 		if expDate.Before(time.Now()) {
@@ -93,10 +93,11 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 			a.Logger.Info("Token for user %s is close to expiring", userId)
 		}
 
-		values := helpers.HttpContext{Values: map[string]string{
+		values := helpers.HttpContext{Values: map[constants.ContextKey]string{
 			constants.AuthUserId:    strconv.FormatInt(user.Id, 10),
 			constants.AuthUserEmail: user.Email,
 			constants.AuthUserName:  user.FullName,
+			constants.AuthIsAdmin:   strconv.FormatBool(user.IsAdmin),
 		}}
 		ctx := context.WithValue(r.Context(), constants.AuthContext, values)
 		request := r.WithContext(ctx)
@@ -104,6 +105,7 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 		next.ServeHTTP(w, request)
 	})
 }
+
 func redirectOnErr(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, location, message string, params ...any) {
 	// TODO: Add ability to let user know why redirect happened (message on screen?)
 	logger.Error(err, message, params...)

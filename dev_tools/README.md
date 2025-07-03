@@ -19,6 +19,7 @@ This directory contains development utilities for managing the todo application 
 .\run_tool.ps1 list-procs
 .\run_tool.ps1 backup
 .\run_tool.ps1 health-check
+.\run_tool.ps1 run-migrations
 ```
 
 **Windows Command Prompt:**
@@ -26,6 +27,7 @@ This directory contains development utilities for managing the todo application 
 run_tool.bat list-procs
 run_tool.bat backup
 run_tool.bat health-check
+run_tool.bat run-migrations
 ```
 
 ### Direct Execution
@@ -64,6 +66,10 @@ go run main.go
 - **`backup`** - Creates a timestamped database backup using pg_dump
 - **`health-check`** - Validates data integrity, checks for orphaned records, and reports inconsistencies
 
+### 📦 **Migration Tools**
+
+- **`run-migrations`** - Applies all .sql migration files in src/database/migrations (in filename order)
+
 ## Tool Categories
 
 ### Safe Tools (No Data Loss Risk)
@@ -83,6 +89,7 @@ go run main.go
 1. **Before making changes:**
    ```bash
    go run main.go backup
+   go run main.go run-migrations
    ```
 
 2. **Check current state:**
@@ -154,6 +161,9 @@ If a tool fails, check:
 - **backup**: Creates a timestamped SQL backup of the entire database
 - **health-check**: Validates data integrity and reports any issues found
 
+### Migration Tools
+- **run-migrations**: Applies all .sql migration files in src/database/migrations (in filename order)
+
 ## File Structure
 
 ```
@@ -172,8 +182,6 @@ dev_tools/
 ```
 
 ## Architecture
-
-The dev tools are organized in a modular structure:
 
 - **`tools/database.go`**: Shared database connection utilities
 - **`tools/schema.go`**: Schema inspection and listing tools
@@ -199,4 +207,16 @@ ApplyMigrationFile("../src/database/migrations/20240614-update-id-columns.sql")
 ApplyMigrationsInDir("../src/database/migrations")
 ```
 
-Add these calls to a custom tool or run them from a Go script as needed 
+Add these calls to a custom tool or run them from a Go script as needed
+
+### Running Migrations (CLI Tool)
+
+You can now apply all migrations from the command line:
+
+```bash
+# Apply all migrations in src/database/migrations
+cd dev_tools
+go run main.go run-migrations
+```
+
+This will apply all .sql files in filename order. 

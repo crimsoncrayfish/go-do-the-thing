@@ -44,6 +44,14 @@ func (l *Logger) Error(err error, msg string, a ...any) {
 	fmt.Printf(errLogFormat, colorRed, l.Name, time.Now().Format("2006-01-02 15:04:05"), "ERROR", logMessage, err.Error(), colorNone)
 }
 
+// COLOR Type - date - message RESETCOLOR
+const warnLogFormat = "%s %s - %s - %s \n%s %s\n"
+
+func (l *Logger) Warn(msg string, a ...any) {
+	message := fmt.Sprintf(msg, a...)
+	fmt.Printf(warnLogFormat, colorYellow, time.Now().Format("2006-01-02 15:04:05"), "WARN", l.Name, message, colorNone)
+}
+
 // Type - date - message
 const infoLogFormat = "%s - %s - %s - %s\n"
 

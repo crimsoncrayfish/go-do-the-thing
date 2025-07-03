@@ -28,8 +28,11 @@ templ ProjectCard(project models.ProjectView) {
 	</div>
 }
 
-templ ProjectCardFront(project models.ProjectView) {
+templ projectCardFront(project models.ProjectView, isOOB bool) {
 	<div
+		if isOOB {
+			hx-swap-oob="true"
+		}
 		id={ fmt.Sprintf("project-card-front-%d", project.Id) }
 		class={ getProjectBorderStyle(project), getProjectThemingStyles(project), "flex flex-col h-full pt-4 rounded-xl overflow-hidden" }
 	>
@@ -53,16 +56,12 @@ templ ProjectCardFront(project models.ProjectView) {
 	</div>
 }
 
+templ ProjectCardFront(project models.ProjectView) {
+	@projectCardFront(project, false)
+}
+
 templ ProjectCardFrontOOB(project models.ProjectView) {
-	<div
-		hx-swap-oob="true"
-		id={ fmt.Sprintf("project-card-front-%d", project.Id) }
-		class={ getProjectBorderStyle(project), getProjectThemingStyles(project) }
-	>
-		@projectStatus(project)
-		@projectDetails(project)
-		@projectActions(project)
-	</div>
+	@projectCardFront(project, true)
 }
 
 templ projectStatus(project models.ProjectView) {

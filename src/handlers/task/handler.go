@@ -26,9 +26,8 @@ type Handler struct {
 }
 
 var (
-	activeScreens models.NavBarObject
-	source        = "TasksHandler"
-	defaultForm   = fm.NewDefaultTaskForm()
+	source      = "TasksHandler"
+	defaultForm = fm.NewDefaultTaskForm()
 )
 
 func SetupTodoHandler(
@@ -39,7 +38,6 @@ func SetupTodoHandler(
 ) {
 	logger := slog.NewLogger(source)
 
-	activeScreens = models.NavBarObject{ActiveScreens: models.ActiveScreens{IsTodoList: true}}
 	todoHandler := &Handler{
 		task_service:    taskService,
 		project_service: projectService,
@@ -57,7 +55,7 @@ func SetupTodoHandler(
 
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -160,7 +158,7 @@ type NoItemRowData struct {
 
 func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -258,14 +256,9 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type ItemPageModel struct {
-	Task   models.TaskView
-	NavBar models.NavBarObject
-}
-
 func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -303,13 +296,13 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	} else {
 		contentType := r.Header.Get("accept")
 		if contentType == "text/html" {
-			if err = templ_todo.TaskItem(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+			if err = templ_todo.TaskItem(task, models.ScreenTodo, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 				h.logger.Error(err, "failed to render task item with id %d", id)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		} else {
-			if err = templ_todo.TaskItemWithBody(task, activeScreens, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+			if err = templ_todo.TaskItemWithBody(task, models.ScreenTodo, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 				h.logger.Error(err, "failed to render task item with id %d", id)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -320,7 +313,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -371,15 +364,9 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type ListModel struct {
-	Tasks    []models.TaskView
-	NavBar   models.NavBarObject
-	FormData fm.TaskForm
-}
-
 func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -402,13 +389,13 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Success zone
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskListPage(activeScreens, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskListPage(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		if err = templ_todo.TaskListWithBody(activeScreens, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		if err = templ_todo.TaskListWithBody(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "Failed to execute template for the item list page")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -418,7 +405,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -466,7 +453,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return

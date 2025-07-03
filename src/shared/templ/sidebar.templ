@@ -1,8 +1,17 @@
 package templ_shared
 
-import "go-do-the-thing/src/models"
+import (
+	"context"
+	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/models"
+)
 
-templ SideBar(navbar models.NavBarObject) {
+// Helper function to get isAdmin from context
+func isAdminFromCtx(ctx context.Context) bool {
+	return helpers.GetIsAdminFromContext(ctx)
+}
+
+templ SideBar(activeScreen models.Screen) {
 	<div
 		id="sidebar-container"
 		class="fixed top-0 left-0 z-40 w-[100%] h-[100%] transition-transform -translate-x-full bg-gray-900 bg-opacity-50"
@@ -19,17 +28,20 @@ templ SideBar(navbar models.NavBarObject) {
 			</button>
 			<div class="py-4 overflow-y-auto">
 				<ul class="space-y-2 font-medium">
-					@navBarListItem("Take me back home", navbar.ActiveScreens.IsHome, "/home")
-					@navBarListItem("Whats on the agenda?", navbar.ActiveScreens.IsTodoList, "/todo/items")
-					@navBarListItem("My side projects...", navbar.ActiveScreens.IsProjects, "/projects")
+					@navBarListItem("Take me back home", activeScreen == models.ScreenHome, "/home")
+					@navBarListItem("Whats on the agenda?", activeScreen == models.ScreenTodo, "/todo/items")
+					@navBarListItem("My side projects...", activeScreen == models.ScreenProjects, "/projects")
 					@navBarListItem("Lets form a habbit!", false, "/habbits")
+					if isAdminFromCtx(ctx) {
+						@navBarListItem("Admin dashboard", activeScreen == models.ScreenAdmin, "/admin")
+					}
 					<li>
 						<a
 							hx-get="/error"
 							hx-target="body"
 							class="flex items-center p-2 text-text-on-light dark:text-text-on-dark cursor-pointer"
 						>
-							if navbar.ActiveScreens.IsError {
+							if activeScreen == models.ScreenError {
 								@SvgBracket()
 							} else {
 								@SvgSlash()

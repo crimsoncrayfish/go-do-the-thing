@@ -7,12 +7,12 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ ProjectListWithBody(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
-	@ts.Main(ProjectListPage(navbar, formData, projects))
+templ ProjectListWithBody(activeScreen m.Screen, formData mf.ProjectForm, projects []m.ProjectView) {
+	@ts.Main(ProjectListPage(activeScreen, formData, projects))
 }
 
-templ ProjectListPage(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
-	@ts.NavBar(navbar)
+templ ProjectListPage(activeScreen m.Screen, formData mf.ProjectForm, projects []m.ProjectView) {
+	@ts.NavBar(activeScreen)
 	<div id="main-layout" class="grid grid-cols-[100%_0%] h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-300 ease-in-out">
 		<div id="main-content" class="overflow-y-auto transition-opacity duration-300 ease-in-out">
 			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
@@ -68,6 +68,6 @@ function flipProjectCardUpdateToFront(event, id) {
 templ ProjectEditContent(project m.ProjectView) {
 	<div class="space-y-4">
 		<p class="text-text-on-light dark:text-text-on-dark">Edit panel content will go here...</p>
-		<p class="text-text-on-light dark:text-text-on-dark">Project: {project.Name}</p>
+		<p class="text-text-on-light dark:text-text-on-dark">Project: { project.Name }</p>
 	</div>
 }

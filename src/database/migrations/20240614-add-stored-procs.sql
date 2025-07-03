@@ -2,6 +2,7 @@
 -- Date: 2024-06-14
 
 -- USERS
+DROP FUNCTION IF EXISTS sp_insert_user(TEXT, TEXT, TEXT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_insert_user(_email TEXT, _full_name TEXT, _password_hash TEXT, _create_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS BIGINT AS $$
 DECLARE _id BIGINT;
@@ -12,42 +13,49 @@ BEGIN
     RETURN _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_user_details(BIGINT, TEXT);
 CREATE OR REPLACE FUNCTION sp_update_user_details(_id BIGINT, _full_name TEXT)
 RETURNS VOID AS $$
 BEGIN
     UPDATE users SET full_name = _full_name WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_user_password(BIGINT, TEXT);
 CREATE OR REPLACE FUNCTION sp_update_user_password(_id BIGINT, _password_hash TEXT)
 RETURNS VOID AS $$
 BEGIN
     UPDATE users SET password_hash = _password_hash WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_user_session(BIGINT, TEXT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_update_user_session(_id BIGINT, _session_id TEXT, _session_start_time TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
     UPDATE users SET session_id = _session_id, session_start_time = _session_start_time WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_user_is_admin(BIGINT, BOOLEAN);
 CREATE OR REPLACE FUNCTION sp_update_user_is_admin(_id BIGINT, _is_admin BOOLEAN)
 RETURNS VOID AS $$
 BEGIN
     UPDATE users SET is_admin = _is_admin WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_user(BIGINT);
 CREATE OR REPLACE FUNCTION sp_delete_user(_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     UPDATE users SET is_deleted = TRUE WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_user_by_email(TEXT);
 CREATE OR REPLACE FUNCTION sp_get_user_by_email(_email TEXT)
 RETURNS TABLE(id BIGINT, email TEXT, full_name TEXT, session_id TEXT, session_start_time TIMESTAMP WITHOUT TIME ZONE, is_admin BOOLEAN, is_deleted BOOLEAN, create_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
     RETURN QUERY SELECT users.id, users.email, users.full_name, users.session_id, users.session_start_time, users.is_admin, users.is_deleted, users.create_date FROM users WHERE users.email = _email;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_user_password(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_user_password(_id BIGINT)
 RETURNS TEXT AS $$
 DECLARE _password TEXT;
@@ -56,18 +64,21 @@ BEGIN
     RETURN _password;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_user_by_id(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_user_by_id(_id BIGINT)
 RETURNS TABLE(id BIGINT, email TEXT, full_name TEXT, session_id TEXT, session_start_time TIMESTAMP WITHOUT TIME ZONE, is_admin BOOLEAN, is_deleted BOOLEAN, create_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
     RETURN QUERY SELECT users.id, users.email, users.full_name, users.session_id, users.session_start_time, users.is_admin, users.is_deleted, users.create_date FROM users WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_users_not_deleted();
 CREATE OR REPLACE FUNCTION sp_get_users_not_deleted()
 RETURNS TABLE(id BIGINT, email TEXT, full_name TEXT, session_id TEXT, session_start_time TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, is_admin BOOLEAN, create_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
     RETURN QUERY SELECT users.id, users.email, users.full_name, users.session_id, users.session_start_time, users.is_deleted, users.is_admin, users.create_date FROM users WHERE users.is_deleted = FALSE;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_logout_user(BIGINT);
 CREATE OR REPLACE FUNCTION sp_logout_user(_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
@@ -75,6 +86,7 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- PROJECTS
+DROP FUNCTION IF EXISTS sp_insert_project(TEXT, TEXT, BIGINT, DATE, DATE, BIGINT, TIMESTAMP, BIGINT, TIMESTAMP, BOOLEAN, BOOLEAN);
 CREATE OR REPLACE FUNCTION sp_insert_project(_name TEXT, _description TEXT, _owner BIGINT, _start_date DATE, _due_date DATE, _created_by BIGINT, _created_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE, _is_complete BOOLEAN, _is_deleted BOOLEAN)
 RETURNS BIGINT AS $$
 DECLARE _id BIGINT;
@@ -85,30 +97,35 @@ BEGIN
     RETURN _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_project(BIGINT, TEXT, TEXT, BIGINT, DATE, DATE, BIGINT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_update_project(_id BIGINT, _name TEXT, _description TEXT, _owner BIGINT, _start_date DATE, _due_date DATE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
     UPDATE projects SET name = _name, description = _description, owner = _owner, start_date = _start_date, due_date = _due_date, modified_by = _modified_by, modified_date = _modified_date WHERE projects.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_project(BIGINT, BIGINT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_delete_project(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
     UPDATE projects SET is_deleted = TRUE, modified_by = _modified_by, modified_date = _modified_date WHERE projects.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_projects_by_user(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_projects_by_user(_user_id BIGINT)
-RETURNS TABLE(id BIGINT, name TEXT, description TEXT, owner BIGINT, start_date DATE, due_date DATE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_complete BOOLEAN, is_deleted BOOLEAN) AS $$
+RETURNS TABLE(id BIGINT, name TEXT, description TEXT, owner BIGINT, start_date TIMESTAMP WITHOUT TIME ZONE, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_complete BOOLEAN, is_deleted BOOLEAN) AS $$
 BEGIN
     RETURN QUERY SELECT projects.id, projects.name, projects.description, projects.owner, projects.start_date, projects.due_date, projects.created_by, projects.created_date, projects.modified_by, projects.modified_date, projects.is_complete, projects.is_deleted FROM projects JOIN project_users ON projects.id = project_users.project_id WHERE project_users.user_id = _user_id AND projects.is_deleted = FALSE;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_project(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_project(_id BIGINT)
-RETURNS TABLE(id BIGINT, name TEXT, description TEXT, owner BIGINT, start_date DATE, due_date DATE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_complete BOOLEAN, is_deleted BOOLEAN) AS $$
+RETURNS TABLE(id BIGINT, name TEXT, description TEXT, owner BIGINT, start_date TIMESTAMP WITHOUT TIME ZONE, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_complete BOOLEAN, is_deleted BOOLEAN) AS $$
 BEGIN
     RETURN QUERY SELECT projects.id, projects.name, projects.description, projects.owner, projects.start_date, projects.due_date, projects.created_by, projects.created_date, projects.modified_by, projects.modified_date, projects.is_complete, projects.is_deleted FROM projects WHERE projects.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_project_count(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_project_count(_user_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _count BIGINT;
@@ -118,6 +135,7 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- TASKS (ITEMS)
+DROP FUNCTION IF EXISTS sp_insert_item(TEXT, TEXT, INTEGER, BIGINT, DATE, BIGINT, TIMESTAMP, BIGINT, TIMESTAMP, BIGINT);
 CREATE OR REPLACE FUNCTION sp_insert_item(_name TEXT, _description TEXT, _status INTEGER, _assigned_to BIGINT, _due_date DATE, _created_by BIGINT, _created_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE, _project_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _id BIGINT;
@@ -128,48 +146,56 @@ BEGIN
     RETURN _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_item(BIGINT, TEXT, TEXT, BIGINT, DATE, BIGINT);
 CREATE OR REPLACE FUNCTION sp_update_item(_id BIGINT, _name TEXT, _description TEXT, _assigned_to BIGINT, _due_date DATE, _project_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     UPDATE items SET name = _name, description = _description, assigned_to = _assigned_to, due_date = _due_date, project_id = _project_id WHERE items.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_item_status(BIGINT, INTEGER, TIMESTAMP, BIGINT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_update_item_status(_id BIGINT, _status INTEGER, _complete_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
     UPDATE items SET status = _status, complete_date = _complete_date, modified_by = _modified_by, modified_date = _modified_date WHERE items.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_item(BIGINT, BIGINT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_delete_item(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
     UPDATE items SET is_deleted = TRUE, modified_by = _modified_by, modified_date = _modified_date WHERE items.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_restore_item(BIGINT, BIGINT, TIMESTAMP);
 CREATE OR REPLACE FUNCTION sp_restore_item(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
     UPDATE items SET is_deleted = FALSE, modified_by = _modified_by, modified_date = _modified_date WHERE items.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_items_by_user(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_items_by_user(_user_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT, status INTEGER, assigned_to BIGINT, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, project_id BIGINT, complete_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
     RETURN QUERY SELECT items.id, items.name, items.description, items.status, items.assigned_to, items.due_date, items.created_by, items.created_date, items.modified_by, items.modified_date, items.is_deleted, items.project_id, items.complete_date FROM items WHERE items.is_deleted = FALSE AND items.assigned_to = _user_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_items_by_user_and_project(BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_items_by_user_and_project(_user_id BIGINT, _project_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT, status INTEGER, assigned_to BIGINT, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, project_id BIGINT, complete_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
     RETURN QUERY SELECT items.id, items.name, items.description, items.status, items.assigned_to, items.due_date, items.created_by, items.created_date, items.modified_by, items.modified_date, items.is_deleted, items.project_id, items.complete_date FROM items WHERE items.is_deleted = FALSE AND items.assigned_to = _user_id AND items.project_id = _project_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_item(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_item(_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT, status INTEGER, assigned_to BIGINT, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, project_id BIGINT, complete_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
     RETURN QUERY SELECT items.id, items.name, items.description, items.status, items.assigned_to, items.due_date, items.created_by, items.created_date, items.modified_by, items.modified_date, items.is_deleted, items.project_id, items.complete_date FROM items WHERE items.id = _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_items_count(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_items_count(_user_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _count BIGINT;
@@ -179,36 +205,42 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- PROJECT_USERS
+DROP FUNCTION IF EXISTS sp_insert_project_user(BIGINT, BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_insert_project_user(_project_id BIGINT, _user_id BIGINT, _role_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     INSERT INTO project_users (project_id, user_id, role_id) VALUES (_project_id, _user_id, _role_id);
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_project_user(BIGINT, BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_update_project_user(_project_id BIGINT, _user_id BIGINT, _role_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     UPDATE project_users SET role_id = _role_id WHERE project_users.project_id = _project_id AND project_users.user_id = _user_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_project_user(BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_delete_project_user(_project_id BIGINT, _user_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     DELETE FROM project_users WHERE project_users.project_id = _project_id AND project_users.user_id = _user_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_all_project_users_for_project(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_all_project_users_for_project(_project_id BIGINT)
 RETURNS TABLE(project_id BIGINT, user_id BIGINT, role_id BIGINT) AS $$
 BEGIN
     RETURN QUERY SELECT project_users.project_id, project_users.user_id, project_users.role_id FROM project_users WHERE project_users.project_id = _project_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_all_project_users_for_user(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_all_project_users_for_user(_user_id BIGINT)
 RETURNS TABLE(project_id BIGINT, user_id BIGINT, role_id BIGINT) AS $$
 BEGIN
     RETURN QUERY SELECT project_users.project_id, project_users.user_id, project_users.role_id FROM project_users WHERE project_users.user_id = _user_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_project_user_roles(BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_project_user_roles(_user_id BIGINT, _project_id BIGINT)
 RETURNS TABLE(role_id BIGINT) AS $$
 BEGIN
@@ -216,6 +248,7 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- TAGS
+DROP FUNCTION IF EXISTS sp_insert_tag(TEXT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_insert_tag(_name TEXT, _user_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _id BIGINT;
@@ -224,18 +257,21 @@ BEGIN
     RETURN _id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_tag(BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_delete_tag(_id BIGINT, _user_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     DELETE FROM tags WHERE tags.id = _id AND tags.user_id = _user_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_tags(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_tags(_user_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT) AS $$
 BEGIN
     RETURN QUERY SELECT tags.id, tags.name FROM tags WHERE tags.user_id = _user_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_get_tag(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_tag(_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT) AS $$
 BEGIN
@@ -243,24 +279,28 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- PROJECT_TAGS
+DROP FUNCTION IF EXISTS sp_insert_project_tag(BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_insert_project_tag(_project_id BIGINT, _tag_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     INSERT INTO project_tags (project_id, tag_id) VALUES (_project_id, _tag_id);
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_project_tag_by_tag(BIGINT);
 CREATE OR REPLACE FUNCTION sp_delete_project_tag_by_tag(_tag_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     DELETE FROM project_tags WHERE project_tags.tag_id = _tag_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_project_tag_by_project(BIGINT);
 CREATE OR REPLACE FUNCTION sp_delete_project_tag_by_project(_project_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
     DELETE FROM project_tags WHERE project_tags.project_id = _project_id;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_delete_project_tag(BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_delete_project_tag(_project_id BIGINT, _tag_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
@@ -268,6 +308,7 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- ROLES
+DROP FUNCTION IF EXISTS sp_get_all_roles();
 CREATE OR REPLACE FUNCTION sp_get_all_roles()
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT) AS $$
 BEGIN

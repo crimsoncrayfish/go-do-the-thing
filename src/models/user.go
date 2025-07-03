@@ -16,8 +16,10 @@ type User struct {
 	LastActiveDate   *time.Time `json:"last_active_date"`
 	PasswordHash     string     `json:"password_hash,omitempty"`
 	IsDeleted        bool       `json:"is_deleted,omitempty"`
+	IsEnabled        bool       `json:"is_enabled,omitempty"`
 	IsAdmin          bool       `json:"is_admin,omitempty"`
 	CreateDate       *time.Time `json:"create_date"`
+	AccessGrantedBy  *int64     `json:"access_granted_by,omitempty"`
 }
 
 type UserView struct {

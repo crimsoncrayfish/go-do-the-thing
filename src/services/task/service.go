@@ -25,9 +25,10 @@ const serviceSource = "TaskService"
 
 func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 	return TaskService{
-		tasksRepo:   *repo_container.GetTasksRepo(),
-		usersRepo:   *repo_container.GetUsersRepo(),
-		projectRepo: *repo_container.GetProjectsRepo(),
+		tasksRepo:        *repo_container.GetTasksRepo(),
+		usersRepo:        *repo_container.GetUsersRepo(),
+		projectRepo:      *repo_container.GetProjectsRepo(),
+		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
 	}
 }
 

@@ -50,14 +50,14 @@ func SetupUserHandler(
 
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))
 	router.Handle("GET /register", mw_no_auth(http.HandlerFunc(handler.GetRegisterUI)))
-	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.LoginUI)))
-	router.Handle("POST /register", mw_no_auth(http.HandlerFunc(handler.RegisterUI)))
+	router.Handle("POST /login", mw_no_auth(http.HandlerFunc(handler.Login)))
+	router.Handle("POST /register", mw_no_auth(http.HandlerFunc(handler.Register)))
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
 }
 
 var emptyAuthCookie = http.Cookie{Name: "token", Value: "", SameSite: http.SameSiteDefaultMode}
 
-func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
+func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewLoginForm()
 	email, err := models.GetRequiredPropertyFromRequest(r, "email", "Email")
 	form.Email = email
@@ -69,7 +69,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		form.Errors["password"] = err.Error()
 	}
 	if len(form.Errors) > 0 {
-		h.logger.Info("LoginUI: invalid form input - email: %s, errors: %v", email, form.Errors)
+		h.logger.Warn("LoginUI: invalid form input - email: %s, errors: %v", email, form.Errors)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -78,7 +78,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
-	h.logger.Info("LoginUI: login attempt - email: %s", email)
+	h.logger.Debug("LoginUI: login attempt - email: %s", email)
 	user, sessionId, err := h.userService.AuthenticateUser(email, password)
 	if err != nil {
 		h.logger.Error(err, "LoginUI: login failed - email: %s", email)
@@ -90,7 +90,7 @@ func (h Handler) LoginUI(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &emptyAuthCookie)
 		return
 	}
-	h.logger.Info("LoginUI: login succeeded - email: %s, user_id: %d", email, user.Id)
+	h.logger.Debug("LoginUI: login succeeded - email: %s, user_id: %d", email, user.Id)
 	tokenString, err := h.security.NewToken(user.Email, sessionId, user.SessionStartTime.Add(time.Duration(time.Hour*4)))
 	if err != nil {
 		http.SetCookie(w, &emptyAuthCookie)
@@ -116,9 +116,9 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
-	currentUserId, currentUserEmail, _, err := helpers.GetUserFromContext(r)
+	current_user_id, currentUserEmail, _, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
-	if err := h.userService.LogoutUser(currentUserId); err != nil {
+	if err := h.userService.LogoutUser(current_user_id); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
 	}
 	http.SetCookie(w, &emptyAuthCookie)
@@ -135,7 +135,7 @@ func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
+func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewRegistrationForm()
 	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Full Name")
 	form.Name = name
@@ -156,7 +156,7 @@ func (h Handler) RegisterUI(w http.ResponseWriter, r *http.Request) {
 		form.SetError("confirmation password", err.Error())
 	}
 	if len(form.GetErrors()) > 0 {
-		h.logger.Info("Failed to register due to invalid form details")
+		h.logger.Debug("Failed to register due to invalid form details")
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "failed to render signup form")
 			http.Error(w, err.Error(), http.StatusInternalServerError)

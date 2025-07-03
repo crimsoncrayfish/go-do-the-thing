@@ -10,22 +10,22 @@ import (
 )
 
 templ ProjectWithBody(project models.ProjectView,
-	navbar models.NavBarObject,
+	activeScreen models.Screen,
 	formdata fm.ProjectForm,
 	task_form_data fm.TaskForm,
 	tasks []*models.TaskView,
 ) {
-	@ts.Main(ProjectView(project, navbar, formdata, task_form_data, tasks))
+	@ts.Main(ProjectView(project, activeScreen, formdata, task_form_data, tasks))
 }
 
 templ ProjectView(
 	project models.ProjectView,
-	navbar models.NavBarObject,
+	activeScreen models.Screen,
 	formdata fm.ProjectForm,
 	task_form_data fm.TaskForm,
 	tasks []*models.TaskView,
 ) {
-	@ts.NavBar(navbar)
+	@ts.NavBar(activeScreen)
 	<div class="px-1 my-4 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 		<div class="flex justify-between items-center mb-4">
 			<button

@@ -36,8 +36,10 @@ func scanUserFromRow(row pgx.Row, user *models.User) error {
 		&user.SessionId,
 		&user.SessionStartTime,
 		&user.IsAdmin,
+		&user.IsEnabled,
 		&user.IsDeleted,
 		&user.CreateDate,
+		&user.AccessGrantedBy,
 	)
 }
 
@@ -50,8 +52,9 @@ func scanUsersFromRows(rows pgx.Rows, user *models.User) error {
 		&user.SessionStartTime,
 		&user.IsDeleted,
 		&user.IsAdmin,
+		&user.IsEnabled,
 		&user.CreateDate,
-		&user.PasswordHash,
+		&user.AccessGrantedBy,
 	)
 }
 
@@ -226,5 +229,18 @@ func (r *UsersRepo) Logout(userId int64) error {
 		return fmt.Errorf("failed to end user session: %w", err)
 	}
 	r.logger.Info("User logged out successfully - id: %d", userId)
+	return nil
+}
+
+const activateUser = `SELECT sp_update_user_is_enabled($1, $2)`
+
+func (r *UsersRepo) ActivateUser(id int64) error {
+	r.logger.Debug("ActivateUser called - sql: %s, params: %d", getUser, id)
+	_, err := r.db.Exec(activateUser, id)
+	if err != nil {
+		r.logger.Error(err, "failed to activate user - sql: %s, params: %d", activateUser, id)
+		return fmt.Errorf("failed to activate user: %w", err)
+	}
+	r.logger.Debug("ActivateUser succeeded - id: %d", id)
 	return nil
 }

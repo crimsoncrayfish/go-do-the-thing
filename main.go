@@ -5,6 +5,7 @@ import (
 	"errors"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
+	"go-do-the-thing/src/handlers/admin"
 	"go-do-the-thing/src/handlers/home"
 	"go-do-the-thing/src/handlers/project"
 	"go-do-the-thing/src/handlers/task"
@@ -56,10 +57,13 @@ func main() {
 
 	reposContainer := repos.NewContainer(dbConnection)
 
-	authMiddleware := middleware.NewAuthenticationMiddleware(jwtHandler, *reposContainer.GetUsersRepo())
+	authMW := middleware.NewAuthenticationMiddleware(jwtHandler, *reposContainer.GetUsersRepo())
 	loggingMW := middleware.NewLoggingMiddleWare()
 	rateLimeter := middleware.NewRateLimiter()
-	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMiddleware.Authentication)
+	adminMW := middleware.NewAdminMiddleware()
+
+	middleware_admin := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication, adminMW.IsAdmin)
+	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication)
 	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
 
 	user_service := user_service.SetupUserService(reposContainer)
@@ -72,6 +76,7 @@ func main() {
 	task.SetupTodoHandler(task_service, project_service, router, middleware_full)
 
 	home.SetupHomeHandler(router, middleware_full)
+	admin.SetupAdminHandler(router, middleware_admin)
 	setupStaticContent(router)
 
 	// This is for https

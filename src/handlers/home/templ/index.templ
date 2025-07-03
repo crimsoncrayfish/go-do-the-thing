@@ -5,12 +5,12 @@ import (
 	templ_shared "go-do-the-thing/src/shared/templ"
 )
 
-templ Index(navbar models.NavBarObject) {
-	@templ_shared.Main(IndexBody(navbar))
+templ Index(activeScreen models.Screen) {
+	@templ_shared.Main(IndexBody(activeScreen))
 }
 
-templ IndexBody(navbar models.NavBarObject) {
-	@templ_shared.NavBar(navbar)
+templ IndexBody(activeScreen models.Screen) {
+	@templ_shared.NavBar(activeScreen)
 	<div class="px-1 mt-10 md:px-[10%] w-full text-text-on-light dark:text-text-on-dark">
 		@templ_shared.SvgLogoBig()
 		<div class="m-auto w-fit py-10 text-3xl">

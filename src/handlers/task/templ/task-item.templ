@@ -12,14 +12,14 @@ import (
 
 templ TaskItemWithBody(
 	task *models.TaskView,
-	navbar models.NavBarObject,
+	activeScreen models.Screen,
 	formdata fm.TaskForm,
 	projects map[int64]string) {
-	@templ_shared.Main(TaskItem(task, navbar, formdata, projects))
+	@templ_shared.Main(TaskItem(task, activeScreen, formdata, projects))
 }
 
-templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, projects map[int64]string) {
-	@ts.NavBar(navbar)
+templ TaskItem(task *models.TaskView, activeScreen models.Screen, formdata fm.TaskForm, projects map[int64]string) {
+	@ts.NavBar(activeScreen)
 	<div class="px-1 my-4 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 		@TaskItemContent(task, projects)
 		@taskTimeline(task)

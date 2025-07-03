@@ -113,10 +113,10 @@ func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
 const deleteProject = `SELECT sp_delete_project($1, $2, $3)`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
-	r.logger.Debug("DeleteProject called - sql: %s, params: %v", deleteProject, []interface{}{currentUser, time.Now(), id})
+	r.logger.Debug("DeleteProject called - sql: %s, params: %v", deleteProject, []any{currentUser, time.Now(), id})
 	_, err := r.database.Exec(deleteProject, currentUser, time.Now(), id)
 	if err != nil {
-		r.logger.Error(err, "failed to update project - sql: %s, params: %v", deleteProject, []interface{}{currentUser, time.Now(), id})
+		r.logger.Error(err, "failed to update project - sql: %s, params: %v", deleteProject, []any{currentUser, time.Now(), id})
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update project: %w", err)
 	}
 	r.logger.Info("Project deleted successfully - id: %d", id)
