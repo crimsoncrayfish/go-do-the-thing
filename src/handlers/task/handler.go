@@ -17,6 +17,8 @@ import (
 	projects_service "go-do-the-thing/src/services/project"
 	task_service "go-do-the-thing/src/services/task"
 	templ_shared "go-do-the-thing/src/shared/templ"
+
+	"github.com/a-h/templ"
 )
 
 type Handler struct {
@@ -118,16 +120,8 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to get newly created task with id %d", new_id)
 		return
 	}
-	err = templ_shared.RenderTempls(
-		templ_todo.TaskItemCardOOB(taskView),
-		templ_shared.NoDataRowOOB(true),
-	).Render(r.Context(), w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render templates for new task")
-		return
-	}
 
+	var form_template templ.Component
 	source := r.URL.Query().Get("source")
 	if source == "task_page" {
 		projects, err = h.project_service.GetAllProjectsForUser(current_user_id)
@@ -135,18 +129,21 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 			defaultForm.Errors["Project"] = err.Error()
 		}
 		defaultForm.SetProject(taskView.ProjectId)
-		if err := templ_todo.TaskFormContent(defaultForm, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			h.logger.Error(err, "failed to render task form")
-			return
-		}
+		form_template = templ_todo.TaskFormContent(defaultForm, models.ProjectListToMap(projects))
 	} else {
 		defaultForm.SetProject(taskView.ProjectId)
-		if err := templ_todo.TaskFormContent(defaultForm, map[int64]string{taskView.ProjectId: taskView.ProjectName}).Render(r.Context(), w); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			h.logger.Error(err, "failed to render task form")
-			return
-		}
+		form_template = templ_todo.TaskFormContent(defaultForm, map[int64]string{taskView.ProjectId: taskView.ProjectName})
+	}
+
+	err = templ_shared.RenderTempls(
+		templ_todo.TaskItemCardOOB(taskView),
+		templ_shared.NoDataRowOOB(true),
+		form_template,
+	).Render(r.Context(), w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render templates for new task")
+		return
 	}
 }
 
@@ -242,12 +239,10 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_todo.TaskItemContentOOBTargetList(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render new task row with id %d", task.Id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = templ_todo.TaskCardFrontOOB(task).Render(r.Context(), w)
+	err = templ_shared.RenderTempls(
+		templ_todo.TaskItemContentOOBTargetList(task, models.ProjectListToMap(projects)),
+		templ_todo.TaskCardFrontOOB(task),
+	).Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
