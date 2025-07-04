@@ -118,6 +118,15 @@ func (s *UserService) ActivateUser(currentUserId, userId int64) error {
 	return s.usersRepo.ActivateUser(userId)
 }
 
+func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
+	user, err := s.usersRepo.GetUserById(userId)
+	if err != nil {
+		s.logger.Error(err, "Failed to get user with id %d", userId)
+		return models.UserView{}, err
+	}
+	return user.ToViewModel(), nil
+}
+
 func (s *UserService) IsUserAdmin(userId int64) (bool, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {

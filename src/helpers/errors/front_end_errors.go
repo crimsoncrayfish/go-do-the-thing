@@ -1,37 +1,82 @@
 package errors
 
 import (
-	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/slog"
 	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 )
 
 func FrontendError(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
-	// TODO: What if the error occurs during login/register
-	current_user_id, _, _, _ := helpers.GetUserFromContext(r)
-
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)
 	logger.Error(err, msg, a...)
-	err = templ_shared.ToastMessage(err.Error(), "error").Render(r.Context(), w)
-	if err != nil {
-		logger.Error(err, "failed to render toast for user %d", current_user_id)
-		return
-	}
+	_ = templ_shared.ToastMessage(err.Error(), "error").Render(r.Context(), w)
 }
 
 func FrontendErrorBadRequest(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
-	FrontendError(w, r, logger, err, msg, a...)
+	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusBadRequest)
+	logger.Error(err, msg, a...)
+
+	// Provide user-friendly message based on error type
+	userMessage := getUserFriendlyMessage(err, msg)
+	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func FrontendErrorNotFound(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
-	FrontendError(w, r, logger, err, msg, a...)
+	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusNotFound)
+	logger.Error(err, msg, a...)
+
+	// Provide user-friendly message based on error type
+	userMessage := getUserFriendlyMessage(err, msg)
+	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func FrontendErrorUnauthorized(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
-	FrontendError(w, r, logger, err, msg, a...)
+	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusUnauthorized)
+	logger.Error(err, msg, a...)
+
+	// Provide user-friendly message based on error type
+	userMessage := getUserFriendlyMessage(err, msg)
+	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+}
+
+func FrontendErrorInternalServerError(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+	w.Header().Set("HX-Retarget", "#toast-message")
+	w.WriteHeader(http.StatusInternalServerError)
+	logger.Error(err, msg, a...)
+
+	// Provide user-friendly message based on error type
+	userMessage := getUserFriendlyMessage(err, msg)
+	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+}
+
+// getUserFriendlyMessage returns a user-friendly error message based on the error type
+func getUserFriendlyMessage(err error, defaultMsg string) string {
+	// Check if it's an AppError with specific codes
+	if appErr, ok := err.(*AppError); ok {
+		switch appErr.Code() {
+		case ErrAccessDenied:
+			return "You don't have permission to perform this action"
+		case ErrPermissionDenied:
+			return "You don't have permission to access this resource"
+		case ErrNotFound:
+			return "The requested resource was not found"
+		case ErrDBReadFailed:
+			return "Unable to retrieve data. Please try again"
+		case ErrDBInsertFailed:
+			return "Unable to save data. Please try again"
+		case ErrDBUpdateFailed:
+			return "Unable to update data. Please try again"
+		case ErrDBDeleteFailed:
+			return "Unable to delete data. Please try again"
+		case ErrDBGenericError:
+			return "A database error occurred. Please try again"
+		}
+	}
+
+	// For other errors, use the provided user-friendly message
+	return defaultMsg
 }

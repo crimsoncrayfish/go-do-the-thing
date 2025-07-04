@@ -244,3 +244,31 @@ func (r *UsersRepo) ActivateUser(id int64) error {
 	r.logger.Debug("ActivateUser succeeded - id: %d", id)
 	return nil
 }
+
+const getInactiveUsers = `SELECT * FROM sp_get_users_inactive()`
+
+func (r *UsersRepo) GetInactiveUsers() ([]models.User, error) {
+	r.logger.Debug("GetInactiveUsers called - sql: %s", getInactiveUsers)
+	rows, err := r.db.Query(getInactiveUsers)
+	if err != nil {
+		r.logger.Error(err, "query failed to get inactive users - sql: %s", getInactiveUsers)
+		return nil, err
+	}
+	users := make([]models.User, 0)
+	for rows.Next() {
+		user := models.User{}
+		err := scanUsersFromRows(rows, &user)
+		if err != nil {
+			r.logger.Error(err, "scan failed to get inactive users")
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	err = rows.Err()
+	if err != nil {
+		r.logger.Error(err, "rows.Err() in GetInactiveUsers")
+		return nil, err
+	}
+	r.logger.Debug("GetInactiveUsers succeeded - count: %d", len(users))
+	return users, nil
+}

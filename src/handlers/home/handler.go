@@ -37,8 +37,7 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := home_templ.Index(models.ScreenHome).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "Failed to execute template for the home page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display home page")
 		return
 	}
 }
@@ -66,8 +65,7 @@ func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := home_templ.Index(models.ScreenHome).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "Failed to execute template for the home page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display home page")
 		return
 	}
 }

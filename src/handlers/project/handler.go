@@ -59,14 +59,20 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.FrontendErrorBadRequest(w, r, h.logger, err, "id for project is not a valid int")
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid project ID provided")
 		return
 	}
 
 	// NOTE: service call
 	projectView, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		errors.FrontendErrorNotFound(w, r, h.logger, err, "failed to find project %d", id)
+		// Check if it's a not found error
+		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
+			errors.FrontendErrorNotFound(w, r, h.logger, err, "Project not found")
+			return
+		}
+		// For other errors (permission, database, etc.), use internal server error
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve project")
 		return
 	}
 
@@ -116,24 +122,21 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		h.logger.Error(err, "failed to parse id from path")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid project ID provided")
 		return
 	}
 
 	// NOTE: service call
 	hasProjects, err := h.project_service.DeleteProject(id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to delete project")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to delete project")
 		return
 	}
 
 	// NOTE: frontend response
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to find project")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve project information")
 		return
 	}
 
@@ -142,8 +145,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		templ_shared.NoDataRowOOB(hasProjects),
 	).Render(r.Context(), w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render templates for project delete")
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project deletion result")
 		return
 	}
 }
@@ -159,16 +161,14 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	// NOTE: service call
 	pList, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get projects for user %d", current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve projects")
 		return
 	}
 	// NOTE: frontend response
 	form := form_models.NewDefaultProjectForm()
 	err = templ_project.ProjectListWithBody(models.ScreenProjects, form, pList).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render project list page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project list")
 		return
 	}
 }
@@ -207,8 +207,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		if err := templ_project.ProjectFormContent(form).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "Failed to render template for formData")
-			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project form")
 		}
 		return
 	}
@@ -220,14 +219,12 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		name, description,
 		&now, &due_date)
 	if err != nil {
-		h.logger.Error(err, "failed to create project for user %d", current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to create project")
 		return
 	}
 	projectView, err := h.project_service.GetProjectView(new_id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get newly added project (%d) for user %d", new_id, current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve newly created project")
 		return
 	}
 
@@ -238,8 +235,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastActionRedirect("Successfully created project", fmt.Sprintf("/project/%d", new_id), "Go to project", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render templates for project create")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project creation result")
 		return
 	}
 }
@@ -255,8 +251,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.logger.Error(err, "not authenticated")
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid project ID provided")
 		return
 	}
 	form := form_models.NewProjectForm()
@@ -285,12 +280,11 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		projectView, err := h.project_service.GetProjectView(id, current_user_id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve project for editing")
 			return
 		}
 		if err := templ_project.ProjectContentOOB(*projectView, true, form.Errors).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "Failed to render template for formData")
-			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project edit form")
 		}
 		return
 	}
@@ -305,8 +299,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	}
 	projectView, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get updated added project (%d) for user %d", id, current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve updated project")
 		return
 	}
 
@@ -316,8 +309,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	).Render(r.Context(), w)
 	if err != nil {
 		// TODO: Handle error on frontend
-		h.logger.Error(err, "Failed to execute template for the project page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display updated project")
 		return
 	}
 }

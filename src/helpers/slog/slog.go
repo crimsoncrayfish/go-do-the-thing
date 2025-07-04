@@ -64,9 +64,9 @@ func (l *Logger) Info(msg string, a ...any) {
 const debugLogFormat = "%s %s - %s - %s \n%s %s\n"
 
 func (l *Logger) Debug(msg string, a ...any) {
-	if !DebugEnabled {
+	/*if !DebugEnabled {
 		return
-	}
+	}*/
 	message := fmt.Sprintf(msg, a...)
 	fmt.Printf(debugLogFormat, colorYellow, time.Now().Format("2006-01-02 15:04:05"), "DEBUG", l.Name, message, colorNone)
 }

@@ -110,8 +110,7 @@ func (h Handler) loginError(err error, w http.ResponseWriter, r *http.Request, m
 func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewLoginForm()
 	if err := templ_users.Login(form).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render template for the home page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fe_errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display login page")
 		return
 	}
 }
@@ -119,8 +118,7 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	current_user_id, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		h.logger.Error(err, "user auth failed unsuccessfully")
-		_ = templ_shared.ToastMessage("User authentication failed", "error").Render(r.Context(), w)
+		fe_errors.FrontendErrorInternalServerError(w, r, h.logger, err, "User authentication failed")
 		return
 	}
 	if err := h.userService.LogoutUser(current_user_id); err != nil {
@@ -133,9 +131,7 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewRegistrationForm()
 	if err := templ_users.Register(form).Render(r.Context(), w); err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		h.logger.Error(err, "failed to render form")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fe_errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display registration page")
 		return
 	}
 }
@@ -163,8 +159,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if len(form.GetErrors()) > 0 {
 		h.logger.Debug("Failed to register due to invalid form details")
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render signup form")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			fe_errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display registration form")
 		}
 		return
 	}
@@ -173,8 +168,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 		form.SetError("register", "failed to register user") // TODO: this is a security risk
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render signup form")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			fe_errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display registration form")
 		}
 		return
 	}
@@ -199,8 +193,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	loginForm.Email = user.Email
 	err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render template for the home page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fe_errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to complete registration")
 		return
 	}
 }

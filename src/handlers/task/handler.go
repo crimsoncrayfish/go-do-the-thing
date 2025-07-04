@@ -99,24 +99,21 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(form.Errors) > 0 {
 		if err := templ_todo.TaskFormContent(form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "Failed to render template for formData")
-			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to update task form")
 		}
 		return
 	}
 
 	new_id, err := h.task_service.CreateTask(current_user_id, project_id, name, description, &due_date)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to create task with error")
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to create task")
 		return
 	}
 
 	// NOTE: Now handle everything
 	taskView, err := h.task_service.GetTaskView(new_id, current_user_id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to get newly created task with id %d", new_id)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve newly created task")
 		return
 	}
 
@@ -140,8 +137,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		form_template,
 	).Render(r.Context(), w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render templates for new task")
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display new task")
 		return
 	}
 }
@@ -160,8 +156,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.logger.Error(err, "not authenticated")
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid task ID provided")
 		return
 	}
 	form := fm.NewTaskForm()
@@ -202,12 +197,11 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		task, err := h.task_service.GetTaskView(id, current_user_id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve task for editing")
 			return
 		}
 		if err := templ_todo.TaskItemContentWithErrors(task, models.ProjectListToMap(projects), form.Errors, true).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task form content")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task edit form")
 			return
 		}
 		return
@@ -224,18 +218,13 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		current_user_id,
 	)
 	if err != nil {
-		h.logger.Error(err, "failed to update task with id %d", id)
-		if err := templ_shared.ToastMessage("Failed to update task", "error").Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render toast")
-			_ = templ_shared.ToastMessage("An error occurred rendering the toast", "error").Render(r.Context(), w)
-		}
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to update task")
 		return
 	}
 	// NOTE: Success zone
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
-		h.logger.Error(err, "failed to get updated task with id %d", task.Id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve updated task")
 		return
 	}
 
@@ -244,8 +233,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		templ_todo.TaskCardFrontOOB(task),
 	).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render task list item")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display updated task")
 		return
 	}
 }
@@ -261,15 +249,18 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		h.logger.Error(err, "failed to parse id from path")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid task ID provided")
 		return
 	}
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
-		// TODO: Handle not found?
-		h.logger.Error(err, "failed to get task with id %d", id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Check if it's a not found error
+		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
+			errors.FrontendErrorNotFound(w, r, h.logger, err, "Task not found")
+			return
+		}
+		// For other errors (permission, database, etc.), use internal server error
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve task")
 		return
 	}
 
@@ -293,8 +284,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if err := template.Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render task item with id %d", id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task")
 		return
 	}
 }
@@ -310,16 +300,14 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		h.logger.Error(err, "failed to parse id from path")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid task ID provided")
 		return
 	}
 
 	// NOTE: Act
 	err = h.task_service.UpdateTaskStatus(current_user_id, id)
 	if err != nil {
-		h.logger.Error(err, "failed to toggle task status for task with id %d", id)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to update task status")
 		return
 	}
 
@@ -327,8 +315,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
 		// TODO: handle err types
-		h.logger.Error(err, "failed to get task with id %d", id)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve updated task")
 		return
 	}
 	source := r.URL.Query().Get("source")
@@ -339,14 +326,12 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err = templ_todo.TaskItemContent(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task list item")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display updated task")
 			return
 		}
 	} else {
 		if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task list item")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display updated task")
 			return
 		}
 	}
@@ -364,8 +349,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	tasks, err := h.task_service.GetTaskViewList(current_user_id)
 	if err != nil {
 		// TODO: some user feedback here?
-		h.logger.Error(err, "failed to get todo tasks")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve tasks")
 		return
 	}
 
@@ -383,8 +367,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		template = templ_todo.TaskListWithBody(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects))
 	}
 	if err = template.Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "Failed to execute template for the item list page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task list")
 		return
 	}
 }
@@ -400,25 +383,21 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		h.logger.Error(err, "failed to parse id from path")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid task ID provided")
 		return
 	}
 
 	// NOTE: Take action
 	err = h.task_service.DeleteTask(current_user_id, id)
 	if err != nil {
-		h.logger.Error(err, "failed to delete todo item")
-		_ = templ_shared.ToastMessage("Failed to delete task", "error").Render(r.Context(), w)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to delete task")
 		return
 	}
 
 	// NOTE: Success zone
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
-		// TODO: handle err types
-		h.logger.Error(err, "failed to get task with id %d", id)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve deleted task")
 		return
 	}
 
@@ -427,8 +406,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 		templ_todo.TaskCardFront(task),
 	).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render templates for task delete")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task deletion result")
 		return
 	}
 }
@@ -444,25 +422,21 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		h.logger.Error(err, "failed to parse id from path")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid task ID provided")
 		return
 	}
 
 	// NOTE: Take action
 	err = h.task_service.RestoreTask(current_user_id, id)
 	if err != nil {
-		h.logger.Error(err, "failed to restore todo item %d", id)
-		_ = templ_shared.ToastMessage("Failed to restore task", "error").Render(r.Context(), w)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to restore task")
 		return
 	}
 
 	// NOTE: Success zone
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
-		// TODO: handle err types
-		h.logger.Error(err, "failed to get task with id %d", id)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve restored task")
 		return
 	}
 
@@ -471,8 +445,7 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 		templ_todo.TaskCardFront(task),
 	).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render templates for task restore")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task restoration result")
 		return
 	}
 }

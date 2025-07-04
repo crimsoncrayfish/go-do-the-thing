@@ -14,6 +14,7 @@ import (
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
+	adminService "go-do-the-thing/src/services/admin"
 	projectService "go-do-the-thing/src/services/project"
 	taskService "go-do-the-thing/src/services/task"
 	user_service "go-do-the-thing/src/services/user"
@@ -66,15 +67,14 @@ func main() {
 
 	user_service := user_service.SetupUserService(reposContainer)
 	task_service := taskService.SetupTaskService(reposContainer)
+	admin_service := adminService.SetupAdminService(reposContainer)
 	project_service := projectService.SetupProjectService(reposContainer)
 
 	users.SetupUserHandler(router, middleware_full, middleware_no_auth, jwtHandler, project_service, task_service, &user_service)
 	project.SetupProjectHandler(project_service, task_service, router, middleware_full)
-
 	task.SetupTodoHandler(task_service, project_service, router, middleware_full)
-
 	home.SetupHomeHandler(router, middleware_full)
-	admin.SetupAdminHandler(router, middleware_admin)
+	admin.SetupAdminHandler(admin_service, router, middleware_admin)
 	setupStaticContent(router)
 
 	// This is for https

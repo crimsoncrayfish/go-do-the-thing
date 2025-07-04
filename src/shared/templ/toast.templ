@@ -2,8 +2,9 @@ package templ_shared
 
 templ ToastMessage(message string, toastType string) {
 	<div
-		hx-swap-oob="true"
 		id="toast-message"
+		hx-swap-oob="outerHTML"
+		hx-on--load="showAndHideToast('toast-message')"
 		class={
 			"opacity-0 p-6 border relative min-h-[80px]",
 			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
@@ -26,10 +27,6 @@ templ ToastMessage(message string, toastType string) {
 				toastType == "info",
 			),
 		}
-		hx-swap-oob="true"
-		hx-swap="outerHTML"
-		hx-target="#toast-message"
-		hx-on--load="showAndHideToast('toast-message')"
 	>
 		<div class="pr-4 my-auto text-base leading-snug">{ message }</div>
 		<button
@@ -57,6 +54,8 @@ templ ToastMessage(message string, toastType string) {
 templ ToastActionRedirect(message, url, action_text, toastType string) {
 	<div
 		id="toast-message"
+		hx-swap-oob="outerHTML"
+		hx-on--load="showAndHideToast('toast-message')"
 		class={
 			"opacity-0 p-6 border relative min-h-[80px]",
 			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
@@ -79,10 +78,6 @@ templ ToastActionRedirect(message, url, action_text, toastType string) {
 				toastType == "info",
 			),
 		}
-		hx-swap-oob="true"
-		hx-swap="outerHTML"
-		hx-target="#toast-message"
-		hx-on--load="showAndHideToast('toast-message')"
 	>
 		<div class="flex flex-col">
 			<div class="pr-4 my-auto text-base leading-snug">{ message }</div>
@@ -130,6 +125,8 @@ templ ToastActionRedirect(message, url, action_text, toastType string) {
 templ ToastActionUndo(message, url, target, swapmode string) {
 	<div
 		id="toast-message"
+		hx-swap-oob="outerHTML"
+		hx-on--load="showAndHideToast('toast-message')"
 		class={
 			"opacity-0 p-6 border relative items-center min-h-[80px]",
 			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
@@ -137,10 +134,6 @@ templ ToastActionUndo(message, url, target, swapmode string) {
 			"bg-secondary-light dark:bg-secondary-dark",
 			"border-success-light dark:border-success-dark text-white",
 		}
-		hx-swap-oob="true"
-		hx-swap="outerHTML"
-		hx-target="#toast-message"
-		hx-on--load="showAndHideToast('toast-message')"
 	>
 		<div class="flex items-center justify-between">
 			<div class="pr-6 my-auto text-base leading-snug">{ message }</div>
@@ -183,8 +176,6 @@ templ EmptyToast() {
 	<div
 		id="toast-message"
 		class="opacity-0"
-		hx-swap="outerHTML"
-		hx-target="#toast-message"
 	></div>
 	<script>
 let showToastTimer = null;
@@ -207,6 +198,7 @@ function hideToast(toastId) {
 }
 
 function showAndHideToast(toastId) {
+	console.error("doing something");
   const toast = document.getElementById(toastId);
   if (toast) {
     clearTimeout(showToastTimer);

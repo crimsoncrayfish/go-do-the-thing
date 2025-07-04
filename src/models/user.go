@@ -23,16 +23,18 @@ type User struct {
 }
 
 type UserView struct {
-	Id       int64  `json:"id,omitempty"`
-	Email    string `json:"email,omitempty"`
-	FullName string `json:"full_name,omitempty"`
+	Id          int64      `json:"id,omitempty"`
+	Email       string     `json:"email,omitempty"`
+	FullName    string     `json:"full_name,omitempty"`
+	CreatedDate *time.Time `json:"create_date,omitempty"`
 }
 
 func (u *User) ToViewModel() UserView {
 	assert.NotNil(u, helpers.PrevCallerName(2), "user cant be nil")
 	return UserView{
-		Id:       u.Id,
-		Email:    u.Email,
-		FullName: u.FullName,
+		Id:          u.Id,
+		Email:       u.Email,
+		FullName:    u.FullName,
+		CreatedDate: u.CreateDate,
 	}
 }
