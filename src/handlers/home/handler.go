@@ -30,7 +30,7 @@ func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, _, _, _, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -44,7 +44,7 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
-	_, _, _, _, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -59,7 +59,7 @@ func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
 
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	_, _, _, _, err := helpers.GetUserFromContext(r)
+	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return

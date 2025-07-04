@@ -116,7 +116,7 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
-	current_user_id, currentUserEmail, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	assert.NoError(err, source, "user auth failed unsuccessfully")
 	if err := h.userService.LogoutUser(current_user_id); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
@@ -192,7 +192,8 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email
-	if err := templ_users.LoginFormOOB(loginForm).Render(r.Context(), w); err != nil {
+	err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w)
+	if err != nil {
 		h.logger.Error(err, "failed to render template for the home page")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

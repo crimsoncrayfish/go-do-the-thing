@@ -37,15 +37,12 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 func (h *AdminHandler) UserRegistrations(w http.ResponseWriter, r *http.Request) {
 	// Get currentUser details
-	current_user_id, _, _, is_admin, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
-	if !is_admin {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
-		return
-	}
+
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
 		err = templ_admin.AdminDashboardWithBody(models.ScreenAdmin).Render(r.Context(), w)
@@ -72,5 +69,4 @@ func (h *AdminHandler) UserActivation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) ActivateUser(w http.ResponseWriter, r *http.Request) {
-	return
 }

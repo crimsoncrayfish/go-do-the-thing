@@ -2,7 +2,6 @@ package errors
 
 import (
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/slog"
 	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
@@ -10,8 +9,7 @@ import (
 
 func FrontendError(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
 	// TODO: What if the error occurs during login/register
-	current_user_id, _, _, _, _ := helpers.GetUserFromContext(r)
-	assert.NoError(err, "FrontendError", "user auth failed unsuccessfully")
+	current_user_id, _, _, _ := helpers.GetUserFromContext(r)
 
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)

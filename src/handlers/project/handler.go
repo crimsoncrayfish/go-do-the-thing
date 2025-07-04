@@ -50,7 +50,7 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -101,7 +101,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -131,22 +131,20 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_project.ProjectCardFront(*project_view).Render(r.Context(), w); err != nil {
+	err = templ_shared.RenderTempls(
+		templ_project.ProjectCardFront(*project_view),
+		templ_shared.NoDataRowOOB(hasProjects),
+	).Render(r.Context(), w)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render task row")
-		return
-	}
-	if err := templ_shared.NoDataRowOOB(hasProjects).Render(r.Context(), w); err != nil {
-		// if err = h.templates.RenderOk(w, "no-data-row-oob", to); err != nil {
-		h.logger.Error(err, "failed to set no-data status")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.logger.Error(err, "failed to render templates for project delete")
 		return
 	}
 }
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -171,7 +169,7 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -227,31 +225,22 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := templ_project.ProjectCardOOB(*projectView).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render new project row (%d) for user %d", new_id, current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render no data row for user %d", current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := templ_project.ProjectFormContent(defaultForm).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render project form for user %d", current_user_id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = templ_shared.ToastActionRedirect("Successfully created project", fmt.Sprintf("/project/%d", new_id), "Go to project", "success").Render(r.Context(), w)
+	err = templ_shared.RenderTempls(
+		templ_project.ProjectCardOOB(*projectView),
+		templ_shared.NoDataRowOOB(true),
+		templ_project.ProjectFormContent(defaultForm),
+		templ_shared.ToastActionRedirect("Successfully created project", fmt.Sprintf("/project/%d", new_id), "Go to project", "success"),
+	).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(err, "failed to render toast for user %d", current_user_id)
+		h.logger.Error(err, "failed to render templates for project create")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -315,15 +304,13 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templ_project.ProjectContentOOB(*projectView, false, nil).Render(r.Context(), w)
+	err = templ_shared.RenderTempls(
+		templ_project.ProjectContentOOB(*projectView, false, nil),
+		templ_project.ProjectCardFrontOOB(*projectView),
+	).Render(r.Context(), w)
 	if err != nil {
 		// TODO: Handle error on frontend
 		h.logger.Error(err, "Failed to execute template for the project page")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := templ_project.ProjectCardFrontOOB(*projectView).Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render project card OOB")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -55,7 +55,7 @@ func SetupTodoHandler(
 
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -118,15 +118,13 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to get newly created task with id %d", new_id)
 		return
 	}
-	if err := templ_todo.TaskItemCardOOB(taskView).Render(r.Context(), w); err != nil {
+	err = templ_shared.RenderTempls(
+		templ_todo.TaskItemCardOOB(taskView),
+		templ_shared.NoDataRowOOB(true),
+	).Render(r.Context(), w)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render task row")
-		return
-	}
-	// TODO: Implement a card or somehting for when there are no tasks
-	if err := templ_shared.NoDataRowOOB(true).Render(r.Context(), w); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		h.logger.Error(err, "failed to render no-data-row")
+		h.logger.Error(err, "failed to render templates for new task")
 		return
 	}
 
@@ -158,7 +156,7 @@ type NoItemRowData struct {
 
 func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -249,7 +247,8 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err = templ_todo.TaskCardFrontOOB(task).Render(r.Context(), w); err != nil {
+	err = templ_todo.TaskCardFrontOOB(task).Render(r.Context(), w)
+	if err != nil {
 		h.logger.Error(err, "failed to render task list item")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -258,7 +257,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -313,7 +312,7 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -366,7 +365,7 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -405,7 +404,7 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -453,7 +452,7 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
-	current_user_id, _, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
 		return
