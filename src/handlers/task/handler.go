@@ -2,7 +2,6 @@ package task
 
 import (
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -100,8 +99,8 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(form.Errors) > 0 {
 		if err := templ_todo.TaskFormContent(form, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			assert.NoError(err, source, "Failed to render template for formData")
+			h.logger.Error(err, "Failed to render template for formData")
+			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
 		}
 		return
 	}
@@ -227,7 +226,8 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error(err, "failed to update task with id %d", id)
 		if err := templ_shared.ToastMessage("Failed to update task", "error").Render(r.Context(), w); err != nil {
-			assert.NoError(err, source, "failed to render toast")
+			h.logger.Error(err, "failed to render toast")
+			_ = templ_shared.ToastMessage("An error occurred rendering the toast", "error").Render(r.Context(), w)
 		}
 		return
 	}
@@ -408,7 +408,8 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Take action
 	err = h.task_service.DeleteTask(current_user_id, id)
 	if err != nil {
-		assert.NoError(err, source, "failed to delete todo item")
+		h.logger.Error(err, "failed to delete todo item")
+		_ = templ_shared.ToastMessage("Failed to delete task", "error").Render(r.Context(), w)
 		return
 	}
 
@@ -451,7 +452,8 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Take action
 	err = h.task_service.RestoreTask(current_user_id, id)
 	if err != nil {
-		assert.NoError(err, source, "failed to restore todo item %d", id)
+		h.logger.Error(err, "failed to restore todo item %d", id)
+		_ = templ_shared.ToastMessage("Failed to restore task", "error").Render(r.Context(), w)
 		return
 	}
 

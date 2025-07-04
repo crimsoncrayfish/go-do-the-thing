@@ -3,7 +3,6 @@ package project
 import (
 	"fmt"
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -208,8 +207,8 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	if len(form.Errors) > 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		if err := templ_project.ProjectFormContent(form).Render(r.Context(), w); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, handlerSource, "Failed to render template for formData")
+			h.logger.Error(err, "Failed to render template for formData")
+			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
 		}
 		return
 	}
@@ -290,8 +289,8 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := templ_project.ProjectContentOOB(*projectView, true, form.Errors).Render(r.Context(), w); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, handlerSource, "Failed to render template for formData")
+			h.logger.Error(err, "Failed to render template for formData")
+			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
 		}
 		return
 	}

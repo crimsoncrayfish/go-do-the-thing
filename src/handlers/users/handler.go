@@ -4,7 +4,6 @@ import (
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
 	fe_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
@@ -14,6 +13,7 @@ import (
 	projects_service "go-do-the-thing/src/services/project"
 	task_service "go-do-the-thing/src/services/task"
 	user_service "go-do-the-thing/src/services/user"
+	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 	"time"
 )
@@ -72,8 +72,8 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		h.logger.Warn("LoginUI: invalid form input - email: %s, errors: %v", email, form.Errors)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			assert.NoError(err, source, "Failed to render template for formData")
+			h.logger.Error(err, "Failed to render template for formData")
+			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
 		}
 		http.SetCookie(w, &emptyAuthCookie)
 		return
@@ -85,7 +85,8 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		form.Errors["login"] = err.Error()
 		w.WriteHeader(http.StatusUnauthorized)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			h.logger.Error(err, "Failed to render template for formData")
+			_ = templ_shared.ToastMessage("An error occurred rendering the form", "error").Render(r.Context(), w)
 		}
 		http.SetCookie(w, &emptyAuthCookie)
 		return
@@ -117,7 +118,11 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	current_user_id, currentUserEmail, _, err := helpers.GetUserFromContext(r)
-	assert.NoError(err, source, "user auth failed unsuccessfully")
+	if err != nil {
+		h.logger.Error(err, "user auth failed unsuccessfully")
+		_ = templ_shared.ToastMessage("User authentication failed", "error").Render(r.Context(), w)
+		return
+	}
 	if err := h.userService.LogoutUser(current_user_id); err != nil {
 		h.logger.Error(err, "failed to logout user %s", currentUserEmail)
 	}

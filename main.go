@@ -10,6 +10,7 @@ import (
 	"go-do-the-thing/src/handlers/project"
 	"go-do-the-thing/src/handlers/task"
 	"go-do-the-thing/src/handlers/users"
+	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -38,10 +39,7 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	logger := slog.NewLogger("Main")
 	workingDir, err := os.Getwd()
-	if err != nil {
-		logger.Error(err, "could not get working dir")
-		panic(err)
-	}
+	assert.NoError(err, "Main", "could not get working dir")
 	logger.Info("Running project in dir %s", workingDir)
 	jwtHandler := security.NewJwtHandler(workingDir + "/keys/")
 
@@ -86,10 +84,10 @@ func main() {
 	}
 
 	logger.Info("Start server")
-	if err := server.ListenAndServeTLS("server.crt", "server.key"); err != nil &&
-		!errors.Is(err, http.ErrServerClosed) {
+	err = server.ListenAndServeTLS("server.crt", "server.key")
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Info("Something went wrong")
-		panic(err)
+		assert.NoError(err, "Main", "Failed to start HTTPS server")
 	}
 }
 
