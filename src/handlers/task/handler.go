@@ -228,8 +228,8 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "failed to update task with id %d", id)
 		if err := templ_shared.ToastMessage("Failed to update task", "error").Render(r.Context(), w); err != nil {
 			assert.NoError(err, source, "failed to render toast")
-			return
 		}
+		return
 	}
 	// NOTE: Success zone
 	task, err := h.task_service.GetTaskView(id, current_user_id)
@@ -280,28 +280,22 @@ func (h *Handler) getItem(w http.ResponseWriter, r *http.Request) {
 		formData.Errors["Project"] = err.Error()
 	}
 
+	var template templ.Component
 	source := r.URL.Query().Get("source")
 	if source == "list" {
-		if err = templ_todo.TaskItemContentOOBTargetList(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task item with id %d", id)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		template = templ_todo.TaskItemContentOOBTargetList(task, models.ProjectListToMap(projects))
 	} else {
 		contentType := r.Header.Get("accept")
 		if contentType == "text/html" {
-			if err = templ_todo.TaskItem(task, models.ScreenTodo, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-				h.logger.Error(err, "failed to render task item with id %d", id)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			template = templ_todo.TaskItem(task, models.ScreenTodo, formData, models.ProjectListToMap(projects))
 		} else {
-			if err = templ_todo.TaskItemWithBody(task, models.ScreenTodo, formData, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-				h.logger.Error(err, "failed to render task item with id %d", id)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			template = templ_todo.TaskItemWithBody(task, models.ScreenTodo, formData, models.ProjectListToMap(projects))
 		}
+	}
+	if err := template.Render(r.Context(), w); err != nil {
+		h.logger.Error(err, "failed to render task item with id %d", id)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -381,19 +375,17 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
+	var template templ.Component
 	contentType := r.Header.Get("accept")
 	if contentType == "text/html" {
-		if err = templ_todo.TaskListPage(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "Failed to execute template for the item list page")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		template = templ_todo.TaskListPage(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects))
 	} else {
-		if err = templ_todo.TaskListWithBody(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "Failed to execute template for the item list page")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		template = templ_todo.TaskListWithBody(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects))
+	}
+	if err = template.Render(r.Context(), w); err != nil {
+		h.logger.Error(err, "Failed to execute template for the item list page")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -421,11 +413,6 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	if err := templ_shared.ToastMessage("Task Deleted", "warning").Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render toast")
-		return
-	}
-
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
 		// TODO: handle err types
@@ -433,15 +420,15 @@ func (h *Handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	source := r.URL.Query().Get("source")
-	if source == "task_page" {
-		h.logger.Debug("TODO:WHAT")
-	} else {
-		if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task list item")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+
+	err = templ_shared.RenderTempls(
+		templ_shared.ToastMessage("Task Deleted", "warning"),
+		templ_todo.TaskCardFront(task),
+	).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error(err, "failed to render templates for task delete")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -469,12 +456,6 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: Success zone
-	if err := templ_shared.ToastMessage("Task Restored", "success").Render(r.Context(), w); err != nil {
-		assert.NoError(err, source, "failed to render toast")
-		// TODO: what should happen if the fetch fails after create
-		return
-	}
-
 	task, err := h.task_service.GetTaskView(id, current_user_id)
 	if err != nil {
 		// TODO: handle err types
@@ -482,15 +463,15 @@ func (h *Handler) restoreItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	source := r.URL.Query().Get("source")
-	if source == "task_page" {
-		h.logger.Debug("TODO:WHAT")
-	} else {
-		if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
-			h.logger.Error(err, "failed to render task list item")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+
+	err = templ_shared.RenderTempls(
+		templ_shared.ToastMessage("Task Restored", "success"),
+		templ_todo.TaskCardFront(task),
+	).Render(r.Context(), w)
+	if err != nil {
+		h.logger.Error(err, "failed to render templates for task restore")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 

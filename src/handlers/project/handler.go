@@ -18,6 +18,8 @@ import (
 	project_service "go-do-the-thing/src/services/project"
 	task_service "go-do-the-thing/src/services/task"
 	templ_shared "go-do-the-thing/src/shared/templ"
+
+	"github.com/a-h/templ"
 )
 
 type Handler struct {
@@ -49,7 +51,6 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
-	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
@@ -91,8 +92,14 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w)
-	if err != nil {
+	var template templ.Component
+	contentType := r.Header.Get("accept")
+	if contentType == "text/html" {
+		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks)
+	} else {
+		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks) // fallback, or could be a different template if needed
+	}
+	if err = template.Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render project page for id %d", id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
