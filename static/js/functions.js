@@ -1,21 +1,17 @@
 htmx.config.useTemplateFragments = true;
 htmx.config.allowNestedOobSwaps = true;
+// NOTE: If debugging set: htmx.logAll();
 document.addEventListener("DOMContentLoaded", (_) => {
-  document.body.addEventListener("htmx:beforeSwap", function(evt) {
-    if (evt.detail.xhr.status === 422) {
+  document.body.addEventListener("htmx:beforeSwap", function (evt) {
+    if (evt.detail.xhr.status >= 400 && evt.detail.xhr.status < 600) {
       evt.detail.shouldSwap = true;
-      evt.detail.isError = false;
-    }
-    if (evt.detail.xhr.status === 500) {
-      evt.detail.shouldSwap = true;
-      evt.detail.isError = false;
     }
   });
-  document.body.addEventListener("htmx:configRequest", function(evt) {
+  document.body.addEventListener("htmx:configRequest", function (evt) {
     evt.detail.headers["accept"] = "text/html";
-    evt.detail.headers["authorization"] = getAuthToken(); // add a new parameter into the mix
+    // Authentication is handled via cookies, no need for authorization header
   });
-  document.addEventListener("htmx:afterSwap", function(_) {
+  document.addEventListener("htmx:afterSwap", function (_) {
     if (typeof initFlowbite === "function") {
       initFlowbite();
     } else if (
@@ -27,8 +23,17 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
 });
 
-function getAuthToken() {
-  return "bearer placeholder token";
+function removeClassForId(className, elementId) {
+  const elem = document.getElementById(elementId);
+  if (elem.classList.contains(className)) {
+    elem.classList.remove(className);
+  }
+}
+function addClassForId(className, elementId) {
+  const elem = document.getElementById(elementId);
+  if (!elem.classList.contains(className)) {
+    elem.classList.add(className);
+  }
 }
 
 function toggleClassForId(className, elementId) {

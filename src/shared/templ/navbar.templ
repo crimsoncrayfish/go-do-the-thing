@@ -5,10 +5,9 @@ import (
 	"go-do-the-thing/src/models"
 )
 
-// TODO: Update the navbar to enable partial updates?
-templ NavBar(navbar models.NavBarObject) {
+templ NavBar(activeScreen models.Screen) {
 	<header
-		class="sticky top-0 z-20 flex justify-between items-center w-full bg-secondary-light border-b border-border-light dark:border-border-dark dark:bg-secondary-dark"
+		class="z-20 flex justify-between items-center h-[5rem] w-full bg-secondary-light border-b border-border-light dark:border-border-dark dark:bg-secondary-dark"
 	>
 		<button
 			onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
@@ -56,5 +55,5 @@ templ NavBar(navbar models.NavBarObject) {
 			</div>
 		</div>
 	</header>
-	@SideBar(navbar)
+	@SideBar(activeScreen)
 }

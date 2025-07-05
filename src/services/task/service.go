@@ -3,38 +3,38 @@ package task_service
 import (
 	"fmt"
 	"go-do-the-thing/src/database/repos"
+	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
-	project_user_service "go-do-the-thing/src/services/project_user_service"
 	"sort"
 	"time"
 )
 
 type TaskService struct {
-	tasksRepo           tasks_repo.TasksRepo
-	usersRepo           users_repo.UsersRepo
-	projectRepo         projects_repo.ProjectsRepo
-	projectUsersService project_user_service.ProjectUserService
+	tasksRepo        tasks_repo.TasksRepo
+	usersRepo        users_repo.UsersRepo
+	projectRepo      projects_repo.ProjectsRepo
+	projectUsersRepo project_users_repo.ProjectUsersRepo
 }
 
 const serviceSource = "TaskService"
 
 func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 	return TaskService{
-		tasksRepo:           *repo_container.GetTasksRepo(),
-		usersRepo:           *repo_container.GetUsersRepo(),
-		projectRepo:         *repo_container.GetProjectsRepo(),
-		projectUsersService: project_user_service.SetupProjectUserService(repo_container),
+		tasksRepo:        *repo_container.GetTasksRepo(),
+		usersRepo:        *repo_container.GetUsersRepo(),
+		projectRepo:      *repo_container.GetProjectsRepo(),
+		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
 	}
 }
 
 func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *time.Time) (int64, error) {
 	// NOTE: Does this user belong to the current project
-	err := s.projectUsersService.UserBelongsToProject(user_id, project_id)
+	err := s.UserBelongsToProject(user_id, project_id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return 0, err
@@ -68,7 +68,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		// NOTE: Errors from function already wrapped
 		return err
 	}
-	err = s.projectUsersService.UserBelongsToProject(user_id, project_id)
+	err = s.UserBelongsToProject(user_id, project_id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return err
@@ -144,7 +144,7 @@ func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 		// NOTE: Errors from function already wrapped
 		return nil, err
 	}
-	err = s.projectUsersService.UserBelongsToProject(user_id, task.Project)
+	err = s.UserBelongsToProject(user_id, task.Project)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return nil, err
@@ -244,10 +244,8 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 				return nil, err
 			}
 			projects[task.Project] = project
-
 		}
 
-		// Convert to ViewModel
 		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by, *project)
 	}
 
@@ -304,5 +302,17 @@ func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err erro
 		// NOTE: Take action
 		return err
 	}
-	return s.projectUsersService.UserBelongsToProject(user_id, task.Project)
+	return s.UserBelongsToProject(user_id, task.Project)
+}
+
+func (s *TaskService) UserBelongsToProject(user_id, project_id int64) (err error) {
+	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
+	if err != nil {
+		// NOTE: Errors from repo are wrapped
+		return err
+	}
+	if len(roles) == 0 {
+		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
+	}
+	return nil
 }

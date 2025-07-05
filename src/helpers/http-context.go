@@ -10,10 +10,10 @@ import (
 )
 
 type HttpContext struct {
-	Values map[string]string
+	Values map[constants.ContextKey]string
 }
 
-func (u HttpContext) Get(key string) string {
+func (u HttpContext) Get(key constants.ContextKey) string {
 	return u.Values[key]
 }
 
@@ -50,5 +50,9 @@ func GetEmailFromContext(ctx context.Context) string {
 }
 
 func GetIsAdminFromContext(ctx context.Context) bool {
-	return false
+	context, ok := ctx.Value(constants.AuthContext).(HttpContext)
+	if !ok {
+		return false
+	}
+	return context.Get(constants.AuthIsAdmin) == "true"
 }

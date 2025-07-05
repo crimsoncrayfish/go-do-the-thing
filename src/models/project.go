@@ -25,6 +25,7 @@ func (p *Project) AssertHealthyNew() {
 	source := "Model.Project"
 
 	assert.NotNil(p, source, "project model struct not healthy - project is nil")
+	assert.NotEqual(p.Owner, 0, source, "project model struct not healthy - project owner not set")
 
 	assert.NotEqual(p.Name, "", source, "Name")
 	assert.NotEqual(p.Description, "", source, "Description")
@@ -45,18 +46,20 @@ func (p *Project) AssertHealthy() {
 }
 
 type ProjectView struct {
-	Id           int64
-	Name         string
-	Description  string
-	Owner        UserView
-	StartDate    *time.Time
-	DueDate      *time.Time
-	CreatedBy    UserView
-	CreatedDate  *time.Time
-	ModifiedBy   UserView
-	ModifiedDate *time.Time
-	IsComplete   bool
-	IsDeleted    bool
+	Id             int64
+	Name           string
+	Description    string
+	Owner          UserView
+	StartDate      *time.Time
+	DueDate        *time.Time
+	CreatedBy      UserView
+	CreatedDate    *time.Time
+	ModifiedBy     UserView
+	ModifiedDate   *time.Time
+	IsComplete     bool
+	IsDeleted      bool
+	CompletedTasks int64
+	TotalTasks     int64
 }
 
 func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {

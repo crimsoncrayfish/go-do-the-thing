@@ -6,22 +6,45 @@ import (
 )
 
 templ ProjectFormContent(formdata form_models.ProjectForm) {
-	<div class="space-y-4">
-		@templ_shared.FormTextInput("Project Name", "name", "Lets do this!", formdata.Project.Name)
-		@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
-			formdata.Project.Description)
-		@templ_shared.FormDatePicker("Due on", "due_date", "project-form-date-picker", formdata.Project.DueDate)
-		for _, v:= range formdata.Errors {
-			<div class="py-4 text-error">
-				{ v }
-			</div>
-		}
-		<button
-			type="submit"
-			class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-light dark:focus:ring-success-dark focus:ring-opacity-50 flex items-center"
+	<div class="space-y-6">
+		<form
+			hx-post="/project"
+			hx-target="#edit-panel"
+			hx-swap="outerHTML"
+			hx-indicator="#edit-panel-loader"
+			class="space-y-5"
 		>
-			Create Project
-			@templ_shared.SvgPlus()
-		</button>
+			@templ_shared.FormTextInput("Project Name", "name", "Enter project name...", formdata.Project.Name)
+			@templ_shared.FormTextInput("Description", "description", "Enter project description...",
+				formdata.Project.Description)
+			@templ_shared.FormDatePicker("Due on", "due_date", "project-create-form-date-picker", formdata.Project.DueDate)
+			for _, v:= range formdata.Errors {
+				<div class="py-2 px-3 bg-danger-light/10 dark:bg-danger-dark/10 border border-danger-light dark:border-danger-dark rounded-lg">
+					<span class="text-danger-light dark:text-danger-dark text-sm">{ v }</span>
+				</div>
+			}
+			<div class="flex gap-3 pt-4 justify-between">
+				<button
+					type="button"
+					onclick="closeEditPanel()"
+					class="px-4 py-2 rounded-full border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors"
+				>
+					Cancel
+				</button>
+				<button
+					type="submit"
+					class="bg-success-light dark:bg-success-dark hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center gap-2"
+				>
+					@templ_shared.SvgPlus()
+					Create Project
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ ProjectFormCard(formdata form_models.ProjectForm) {
+	<div class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
+		@ProjectFormContent(formdata)
 	</div>
 }

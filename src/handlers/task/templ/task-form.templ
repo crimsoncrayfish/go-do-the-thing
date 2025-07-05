@@ -6,23 +6,46 @@ import (
 )
 
 templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) {
-	<div class="space-y-5 mb-5">
-		@templ_shared.FormTextInput("Task Name", "name", "Lets do this!", formdata.Task.Name)
-		@templ_shared.FormTextInput("Description", "description", "Lets do this! (but more info pls)",
-			formdata.Task.Description)
-		@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
-		@templ_shared.FormDatePicker("Due on", "due_date", "task-form-date-picker", formdata.Task.DueDate)
+	<div class="space-y-6">
+		<form
+			hx-post="/todo/item"
+			hx-target="#edit-panel"
+			hx-swap="outerHTML"
+			hx-indicator="#edit-panel-loader"
+			class="space-y-5"
+		>
+			@templ_shared.FormTextInput("Task Name", "name", "Enter task name...", formdata.Task.Name)
+			@templ_shared.FormTextInput("Description", "description", "Enter task description...",
+				formdata.Task.Description)
+			@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
+			@templ_shared.FormDatePicker("Due on", "due_date", "task-create-form-date-picker", formdata.Task.DueDate)
+			for _, v:= range formdata.Errors {
+				<div class="py-2 px-3 bg-danger-light/10 dark:bg-danger-dark/10 border border-danger-light dark:border-danger-dark rounded-lg">
+					<span class="text-danger-light dark:text-danger-dark text-sm">{ v }</span>
+				</div>
+			}
+			<div class="flex gap-3 pt-4 justify-between">
+				<button
+					type="button"
+					onclick="closeEditPanel()"
+					class="px-4 py-2 rounded-full border border-border-light dark:border-border-dark text-text-on-light dark:text-text-on-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10 transition-colors"
+				>
+					Cancel
+				</button>
+				<button
+					type="submit"
+					class="bg-success-light dark:bg-success-dark hover:opacity-80 text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center gap-2"
+				>
+					@templ_shared.SvgPlus()
+					Create Task
+				</button>
+			</div>
+		</form>
 	</div>
-	for _, v:= range formdata.Errors {
-		<div class="py-4 text-error">
-			{ v }
-		</div>
-	}
-	<button
-		type="submit"
-		class=" bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
-	>
-		Create Task
-		@templ_shared.SvgPlus()
-	</button>
+}
+
+templ TaskFormCard(formdata form_models.TaskForm, projects map[int64]string) {
+	<div class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
+		@TaskFormContent(formdata, projects)
+	</div>
 }

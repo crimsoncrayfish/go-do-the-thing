@@ -1,18 +1,11 @@
 package models
 
-type ActiveScreens struct {
-	IsHome     bool
-	IsTodoList bool
-	IsProjects bool
-	IsError    bool
-}
+type Screen string
 
-type NavBarObject struct {
-	ActiveScreens
-}
-
-func NewNavbarObject() NavBarObject {
-	return NavBarObject{
-		ActiveScreens{false, false, false, false},
-	}
-}
+const (
+	ScreenHome     Screen = "home"
+	ScreenTodo     Screen = "todo"
+	ScreenProjects Screen = "projects"
+	ScreenAdmin    Screen = "admin"
+	ScreenError    Screen = "error"
+)

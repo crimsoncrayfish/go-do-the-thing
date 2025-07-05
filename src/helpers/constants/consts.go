@@ -6,9 +6,12 @@ const (
 	PrettyDateFormat = "2 January 2006"
 )
 
+type ContextKey string
+
 const (
-	AuthContext   = "auth.middleware.context"
-	AuthUserId    = "security.middleware.userId"
-	AuthUserEmail = "security.middleware.userEmail"
-	AuthUserName  = "security.middleware.userName"
+	AuthContext   ContextKey = "auth.middleware.context"
+	AuthUserId    ContextKey = "security.middleware.userId"
+	AuthUserEmail ContextKey = "security.middleware.userEmail"
+	AuthUserName  ContextKey = "security.middleware.userName"
+	AuthIsAdmin   ContextKey = "security.middleware.isAdmin"
 )

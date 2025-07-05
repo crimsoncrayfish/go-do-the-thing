@@ -37,6 +37,22 @@ templ TaskItemCardOOB(task *models.TaskView) {
 	</div>
 }
 
+templ TaskCardFrontOOB(task *models.TaskView) {
+	<div
+		hx-swap-oob="true"
+		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
+		class={
+			getPosAnd3dStyles(),
+			getTaskBorderStyle(task),
+			getThemingStyles(task),
+		}
+	>
+		@cardStatus(task)
+		@cardDetails(task)
+		@cardActions(task)
+	</div>
+}
+
 templ TaskCardFront(task *models.TaskView) {
 	<div
 		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
@@ -55,7 +71,7 @@ templ TaskCardFront(task *models.TaskView) {
 templ cardStatus(task *models.TaskView) {
 	<div class="hidden sm:flex pr-8 pl-4 items-center justify-center ">
 		if (task.IsDeleted) {
-			@templ_shared.SvgBin()
+			@restoreTaskButton(task)
 		} else {
 			@completeTaskButton(task)
 		}
@@ -112,6 +128,7 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 						hx-swap="outerHTML swap:0.8s"
 						hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
 						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+						hx-indicator="false"
 						aria-label="Delete Task"
 					>
 						@templ_shared.SvgBin()
@@ -125,17 +142,42 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 
 templ editFromList(task *models.TaskView) {
 	<button
-		class={ " w-full text-left px-4 py-2 text-sm",
-								"text-text-on-light dark:text-text-on-dark",
-								"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center" }
+		class={
+			"w-full text-left px-4 py-2 text-sm",
+			"text-text-on-light dark:text-text-on-dark",
+			"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center",
+		}
+		hx-get={ fmt.Sprintf("/todo/item/%d/edit/panel", task.Id) }
+		hx-target="#edit-panel"
 		hx-swap="outerHTML"
-		hx-target="body"
-		hx-get={ fmt.Sprintf("/todo/item/%d", task.Id) }
-		hx-replace-url="true"
+		hx-on:click="openEditPanel()"
+		hx-indicator="#edit-panel-loader"
 		aria-label="Edit Task"
 	>
 		@templ_shared.SvgEdit()
 		<p class="pl-4">Edit</p>
+	</button>
+}
+
+templ restoreTaskButton(task *models.TaskView) {
+	<button
+		class={ templ.KV( "bg-transparent text-success-light dark:text-success-dark" , task.Status != models.Completed),
+				templ.KV( "bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark" , task.Status == models.Completed),
+				"theme-transition",
+				"hover:text-white font-bold p-2",
+				"rounded-full shadow-md focus:outline-none",
+				"focus:ring-2 focus:ring-success-light",
+				"focus:dark:ring-success-dark focus:ring-opacity-50",
+				"flex items-center justify-center w-10 h-10",
+				"border border-success-light",
+				"dark:border-success-dark" }
+		aria-label="Mark as Complete"
+		hx-swap="outerHTML swap:0.8s"
+		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
+		hx-post={ fmt.Sprintf("/todo/item/restore/%d", task.Id) }
+		hx-indicator="false"
+	>
+		@templ_shared.SvgBin()
 	</button>
 }
 
@@ -155,6 +197,7 @@ templ completeTaskButton(task *models.TaskView) {
 		hx-swap="outerHTML swap:0.8s"
 		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
 		hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }
+		hx-indicator="false"
 	>
 		@templ_shared.SvgCheck()
 	</button>
@@ -170,7 +213,7 @@ templ taskStatusChip(task *models.TaskView) {
 		>
 			DELETED	
 		</span>
-	} else if (task.InProgress) {
+	} else if (task.Status == models.Completed) {
 		<span
 			class="bg-success-light dark:bg-success-dark
                          text-text-on-light dark:text-text-on-dark

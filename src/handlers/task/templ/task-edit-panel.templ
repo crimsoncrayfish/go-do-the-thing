@@ -1,0 +1,17 @@
+package templ_todo
+
+import (
+	m "go-do-the-thing/src/models"
+	ts "go-do-the-thing/src/shared/templ"
+)
+
+templ EditPanel(task m.TaskView) {
+	@ts.EditPanel("Edit Task", TaskEditContent(task))
+}
+
+templ TaskEditContent(task m.TaskView) {
+	<div class="space-y-4">
+		<p class="text-text-on-light dark:text-text-on-dark">Task edit content will go here...</p>
+		<p class="text-text-on-light dark:text-text-on-dark">Task: {task.Name}</p>
+	</div>
+}

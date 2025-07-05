@@ -12,14 +12,14 @@ import (
 
 templ TaskItemWithBody(
 	task *models.TaskView,
-	navbar models.NavBarObject,
+	activeScreen models.Screen,
 	formdata fm.TaskForm,
 	projects map[int64]string) {
-	@templ_shared.Main(TaskItem(task, navbar, formdata, projects))
+	@templ_shared.Main(TaskItem(task, activeScreen, formdata, projects))
 }
 
-templ TaskItem(task *models.TaskView, navbar models.NavBarObject, formdata fm.TaskForm, projects map[int64]string) {
-	@ts.NavBar(navbar)
+templ TaskItem(task *models.TaskView, activeScreen models.Screen, formdata fm.TaskForm, projects map[int64]string) {
+	@ts.NavBar(activeScreen)
 	<div class="px-1 my-4 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 		@TaskItemContent(task, projects)
 		@taskTimeline(task)
@@ -34,12 +34,21 @@ templ TaskItemContent(task *models.TaskView, projects map[int64]string) {
 	</div>
 }
 
+templ TaskItemContentOOBTargetList(task *models.TaskView, projects map[int64]string) {
+	<div
+		class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg"
+	>
+		@taskHeader(task)
+		@taskForm(task, projects, map[string]string{}, false)
+	</div>
+}
+
 templ TaskItemContentOOB(task *models.TaskView, projects map[int64]string) {
 	@TaskItemContentWithErrors(task, projects, map[string]string{}, false)
 }
 
 templ TaskItemContentWithErrors(task *models.TaskView, projects map[int64]string, errors map[string]string, is_editing bool) {
-	<div id="task-content" hx-swap-oob="true" hx-target="#task-content" class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg">
+	<div id="task-content" class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg">
 		@taskHeader(task)
 		@taskForm(task, projects, errors, is_editing)
 	</div>
@@ -47,7 +56,10 @@ templ TaskItemContentWithErrors(task *models.TaskView, projects map[int64]string
 
 templ taskForm(task *models.TaskView, projects map[int64]string, errors map[string]string, is_editing bool) {
 	<form
+		hx-target="#edit-panel"
+		hx-swap="outerHTML"
 		hx-post={ fmt.Sprintf("/todo/item/%d", task.Id) }
+		hx-indicator="#edit-panel-loader"
 	>
 		@taskTitleAndTimer(task, projects, is_editing)
 		<hr class="h-px my-8 border-0 bg-border-light dark:border-border-dark "/>
@@ -69,47 +81,47 @@ templ taskForm(task *models.TaskView, projects map[int64]string, errors map[stri
 templ taskHeader(task *models.TaskView) {
 	<div class="flex justify-between items-start mb-4">
 		<div class="flex items-center gap-3">
-			<button
-				hx-get="/todo/items"
-				hx-replace-url="true"
-				hx-target="body"
-				class="text-text-on-light dark:text-text-on-dark hover:opacity-80 transition-opacity"
-			>
-				@templ_shared.SvgBack()
-			</button>
 			@taskStatusChip(task)
 		</div>
 		<div class="flex gap-2">
 			if (task.InProgress) {
-				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+				<button
+					id="start-stop-button"
+					class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
+				>
 					@templ_shared.SvgPause()
-					<span class="hidden md:inline">Pause</span>
+					<span id="start-stop-label" class="hidden xl:inline">Pause</span>
 				</button>
 			} else {
-				<button class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2">
+				<button
+					id="start-stop-button"
+					class="theme-transition bg-warning-light dark:bg-warning-dark hover:opacity-80 text-primary-light dark:text-primary-dark rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
+				>
 					@templ_shared.SvgPlay()
-					<span class="hidden md:inline">Start</span>
+					<span id="start-stop-label" class="hidden xl:inline">Start</span>
 				</button>
 			}
 			if (task.Status != models.Completed) {
 				<button
+					id="complete-task-button"
 					hx-swap="outerHTML"
 					hx-target="#task-content"
 					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
-					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
 				>
 					@templ_shared.SvgCheck()
-					<span class="hidden md:inline">Mark as Complete</span>
+					<span id="complete-task-label" class="hidden xl:inline">Mark as Complete</span>
 				</button>
 			} else {
 				<button
+					id="complete-task-button"
 					hx-swap="outerHTML"
 					hx-target="#task-content"
 					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
-					class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 md:px-4 md:py-2 flex items-center gap-2"
+					class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
 				>
 					@templ_shared.SvgClose()
-					<span class="hidden md:inline">Mark as Incomplete</span>
+					<span id="complete-task-label" class="hidden xl:inline">Mark as Incomplete</span>
 				</button>
 			}
 			@editDeleteMenuItemPage(task, editFromTask())
@@ -182,7 +194,7 @@ templ taskTitleAndTimer(task *models.TaskView, projects map[int64]string, is_edi
 				@statusIcon(task)
 				<p
 					id="task-title-view"
-					class={ templ.KV("hidden",is_editing), "text-2xl ml-2 font-bold" }
+					class={ templ.KV("hidden",is_editing), "text-text-on-ligh dark:text-text-on-dark text-2xl ml-2 font-bold" }
 				>
 					{ task.Name }
 				</p>
@@ -214,7 +226,7 @@ templ taskTitleAndTimer(task *models.TaskView, projects map[int64]string, is_edi
 		</div>
 		<div class="mb-4">
 			<div class="text-text-on-light dark:text-text-on-dark text-sm">Time Elapsed</div>
-			<div id="detail-timer" class="text-xl font-semibold">02:37:05</div>
+			<div id="detail-timer" class="text-text-on-ligh dark:text-text-on-dark text-xl font-semibold">02:37:05</div>
 		</div>
 	</div>
 }

@@ -2,42 +2,50 @@ package templ_project
 
 import (
 	m "go-do-the-thing/src/models"
-	mf "go-do-the-thing/src/models/forms"
-	"go-do-the-thing/src/shared/templ"
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ ProjectListWithBody(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
-	@ts.Main(ProjectListPage(navbar, formData, projects))
+// Main project list page with lazy loading
+templ ProjectListWithBody(activeScreen m.Screen) {
+	@ts.Main(ProjectListPage(activeScreen))
 }
 
-templ ProjectListPage(navbar m.NavBarObject, formData mf.ProjectForm, projects []m.ProjectView) {
-	@ts.NavBar(navbar)
-	<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
-		<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
-			<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Projects</p>
-			<div>
-				@ts.OpenFormButton("New Project", ts.SvgPlus())
+templ ProjectListPage(activeScreen m.Screen) {
+	@ts.NavBar(activeScreen)
+	<div id="main-layout" class="grid grid-cols-[100%_0%] h-[calc(100vh-5rem)] transition-[grid-template-columns] duration-300 ease-in-out overflow-hidden">
+		<div id="main-content" class="overflow-y-auto h-[calc(100vh-5rem)] transition-opacity duration-300 ease-in-out">
+			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
+				<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
+					<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Projects</p>
+					<div>
+						<button
+							hx-get="/project/create/panel"
+							hx-target="#edit-panel"
+							hx-swap="outerHTML"
+							hx-indicator="#edit-panel-loader"
+							onclick="openEditPanel()"
+							class="bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
+						>
+							@ts.SvgPlus()
+							&nbsp;New Project
+						</button>
+					</div>
+				</div>
+				<div hx-get="/projects/lazy" hx-trigger="load" hx-indicator="#loader-page" id="project-list-container"></div>
 			</div>
 		</div>
-		@templ_shared.FormContainer("project", ProjectFormContent(formData))
-		@ProjectList(projects)
-	</div>
-}
-
-templ ProjectList(projects []m.ProjectView) {
-	<div id="project-list-container">
-		for _, project := range projects {
-			@ProjectCard(project)
-		}
+		@ts.EditPanel("Edit Project", projectEditContent())
 	</div>
 	<script>
 function flipProjectCardUpdateToBack(event, id) {
     const method = event.detail.requestConfig.verb.toUpperCase();
+    if (method === "GET") {
+        return;
+    }
     if (method === "POST") {
-	toggleClassForId('hidden', 'project-card-back-update-'+id)
+        toggleClassForId('hidden', 'project-card-back-update-'+id)
     } else if (method === "DELETE") {
-	toggleClassForId('hidden', 'project-card-back-delete-'+id)
+        toggleClassForId('hidden', 'project-card-back-delete-'+id)
     }
     const inner = document.getElementById('project-card-inner-' + id);
     if (!inner) return;
@@ -54,5 +62,17 @@ function flipProjectCardUpdateToFront(event, id) {
 	inner.removeEventListener('transitionend', hideBack);
     });
 };
-</script>
+	</script>
+}
+
+templ ProjectListContent(projects []m.ProjectView) {
+	for _, project := range projects {
+		@ProjectCard(project)
+	}
+}
+
+templ projectEditContent() {
+	<div class="space-y-4">
+		<p class="text-text-on-light dark:text-text-on-dark">Project Edit Content</p>
+	</div>
 }

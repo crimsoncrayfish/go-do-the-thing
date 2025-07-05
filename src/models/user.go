@@ -16,21 +16,25 @@ type User struct {
 	LastActiveDate   *time.Time `json:"last_active_date"`
 	PasswordHash     string     `json:"password_hash,omitempty"`
 	IsDeleted        bool       `json:"is_deleted,omitempty"`
+	IsEnabled        bool       `json:"is_enabled,omitempty"`
 	IsAdmin          bool       `json:"is_admin,omitempty"`
 	CreateDate       *time.Time `json:"create_date"`
+	AccessGrantedBy  *int64     `json:"access_granted_by,omitempty"`
 }
 
 type UserView struct {
-	Id       int64  `json:"id,omitempty"`
-	Email    string `json:"email,omitempty"`
-	FullName string `json:"full_name,omitempty"`
+	Id          int64      `json:"id,omitempty"`
+	Email       string     `json:"email,omitempty"`
+	FullName    string     `json:"full_name,omitempty"`
+	CreatedDate *time.Time `json:"create_date,omitempty"`
 }
 
 func (u *User) ToViewModel() UserView {
 	assert.NotNil(u, helpers.PrevCallerName(2), "user cant be nil")
 	return UserView{
-		Id:       u.Id,
-		Email:    u.Email,
-		FullName: u.FullName,
+		Id:          u.Id,
+		Email:       u.Email,
+		FullName:    u.FullName,
+		CreatedDate: u.CreateDate,
 	}
 }

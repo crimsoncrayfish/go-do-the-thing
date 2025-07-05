@@ -26,9 +26,10 @@ templ FormContainer(postTo string, content templ.Component) {
 						@SvgClose()
 					</button>
 				</div>
-				<div id="create-project-form">
+				<div id="create-project-form" class="relative">
 					<form
 						hx-post={ postTo }
+						hx-indicator="#task-form-loader"
 						class="px-5 pt-5 pb-1 mb-0"
 					>
 						@content

@@ -11,7 +11,7 @@ type ProjectTagsRepo struct {
 
 var repoName = "ProjectTagsRepo"
 
-// NOTE: Depends on: [./tags-repo.go, ./projects-repo.go]
+// NOTE: Depends on: [./tags_repo.go, ./projects_repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectTagsRepo {
 	assert.IsTrue(false, repoName, "not implemented exception")
 	//TODO: Cleanup
@@ -23,8 +23,8 @@ func InitRepo(database database.DatabaseConnection) *ProjectTagsRepo {
 }
 
 const (
-	insertProjectTag = `INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?)`
-	deleteTag        = `DELETE FROM project_tags WHERE [tag_id] = ?`
-	deleteProject    = `DELETE FROM project_tags WHERE [project_id] = ?`
-	deleteProjectTag = `DELETE FROM project_tags WHERE [tag_id] = ? AND [project_id] = ?`
+	insertProjectTag = `SELECT sp_insert_project_tag($1, $2)`
+	deleteTag        = `SELECT sp_delete_project_tag_by_tag($1)`
+	deleteProject    = `SELECT sp_delete_project_tag_by_project($1)`
+	deleteProjectTag = `SELECT sp_delete_project_tag($1, $2)`
 )
