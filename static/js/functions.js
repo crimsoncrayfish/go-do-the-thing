@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
   document.body.addEventListener("htmx:configRequest", function (evt) {
     evt.detail.headers["accept"] = "text/html";
-    evt.detail.headers["authorization"] = getAuthToken(); // add a new parameter into the mix
+    // Authentication is handled via cookies, no need for authorization header
   });
   document.addEventListener("htmx:afterSwap", function (_) {
     if (typeof initFlowbite === "function") {
@@ -23,9 +23,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
 });
 
-function getAuthToken() {
-  return "bearer placeholder token";
-}
+
 
 function toggleClassForId(className, elementId) {
   const elem = document.getElementById(elementId);
