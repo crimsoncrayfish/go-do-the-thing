@@ -39,6 +39,8 @@ templ SideBar(activeScreen models.Screen) {
 						<a
 							hx-get="/error"
 							hx-target="body"
+							hx-indicator="#loader-page"
+							onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
 							class="flex items-center p-2 text-text-on-light dark:text-text-on-dark cursor-pointer"
 						>
 							if activeScreen == models.ScreenError {
@@ -132,6 +134,8 @@ templ navBarListItem(description string, isActive bool, navigation string) {
 			hx-get={ navigation }
 			hx-replace-url="true"
 			hx-target="body"
+			hx-indicator="#loader-page"
+			onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
 			class="flex items-center p-2 text-text-on-light dark:text-text-on-dark cursor-pointer"
 		>
 			if isActive {

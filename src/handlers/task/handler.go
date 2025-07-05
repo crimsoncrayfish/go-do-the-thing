@@ -47,6 +47,7 @@ func SetupTodoHandler(
 
 	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItem)))
 	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.listItems)))
+	router.Handle("GET /tasks/lazy", mw_stack(http.HandlerFunc(todoHandler.listItemsLazy)))
 	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemStatus)))
 	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItem)))
 	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItem)))
@@ -345,29 +346,39 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// NOTE: Take action
-	tasks, err := h.task_service.GetTaskViewList(current_user_id)
-	if err != nil {
-		// TODO: some user feedback here?
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve tasks")
-		return
-	}
-
 	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		defaultForm.Errors["Project"] = err.Error()
 	}
 
-	// NOTE: Success zone
-	var template templ.Component
-	contentType := r.Header.Get("accept")
-	if contentType == "text/html" {
-		template = templ_todo.TaskListPage(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects))
-	} else {
-		template = templ_todo.TaskListWithBody(models.ScreenTodo, defaultForm, tasks, models.ProjectListToMap(projects))
-	}
-	if err = template.Render(r.Context(), w); err != nil {
+	// NOTE: frontend response
+	form := fm.NewDefaultTaskForm()
+	tmpl := templ_todo.TaskListWithBody(models.ScreenTodo, form, models.ProjectListToMap(projects))
+	if err := tmpl.Render(r.Context(), w); err != nil {
 		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task list")
+		return
+	}
+}
+
+func (h *Handler) listItemsLazy(w http.ResponseWriter, r *http.Request) {
+	// NOTE: Auth check
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+
+	// NOTE: Take action
+	tasks, err := h.task_service.GetTaskViewList(current_user_id)
+	if err != nil {
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve tasks")
+		return
+	}
+
+	// NOTE: Return only the task list content for lazy loading
+	err = templ_todo.TaskListContent(tasks).Render(r.Context(), w)
+	if err != nil {
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display task list content")
 		return
 	}
 }

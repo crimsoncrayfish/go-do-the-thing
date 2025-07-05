@@ -1,18 +1,25 @@
 package templ_shared
 
 templ Loader() {
-	<script>
-	function toggleLoader(on) {
-		toggleClassForIdExact('-translate-x-full', 'loader-page', on);
-	}
-</script>
 	<div
 		id="loader-page"
-		class="z-50 fixed top-0 left-0 w-screen h-screen bg-g -translate-x-full bg-primary-900 bg-opacity-50"
+		class="htmx-indicator z-50 fixed top-0 left-0 w-screen h-screen bg-secondary-light bg-opacity-50 dark:bg-secondary-dark dark:bg-opacity-50 flex items-center justify-center pointer-events-none backdrop-blur-[1px]"
 	>
-		<div class="flex items-center justify-center h-full">
-			<img class="mx-auto my-auto" src="/static/gif/loading_white.gif" alt="Loading..."/>
+		<div class="loader-bounce flex space-x-2">
+			<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
+			<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
+			<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.4s"></div>
 		</div>
+		<style>
+		@keyframes bounce-balls {
+			0%, 80%, 100% { transform: translateY(0); }
+			40% { transform: translateY(-20px); }
+		}
+		.animate-bounce-balls {
+			display: inline-block;
+			animation: bounce-balls 1.2s infinite both;
+		}
+		</style>
 	</div>
 }
 

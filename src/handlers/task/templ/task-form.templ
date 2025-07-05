@@ -25,4 +25,21 @@ templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) 
 		Create Task
 		@templ_shared.SvgPlus()
 	</button>
+	<div id="task-form-loader" class="htmx-indicator absolute inset-0 bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 flex items-center justify-center rounded-lg">
+		<div class="loader-bounce flex space-x-2">
+			<div class="w-3 h-3 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
+			<div class="w-3 h-3 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
+			<div class="w-3 h-3 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.4s"></div>
+		</div>
+		<style>
+		@keyframes bounce-balls {
+			0%, 80%, 100% { transform: translateY(0); }
+			40% { transform: translateY(-20px); }
+		}
+		.animate-bounce-balls {
+			display: inline-block;
+			animation: bounce-balls 1.2s infinite both;
+		}
+		</style>
+	</div>
 }

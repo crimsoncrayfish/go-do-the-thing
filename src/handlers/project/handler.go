@@ -42,6 +42,7 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 	}
 
 	router.Handle("GET /projects", mw_stack(http.HandlerFunc(projectsHandler.getProjects)))
+	router.Handle("GET /projects/lazy", mw_stack(http.HandlerFunc(projectsHandler.getProjectsLazy)))
 	router.Handle("POST /project", mw_stack(http.HandlerFunc(projectsHandler.createProject)))
 	router.Handle("PUT /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.updateProject)))
 
@@ -152,6 +153,22 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	// NOTE: Auth check
+	_, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+
+	// NOTE: service call (no need to fetch projects here)
+	err = templ_project.ProjectListWithBody(models.ScreenProjects).Render(r.Context(), w)
+	if err != nil {
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project list")
+		return
+	}
+}
+
+func (h *Handler) getProjectsLazy(w http.ResponseWriter, r *http.Request) {
+	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
@@ -159,16 +176,17 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// NOTE: service call
-	pList, err := h.project_service.GetAllProjectsForUser(current_user_id)
+	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
 		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve projects")
 		return
 	}
-	// NOTE: frontend response
+
+	// NOTE: Return only the project list content for lazy loading
 	form := form_models.NewDefaultProjectForm()
-	err = templ_project.ProjectListWithBody(models.ScreenProjects, form, pList).Render(r.Context(), w)
+	err = templ_project.ProjectListContent(projects, form).Render(r.Context(), w)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project list")
+		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project list content")
 		return
 	}
 }

@@ -128,6 +128,7 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 						hx-swap="outerHTML swap:0.8s"
 						hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
 						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+						hx-indicator="false"
 						aria-label="Delete Task"
 					>
 						@templ_shared.SvgBin()
@@ -174,6 +175,7 @@ templ restoreTaskButton(task *models.TaskView) {
 		hx-swap="outerHTML swap:0.8s"
 		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
 		hx-post={ fmt.Sprintf("/todo/item/restore/%d", task.Id) }
+		hx-indicator="false"
 	>
 		@templ_shared.SvgBin()
 	</button>
@@ -195,6 +197,7 @@ templ completeTaskButton(task *models.TaskView) {
 		hx-swap="outerHTML swap:0.8s"
 		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
 		hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }
+		hx-indicator="false"
 	>
 		@templ_shared.SvgCheck()
 	</button>

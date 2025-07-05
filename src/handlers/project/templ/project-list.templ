@@ -7,34 +7,20 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-templ ProjectListWithBody(activeScreen m.Screen, formData mf.ProjectForm, projects []m.ProjectView) {
-	@ts.Main(ProjectListPage(activeScreen, formData, projects))
+// Main project list page with lazy loading
+templ ProjectListWithBody(activeScreen m.Screen) {
+	@ts.Main(ProjectListPage(activeScreen))
 }
 
-templ ProjectListPage(activeScreen m.Screen, formData mf.ProjectForm, projects []m.ProjectView) {
+templ ProjectListPage(activeScreen m.Screen) {
 	@ts.NavBar(activeScreen)
 	<div id="main-layout" class="grid grid-cols-[100%_0%] h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-300 ease-in-out">
 		<div id="main-content" class="overflow-y-auto transition-opacity duration-300 ease-in-out">
 			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
-				<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
-					<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Projects</p>
-					<div>
-						@ts.OpenFormButton("New Project", ts.SvgPlus())
-					</div>
-				</div>
-				@templ_shared.FormContainer("project", ProjectFormContent(formData))
-				@ProjectList(projects)
+				<div hx-get="/projects/lazy" hx-trigger="load" hx-indicator="#loader-page" id="project-list-container"></div>
 			</div>
 		</div>
-		@ts.EditPanel("Edit Project", ProjectEditContent(m.ProjectView{}))
-	</div>
-}
-
-templ ProjectList(projects []m.ProjectView) {
-	<div id="project-list-container">
-		for _, project := range projects {
-			@ProjectCard(project)
-		}
+		@ts.EditPanel("Edit Project", projectEditContent())
 	</div>
 	<script>
 function flipProjectCardUpdateToBack(event, id) {
@@ -65,9 +51,21 @@ function flipProjectCardUpdateToFront(event, id) {
 </script>
 }
 
-templ ProjectEditContent(project m.ProjectView) {
+templ ProjectListContent(projects []m.ProjectView, formData mf.ProjectForm) {
+	<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
+		<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Projects</p>
+		<div>
+			@ts.OpenFormButton("New Project", ts.SvgPlus())
+		</div>
+	</div>
+	@templ_shared.FormContainer("project", ProjectFormContent(formData))
+	for _, project := range projects {
+		@ProjectCard(project)
+	}
+}
+
+templ projectEditContent() {
 	<div class="space-y-4">
-		<p class="text-text-on-light dark:text-text-on-dark">Edit panel content will go here...</p>
-		<p class="text-text-on-light dark:text-text-on-dark">Project: { project.Name }</p>
+		<p class="text-text-on-light dark:text-text-on-dark">Project Edit Content</p>
 	</div>
 }
