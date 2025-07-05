@@ -48,7 +48,7 @@ templ TaskItemContentOOB(task *models.TaskView, projects map[int64]string) {
 }
 
 templ TaskItemContentWithErrors(task *models.TaskView, projects map[int64]string, errors map[string]string, is_editing bool) {
-	<div id="task-content" hx-swap-oob="true" hx-target="#task-content" class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg">
+	<div id="task-content" class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 mb-6 border border-border-light dark:border-border-dark shadow-lg">
 		@taskHeader(task)
 		@taskForm(task, projects, errors, is_editing)
 	</div>
@@ -56,8 +56,8 @@ templ TaskItemContentWithErrors(task *models.TaskView, projects map[int64]string
 
 templ taskForm(task *models.TaskView, projects map[int64]string, errors map[string]string, is_editing bool) {
 	<form
-		hx-target="#edit-panel-content"
-		hx-swap="innerHTML"
+		hx-target="#edit-panel"
+		hx-swap="outerHTML"
 		hx-post={ fmt.Sprintf("/todo/item/%d", task.Id) }
 		hx-indicator="#edit-panel-loader"
 	>

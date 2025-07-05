@@ -1,13 +1,13 @@
 package home
 
 import (
+	"errors"
 	home_templ "go-do-the-thing/src/handlers/home/templ"
 	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/errors"
+	app_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
-	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 )
 
@@ -29,15 +29,14 @@ func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
 }
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
-	// Get currentUser details
 	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		app_errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
 	if err := home_templ.Index(models.ScreenHome).Render(r.Context(), w); err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display home page")
+		app_errors.InternalServerError(w, r, h.logger, err, "Failed to display home page")
 		return
 	}
 }
@@ -45,27 +44,22 @@ func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 func (h *HomeHandler) error(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		app_errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	w.Header().Set("HX-Retarget", "#toast-message")
-	w.WriteHeader(http.StatusInternalServerError)
-	h.logger.Debug("testing error")
-
-	templ_shared.ToastMessage("This is an error", "error").Render(r.Context(), w)
+	app_errors.InternalServerError(w, r, h.logger, errors.New("testing"), "Testing Error Toasts")
 }
 
 func (h *HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
-	// Get currentUser details
 	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		app_errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
 	if err := home_templ.Index(models.ScreenHome).Render(r.Context(), w); err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display home page")
+		app_errors.InternalServerError(w, r, h.logger, err, "Failed to display home page")
 		return
 	}
 }

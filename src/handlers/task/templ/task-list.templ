@@ -14,21 +14,36 @@ templ TaskListWithBody(activeScreen m.Screen, formdata mf.TaskForm, projects map
 
 templ TaskListPage(activeScreen m.Screen, formdata mf.TaskForm, projects map[int64]string) {
 	@ts.NavBar(activeScreen)
-	<div id="main-layout" class="grid grid-cols-[100%_0%] h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-300 ease-in-out">
-		<div id="main-content" class="overflow-y-auto transition-opacity duration-300 ease-in-out">
+	<div
+		id="main-layout"
+		class="grid grid-cols-[100%_0%] h-[calc(100vh-5rem)] transition-[grid-template-columns] duration-300 ease-in-out overflow-hidden"
+	>
+		<div
+			id="main-content"
+			class="overflow-y-auto h-[calc(100vh-5rem)] transition-opacity duration-300 ease-in-out"
+		>
 			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 				<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
 					<p class="font-bold text-xl text-text-on-light dark:text-text-on-dark">TODO: Tasks</p>
 					<div>
-						@ts.OpenFormButton("New Task", ts.SvgPlus())
+						<button
+							hx-get="/todo/item/create/panel"
+							hx-target="#edit-panel"
+							hx-swap="outerHTML"
+							hx-indicator="#edit-panel-loader"
+							onclick="openEditPanel()"
+							class="bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
+						>
+							@ts.SvgPlus()
+							&nbsp;New Task
+						</button>
 					</div>
 				</div>
-				@ts.FormContainer("/todo/item?source=task_page", TaskFormContent(formdata, projects))
 				@searchBar(projects)
 				<div hx-get="/tasks/lazy" hx-trigger="load" hx-indicator="#loader-page" id="task-list-container"></div>
 			</div>
 		</div>
-		@EditPanel(m.TaskView{})
+		@ts.EditPanel("Edit Task", taskEditContent())
 	</div>
 	<script>
 function flipTaskCardUpdateToBack(event, id) {
@@ -54,11 +69,12 @@ function flipTaskCardUpdateToFront(event, id) {
     if (!inner) return;
     inner.style.transform = 'rotateX(0deg)';
     inner.addEventListener('transitionend', function hideBack() {
-	toggleClassForId('hidden', 'task-card-back-update-'+id);
+        addClassForId('hidden', 'task-card-back-update-'+id);
+	addClassForId('hidden', 'task-card-back-delete-'+id);
 	inner.removeEventListener('transitionend', hideBack);
     });
 };
-</script>
+	</script>
 }
 
 templ TaskListContent(tasks []*m.TaskView) {
@@ -94,5 +110,11 @@ templ searchBar(projects map[int64]string) {
 				Overdue
 			</button>
 		</div>
+	</div>
+}
+
+templ taskEditContent() {
+	<div class="space-y-4">
+		<p class="text-text-on-light dark:text-text-on-dark">Task Edit Content</p>
 	</div>
 }

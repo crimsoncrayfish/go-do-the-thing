@@ -147,9 +147,9 @@ templ editFromList(task *models.TaskView) {
 			"text-text-on-light dark:text-text-on-dark",
 			"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center",
 		}
-		hx-get={ templ.URL(fmt.Sprintf("/todo/item/%d?source=list", task.Id)) }
-		hx-target="#edit-panel-content"
-		hx-swap="innerHTML"
+		hx-get={ fmt.Sprintf("/todo/item/%d/edit/panel", task.Id) }
+		hx-target="#edit-panel"
+		hx-swap="outerHTML"
 		hx-on:click="openEditPanel()"
 		hx-indicator="#edit-panel-loader"
 		aria-label="Edit Task"

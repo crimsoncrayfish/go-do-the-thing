@@ -23,7 +23,18 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
 });
 
-
+function removeClassForId(className, elementId) {
+  const elem = document.getElementById(elementId);
+  if (elem.classList.contains(className)) {
+    elem.classList.remove(className);
+  }
+}
+function addClassForId(className, elementId) {
+  const elem = document.getElementById(elementId);
+  if (!elem.classList.contains(className)) {
+    elem.classList.add(className);
+  }
+}
 
 function toggleClassForId(className, elementId) {
   const elem = document.getElementById(elementId);

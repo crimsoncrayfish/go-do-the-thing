@@ -49,10 +49,19 @@ templ ProjectView(
 		@ProjectContent(project, false, map[string]string{})
 		<div class="mx-auto px-4 flex  items-center justify-between mb-4">
 			<div>
-				@ts.OpenFormButton("New Task", ts.SvgPlus())
+				<button
+					hx-get={ fmt.Sprintf("/todo/item/create/panel?project_id=%d", project.Id) }
+					hx-target="#edit-panel"
+					hx-swap="outerHTML"
+					hx-indicator="#edit-panel-loader"
+					onclick="openEditPanel()"
+					class="bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
+				>
+					@ts.SvgPlus()
+					&nbsp;New Task
+				</button>
 			</div>
 		</div>
-		@ts.FormContainer("/todo/item?source=project_page", templ_todo.TaskFormContent(task_form_data, map[int64]string{project.Id: project.Name}))
 		@templ_todo.TaskListContent(tasks)
 	</div>
 }

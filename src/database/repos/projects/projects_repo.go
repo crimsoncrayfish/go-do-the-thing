@@ -114,12 +114,12 @@ const deleteProject = `SELECT sp_delete_project($1, $2, $3)`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
 	r.logger.Debug("DeleteProject called - sql: %s, params: %v", deleteProject, []any{currentUser, time.Now(), id})
-	_, err := r.database.Exec(deleteProject, currentUser, time.Now(), id)
+	_, err := r.database.Exec(deleteProject, id, currentUser, time.Now())
 	if err != nil {
 		r.logger.Error(err, "failed to update project - sql: %s, params: %v", deleteProject, []any{currentUser, time.Now(), id})
-		return errors.New(errors.ErrDBUpdateFailed, "failed to update project: %w", err)
+		return errors.New(errors.ErrDBDeleteFailed, "failed to update project: %w", err)
 	}
-	r.logger.Info("Project deleted successfully - id: %d", id)
+	r.logger.Debug("Project deleted successfully - id: %d", id)
 	return nil
 }
 
@@ -153,7 +153,7 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 		r.logger.Error(err, "failed to update project - sql: %s, params: %+v", updateProject, project)
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update project: %w", err)
 	}
-	r.logger.Info("Project updated successfully - id: %d, name: %s", project.Id, project.Name)
+	r.logger.Debug("Project updated successfully - id: %d, name: %s", project.Id, project.Name)
 	return nil
 }
 
@@ -181,6 +181,6 @@ func (r *ProjectsRepo) Insert(project models.Project) (id int64, err error) {
 		r.logger.Error(err, "failed to create new project - sql: %s, params: %+v", insertProject, project)
 		return 0, errors.New(errors.ErrDBReadFailed, "failed to create new project: %w", err)
 	}
-	r.logger.Info("Project created successfully - id: %d, name: %s, owner: %d", id, project.Name, project.Owner)
+	r.logger.Debug("Project created successfully - id: %d, name: %s, owner: %d", id, project.Name, project.Owner)
 	return id, nil
 }

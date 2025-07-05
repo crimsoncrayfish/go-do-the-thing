@@ -1,7 +1,6 @@
 package project
 
 import (
-	"fmt"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
@@ -48,46 +47,43 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 
 	router.Handle("GET /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.getProject)))
 	router.Handle("DELETE /project/{id}", mw_stack(http.HandlerFunc(projectsHandler.deleteProject)))
+
+	router.Handle("GET /project/create/panel", mw_stack(http.HandlerFunc(projectsHandler.getCreatePanel)))
+	router.Handle("GET /project/{id}/edit/panel", mw_stack(http.HandlerFunc(projectsHandler.getEditPanel)))
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
 		return
 	}
 
-	// NOTE: service call
 	projectView, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		// Check if it's a not found error
 		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
-			errors.FrontendErrorNotFound(w, r, h.logger, err, "Project not found")
+			errors.NotFound(w, r, h.logger, err, "Project not found")
 			return
 		}
-		// For other errors (permission, database, etc.), use internal server error
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve project")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project")
 		return
 	}
 
-	// NOTE: Check if this is an edit panel request
 	source := r.URL.Query().Get("source")
 	if source == "list" {
 		if err = templ_project.ProjectContentOOB(*projectView, false, map[string]string{}).Render(r.Context(), w); err != nil {
-			errors.FrontendError(w, r, h.logger, err, "failed to render project content for id %d", id)
+			errors.InternalServerError(w, r, h.logger, err, "failed to render project content for id %d", id)
 			return
 		}
 		return
 	}
 
-	// NOTE: frontend response for full page
 	formData := formDataFromProject(*projectView)
 
 	var tasks []*models.TaskView
@@ -103,7 +99,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	if contentType == "text/html" {
 		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks)
 	} else {
-		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks) // fallback, or could be a different template if needed
+		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks)
 	}
 	if err = template.Render(r.Context(), w); err != nil {
 		h.logger.Error(err, "failed to render project page for id %d", id)
@@ -113,31 +109,27 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
-	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
 		return
 	}
 
-	// NOTE: service call
 	hasProjects, err := h.project_service.DeleteProject(id, current_user_id)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to delete project")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to delete project")
 		return
 	}
 
-	// NOTE: frontend response
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve project information")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project information")
 		return
 	}
 
@@ -146,66 +138,62 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		templ_shared.NoDataRowOOB(hasProjects),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project deletion result")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project deletion result")
 		return
 	}
 }
 
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
-	// NOTE: Auth check
 	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	// NOTE: service call (no need to fetch projects here)
 	err = templ_project.ProjectListWithBody(models.ScreenProjects).Render(r.Context(), w)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project list")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project list")
 		return
 	}
 }
 
 func (h *Handler) getProjectsLazy(w http.ResponseWriter, r *http.Request) {
-	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	// NOTE: service call
 	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve projects")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve projects")
 		return
 	}
 
-	// NOTE: Return only the project list content for lazy loading
-	form := form_models.NewDefaultProjectForm()
-	err = templ_project.ProjectListContent(projects, form).Render(r.Context(), w)
+	err = templ_project.ProjectListContent(projects).Render(r.Context(), w)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project list content")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project list content")
 		return
 	}
 }
 
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
-	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	// NOTE: Collect data
 	form := form_models.NewProjectForm()
 	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Project Name")
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
 	description := models.GetPropertyFromRequest(r, "description", "Description")
+
+	if description == "" {
+		form.Errors["Description"] = "Description is required"
+	}
 
 	dateRaw, err := models.GetRequiredPropertyFromRequest(r, "due_date", "Due on")
 	if err != nil {
@@ -216,6 +204,10 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		form.Errors["Due Date"] = err.Error()
 	}
 
+	if due_date.Before(time.Now()) {
+		form.Errors["Due Date"] = "Due date cannot be in the past"
+	}
+
 	form.Project = models.ProjectView{
 		Name:        name,
 		Description: description,
@@ -223,9 +215,8 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(form.Errors) > 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		if err := templ_project.ProjectFormContent(form).Render(r.Context(), w); err != nil {
-			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project form")
+		if err := templ_shared.EditPanel("Create New Project", templ_project.ProjectFormCard(form)).Render(r.Context(), w); err != nil {
+			errors.InternalServerError(w, r, h.logger, err, "Failed to display project form")
 		}
 		return
 	}
@@ -237,39 +228,38 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		name, description,
 		&now, &due_date)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to create project")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to create project")
 		return
 	}
 	projectView, err := h.project_service.GetProjectView(new_id, current_user_id)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve newly created project")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve newly created project")
 		return
 	}
 
+	defaultForm := form_models.NewDefaultProjectForm()
+
 	err = templ_shared.RenderTempls(
 		templ_project.ProjectCardOOB(*projectView),
-		templ_shared.NoDataRowOOB(true),
-		templ_project.ProjectFormContent(defaultForm),
-		templ_shared.ToastActionRedirect("Successfully created project", fmt.Sprintf("/project/%d", new_id), "Go to project", "success"),
+		templ_shared.EditPanel("Create New Project", templ_project.ProjectFormCard(defaultForm)),
+		templ_shared.ToastMessage("Project created successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project creation result")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project creation result")
 		return
 	}
 }
 
 func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
-	// NOTE: Auth check
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.FrontendErrorUnauthorized(w, r, h.logger, err, "user auth failed")
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
 	}
 
-	// NOTE: Collect data
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.FrontendErrorBadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
 		return
 	}
 	form := form_models.NewProjectForm()
@@ -278,6 +268,10 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		form.Errors["Name"] = err.Error()
 	}
 	description := models.GetPropertyFromRequest(r, "description", "Description")
+
+	if description == "" {
+		form.Errors["Description"] = "Description is required"
+	}
 
 	dateRaw, err := models.GetRequiredPropertyFromRequest(r, "due_date", "Due on")
 	if err != nil {
@@ -288,6 +282,10 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		form.Errors["Due Date"] = err.Error()
 	}
 
+	if due_date.Before(time.Now()) {
+		form.Errors["Due Date"] = "Due date cannot be in the past"
+	}
+
 	form.Project = models.ProjectView{
 		Name:        name,
 		Description: description,
@@ -295,39 +293,81 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(form.Errors) > 0 {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		projectView, err := h.project_service.GetProjectView(id, current_user_id)
+		project, err := h.project_service.GetProjectView(id, current_user_id)
 		if err != nil {
-			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve project for editing")
+			errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project for editing")
 			return
 		}
-		if err := templ_project.ProjectContentOOB(*projectView, true, form.Errors).Render(r.Context(), w); err != nil {
-			errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display project edit form")
+		if err := templ_shared.EditPanel("Edit Project", templ_project.ProjectContentOOB(*project, true, form.Errors)).Render(r.Context(), w); err != nil {
+			errors.InternalServerError(w, r, h.logger, err, "Failed to display project edit form")
 		}
 		return
 	}
 
 	err = h.project_service.UpdateProject(
-		id, current_user_id, current_user_id, // NOTE: for now owner is also creator
+		id, current_user_id, current_user_id,
 		name, description,
 		&due_date)
 	if err != nil {
-		errors.FrontendError(w, r, h.logger, err, "failed to update project %d", id)
+		errors.InternalServerError(w, r, h.logger, err, "failed to update project %d", id)
 		return
 	}
 	projectView, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to retrieve updated project")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve updated project")
 		return
 	}
 
 	err = templ_shared.RenderTempls(
-		templ_project.ProjectContentOOB(*projectView, false, nil),
+		templ_project.ProjectContentOOB(*projectView, false, map[string]string{}),
 		templ_project.ProjectCardFrontOOB(*projectView),
+		templ_shared.ToastMessage("Project updated successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		// TODO: Handle error on frontend
-		errors.FrontendErrorInternalServerError(w, r, h.logger, err, "Failed to display updated project")
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project update result")
+		return
+	}
+}
+
+func (h *Handler) getCreatePanel(w http.ResponseWriter, r *http.Request) {
+	_, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+
+	form := form_models.NewDefaultProjectForm()
+
+	if err := templ_shared.EditPanel("Create New Project", templ_project.ProjectFormCard(form)).Render(r.Context(), w); err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to render project create panel")
+		return
+	}
+}
+
+func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		return
+	}
+
+	project, err := h.project_service.GetProjectView(id, current_user_id)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project")
+		return
+	}
+
+	form := form_models.NewProjectForm()
+	form.Project = *project
+
+	if err := templ_shared.EditPanel("Edit Project", templ_project.ProjectContent(*project, false, map[string]string{})).Render(r.Context(), w); err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to render project edit panel")
 		return
 	}
 }
