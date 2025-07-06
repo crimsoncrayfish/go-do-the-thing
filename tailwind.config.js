@@ -38,6 +38,17 @@ module.exports = {
         "tag-9": "#22d3ee",
         "tag-10": "#f87171",
       },
+      screens: {
+        'xs': '475px',
+      },
+      containers: {
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
       transitionProperty: {
         "max-height": "max-height",
       },
@@ -59,6 +70,7 @@ module.exports = {
   plugins: [
     require("flowbite/plugin"),
     require("@tailwindcss/line-clamp"),
+    require("@tailwindcss/container-queries"),
     plugin(function ({ matchUtilities, theme }) {
       matchUtilities(
         {
