@@ -65,21 +65,21 @@ templ ProjectCardFrontOOB(project models.ProjectView) {
 }
 
 templ projectStatus(project models.ProjectView) {
-	<div class="hidden sm:flex pr-8 pl-4 items-center justify-center">
+	<div class="hidden @sm:flex pr-8 pl-4 items-center justify-center">
 		@projectStatusIcon(project)
 	</div>
 }
 
 templ projectDetails(project models.ProjectView) {
-	<div class="sm:px-4 flex flex-col w-full justify-around space-y-4 pb-4 sm:pb-0 sm:border-x border-border-light dark:border-border-dark">
+	<div class="@sm:px-4 flex flex-col w-full justify-around space-y-4 pb-4 @sm:pb-0 @sm:border-x border-border-light dark:border-border-dark">
 		<div class="flex flex-row items-start justify-between">
 			@projectStatusChip(project)
 			<span class="text-sm text-text-on-light dark:text-text-on-dark">
 				Due: { project.DueDate.Format(constants.DateFormat) }
 			</span>
 		</div>
-		<div class="flex flex-col-reverse md:flex-row md:justify-between md:items-center">
-			<p class="font-bold text-lg md:mb-0">{ project.Name }</p>
+		<div class="flex flex-col-reverse @md:flex-row @md:justify-between @md:items-center">
+			<p class="font-bold text-lg @md:mb-0">{ project.Name }</p>
 			<div class="flex items-center space-x-2">
 				<span class="text-sm text-text-on-light dark:text-text-on-dark">Owner: { project.Owner.FullName }</span>
 			</div>
@@ -94,26 +94,26 @@ templ projectDetails(project models.ProjectView) {
 
 templ projectStatusChip(project models.ProjectView) {
 	if project.IsDeleted {
-		<span class="bg-danger-light dark:bg-danger-dark text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+		<span class="bg-danger-light dark:bg-danger-dark text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 @sm:mb-0">
 			Deleted
 		</span>
 	} else if project.IsComplete {
-		<span class="bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+		<span class="bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 @sm:mb-0">
 			Complete
 		</span>
 	} else if project.DueDate.Before(time.Now()) {
-		<span class="bg-danger-light dark:bg-danger-dark text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+		<span class="bg-danger-light dark:bg-danger-dark text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 @sm:mb-0">
 			Over Due
 		</span>
 	} else {
-		<span class="bg-primary-light dark:bg-primary-dark text-text-on-light dark:text-text-on-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 sm:mb-0">
+		<span class="bg-primary-light dark:bg-primary-dark text-text-on-light dark:text-text-on-dark text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 @sm:mb-0">
 			In Progress
 		</span>
 	}
 }
 
 templ projectActions(project models.ProjectView) {
-	<div class="flex sm:pl-8 pr-4 items-center space-x-4 sm:space-x-0 lg:space-x-4 sm:space-y-4 lg:space-y-0 justify-start sm:justify-center lg:justify-end sm:flex-col lg:flex-row">
+	<div class="flex @sm:pl-8 pr-4 items-center space-x-4 @sm:space-x-0 @lg:space-x-4 @sm:space-y-4 @lg:space-y-0 justify-start @sm:justify-center @lg:justify-end @sm:flex-col @lg:flex-row">
 		<button
 			class="theme-transition bg-primary-light dark:bg-primary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark focus:ring-opacity-50 flex items-center justify-center"
 			hx-get={ fmt.Sprintf("/project/%d/edit/panel", project.Id) }
