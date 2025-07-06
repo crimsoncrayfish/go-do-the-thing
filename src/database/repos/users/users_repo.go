@@ -101,10 +101,10 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 const updateUserSession = `SELECT sp_update_user_session($1, $2, $3)`
 
 func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *time.Time) error {
-	r.logger.Debug("UpdateSession called - sql: %s, params: %v", updateUserSession, []interface{}{userId, sessionId, sessionStartTime})
+	r.logger.Debug("UpdateSession called - sql: %s, params: %v", updateUserSession, []any{userId, sessionId, sessionStartTime})
 	_, err := r.db.Exec(updateUserSession, userId, sessionId, sessionStartTime)
 	if err != nil {
-		r.logger.Error(err, "failed to set user session - sql: %s, params: %v", updateUserSession, []interface{}{userId, sessionId, sessionStartTime})
+		r.logger.Error(err, "failed to set user session - sql: %s, params: %v", updateUserSession, []any{userId, sessionId, sessionStartTime})
 		return fmt.Errorf("failed to set user session: %w", err)
 	}
 	r.logger.Debug("UpdateSession succeeded - id: %d", userId)

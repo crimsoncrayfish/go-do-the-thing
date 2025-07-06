@@ -106,6 +106,7 @@ templ taskHeader(task *models.TaskView) {
 					id="complete-task-button"
 					hx-swap="outerHTML"
 					hx-target="#task-content"
+					hx-indicator="#edit-panel-loader"
 					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
 					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
 				>
@@ -117,6 +118,7 @@ templ taskHeader(task *models.TaskView) {
 					id="complete-task-button"
 					hx-swap="outerHTML"
 					hx-target="#task-content"
+					hx-indicator="#edit-panel-loader"
 					hx-post={ fmt.Sprintf("/todo/item/status/%d?source=task_page", task.Id) }
 					class="theme-transition bg-danger-light dark:bg-danger-dark hover:opacity-80 text-white rounded-full font-medium transition-all px-2 py-2 xl:px-4 xl:py-2 flex items-center gap-2"
 				>
