@@ -102,24 +102,6 @@ func (s *UserService) LogoutUser(userId int64) error {
 	return s.usersRepo.UpdateSession(userId, "", &time.Time{})
 }
 
-func (s *UserService) ActivateUser(currentUserId, userId int64) error {
-	currentUser, err := s.usersRepo.GetUserById(userId)
-	if err != nil {
-		s.logger.Error(err, "Failed to get current user with id %d", userId)
-		return err
-	}
-	if !currentUser.IsAdmin {
-		s.logger.Warn("User with id %d tried to activate user %d while they are not an admin", currentUserId, userId)
-		return errors.New("only admins can activate/deactivate users")
-	}
-	_, err = s.usersRepo.GetUserById(userId)
-	if err != nil {
-		s.logger.Error(err, "Failed to get user with id %d to activate", userId)
-		return err
-	}
-	return s.usersRepo.ActivateUser(userId)
-}
-
 func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {

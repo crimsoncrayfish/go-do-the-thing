@@ -1,0 +1,10 @@
+package templ_shared
+
+templ AuthLayout(content templ.Component) {
+	<div class="min-h-screen flex flex-col lg:flex-row">
+		@BlogSection()
+		<div class="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8">
+			@content
+		</div>
+	</div>
+}

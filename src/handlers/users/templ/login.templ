@@ -6,21 +6,21 @@ import (
 )
 
 templ Login(form form_models.LoginForm) {
-	@templ_shared.Main(LoginFormContainer(form))
+	@templ_shared.Main(templ_shared.AuthLayout(LoginFormContainer(form)))
 }
 
 templ LoginFormOOB(form form_models.LoginForm) {
 	<div
 		id="login-form"
 		hx-swap-oob="outerHTML:#main-body"
-		class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
+		class="w-full max-w-md"
 	>
 		@loginForm(form)
 	</div>
 }
 
 templ LoginFormContainer(form form_models.LoginForm) {
-	<div id="login-form" class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+	<div id="login-form" class="w-full max-w-md">
 		@loginForm(form)
 	</div>
 }
@@ -76,7 +76,7 @@ templ LoginFormContent(form form_models.LoginForm) {
 		Don’t have an account yet? <a
 	hx-get="register"
 	hx-replace-url="true"
-	hx-target="#login-form"
+	hx-target="#main-body"
 	hx-swap="outerHTML"
 	href="#"
 	class="font-medium text-text-on-light hover:underline dark:text-text-on-dark"

@@ -126,10 +126,14 @@ BEGIN
     WHERE users.is_deleted = FALSE;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS sp_update_user_is_enabled(_id BIGINT, _is_enabled BOOLEAN);
 CREATE OR REPLACE FUNCTION sp_update_user_is_enabled(_id BIGINT, _is_enabled BOOLEAN)
-RETURNS VOID AS $$
+RETURNS TEXT AS $$
+DECLARE _email TEXT;
 BEGIN
     UPDATE users SET is_enabled = _is_enabled WHERE users.id = _id;
+    SELECT users.email INTO _email FROM users WHERE users.id = _id;
+    RETURN _email;
 END; $$ LANGUAGE plpgsql;
 
 -- Get all inactive users (not enabled and not deleted)

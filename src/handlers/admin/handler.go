@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	templ_admin "go-do-the-thing/src/handlers/admin/templ"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/errors"
@@ -8,6 +9,7 @@ import (
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	admin_service "go-do-the-thing/src/services/admin"
+	templ_shared "go-do-the-thing/src/shared/templ"
 	"net/http"
 	"strconv"
 )
@@ -59,9 +61,17 @@ func (h *AdminHandler) ActivateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.ActivateUser(current_user_id, id)
+	user_email, err := h.service.ActivateUser(current_user_id, id)
 	if err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to activate user")
+		return
+	}
+
+	err = templ_shared.RenderTempls(
+		templ_shared.ToastMessage(fmt.Sprintf("Activated user %s", user_email), "success"),
+	).Render(r.Context(), w)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to update ui")
 		return
 	}
 }

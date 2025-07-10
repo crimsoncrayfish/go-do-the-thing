@@ -92,7 +92,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.logger.Debug("LoginUI: login succeeded - email: %s, user_id: %d", email, user.Id)
-	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Add(time.Duration(time.Hour*4)))
+	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Add(time.Duration(time.Hour*24)))
 	if err != nil {
 		http.SetCookie(w, &emptyAuthCookie)
 		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display login page")

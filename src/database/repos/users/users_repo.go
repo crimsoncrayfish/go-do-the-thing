@@ -20,10 +20,6 @@ var repoName = "UsersRepo"
 
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
-	//TODO: Cleanup
-	//_, err := connection.Exec(createTable)
-	//assert.NoError(err, repoName, "Failed to create Users table")
-
 	logger := slog.NewLogger(repoName)
 	return &UsersRepo{db: connection, logger: logger}
 }
@@ -232,17 +228,19 @@ func (r *UsersRepo) Logout(userId int64) error {
 	return nil
 }
 
-const activateUser = `SELECT sp_update_user_is_enabled($1, $2)`
+const activateUser = `SELECT * FROM sp_update_user_is_enabled($1, $2)`
 
-func (r *UsersRepo) ActivateUser(id int64) error {
+func (r *UsersRepo) ActivateUser(id int64) (string, error) {
 	r.logger.Debug("ActivateUser called - sql: %s, params: %d", getUser, id)
-	_, err := r.db.Exec(activateUser, id)
+	row := r.db.QueryRow(activateUser, id, true)
+	var email string
+	err := row.Scan(&email)
 	if err != nil {
-		r.logger.Error(err, "failed to activate user - sql: %s, params: %d", activateUser, id)
-		return fmt.Errorf("failed to activate user: %w", err)
+		r.logger.Error(err, "failed to get activate user - sql: %s, params: %d", activateUser, id)
+		return "", fmt.Errorf("failed to activate user: %w", err)
 	}
 	r.logger.Debug("ActivateUser succeeded - id: %d", id)
-	return nil
+	return email, nil
 }
 
 const getInactiveUsers = `SELECT * FROM sp_get_users_inactive()`

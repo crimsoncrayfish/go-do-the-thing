@@ -16,8 +16,6 @@ import (
 	project_service "go-do-the-thing/src/services/project"
 	task_service "go-do-the-thing/src/services/task"
 	templ_shared "go-do-the-thing/src/shared/templ"
-
-	"github.com/a-h/templ"
 )
 
 type Handler struct {
@@ -94,16 +92,8 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var template templ.Component
-	contentType := r.Header.Get("accept")
-	if contentType == "text/html" {
-		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks)
-	} else {
-		template = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks)
-	}
-	if err = template.Render(r.Context(), w); err != nil {
-		h.logger.Error(err, "failed to render project page for id %d", id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w); err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "failed to render project page")
 		return
 	}
 }
@@ -362,6 +352,7 @@ func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project")
 		return
 	}
+	project.Tags = []models.TagView{models.NewTag(1, "#33FF57"), models.NewTag(2, "#ff5733"), models.NewTag(3, "#5733FF")}
 
 	form := form_models.NewProjectForm()
 	form.Project = *project

@@ -14,10 +14,10 @@ templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) 
 			hx-indicator="#edit-panel-loader"
 			class="space-y-5"
 		>
+			@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
 			@templ_shared.FormTextInput("Task Name", "name", "Enter task name...", formdata.Task.Name)
 			@templ_shared.FormTextInput("Description", "description", "Enter task description...",
 				formdata.Task.Description)
-			@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
 			@templ_shared.FormDatePicker("Due on", "due_date", "task-create-form-date-picker", formdata.Task.DueDate)
 			for _, v:= range formdata.Errors {
 				<div class="py-2 px-3 bg-danger-light/10 dark:bg-danger-dark/10 border border-danger-light dark:border-danger-dark rounded-lg">

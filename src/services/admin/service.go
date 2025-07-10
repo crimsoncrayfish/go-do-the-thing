@@ -22,7 +22,6 @@ func SetupAdminService(repo_container *repos.RepoContainer) AdminService {
 	}
 }
 
-// ListInactiveUsers returns all users who are not enabled and not deleted, as view models
 func (s *AdminService) ListInactiveUsers(currentUserId int64) ([]models.UserView, error) {
 	s.logger.Debug("ListInactiveUsers called by userId: %d", currentUserId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
@@ -46,17 +45,16 @@ func (s *AdminService) ListInactiveUsers(currentUserId int64) ([]models.UserView
 	return inactive, nil
 }
 
-// ActivateUser enables a user by id, only if the current user is admin
-func (s *AdminService) ActivateUser(currentUserId, userId int64) error {
+func (s *AdminService) ActivateUser(currentUserId, userId int64) (string, error) {
 	s.logger.Debug("ActivateUser called by userId: %d for userId: %d", currentUserId, userId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
 	if err != nil {
 		s.logger.Error(err, "failed to get current user for ActivateUser")
-		return err
+		return "", err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
 		s.logger.Warn("User %d attempted to activate user %d without admin rights", currentUserId, userId)
-		return errors.New("only admins can activate users")
+		return "", errors.New("only admins can activate users")
 	}
 	return s.usersRepo.ActivateUser(userId)
 }
