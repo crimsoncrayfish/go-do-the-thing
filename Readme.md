@@ -76,13 +76,11 @@ openssl req -new -x509 -key private_key.pem -out certificate.pem -days 365
 - [x] Link tasks to users
 - [x] [Templ](https://templ.guide/)
 - [x] Logout
-- [ ] improve task editing security
-- [ ] Admin controls to enable users
+- [x] improve task editing security
+- [x] Admin controls to enable users
 - [x] Containerize this so i can dev on Windows
-- [ ] Projects for task grouping
+- [x] Projects for task grouping
+- [ ] Tags on projects and tasks
 - [ ] Time logging on tasks
 - [ ] Export to csv
 - [ ] Dashboard with stats
-
-## Known issues
-- [ ] hover on table rows with the z axis translation causes rows to end up "behind" the table
