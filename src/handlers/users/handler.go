@@ -187,8 +187,8 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email
-	err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w)
-	if err != nil {
+
+	if err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w); err != nil {
 		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to complete registration")
 		return
 	}

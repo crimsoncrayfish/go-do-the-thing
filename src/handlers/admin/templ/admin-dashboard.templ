@@ -2,7 +2,6 @@ package templ_admin
 
 import "go-do-the-thing/src/models"
 import "go-do-the-thing/src/shared/templ"
-import "fmt"
 
 templ AdminDashboardWithBody(activeScreen models.Screen, users []models.UserView) {
 	@templ_shared.Main(AdminDashboard(activeScreen, users))
@@ -15,63 +14,12 @@ templ AdminDashboard(activeScreen models.Screen, users []models.UserView) {
 			<button id="collapse-btn" class="p-2 text-xs self-end text-primary-dark dark:text-text-on-dark" onclick="document.getElementById('admin-sidebar').classList.toggle('w-16')">☰</button>
 			<ul class="flex-1">
 				<li>
-					<a href="#" hx-get="/admin/user-activation" hx-target="#admin-content" hx-swap="innerHTML" class="block p-4 hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark">User Activation</a>
+					<a href="#" hx-get="/admin/inactive-users" hx-target="#admin-content" hx-swap="innerHTML" class="block p-4 hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark">Activate/Deactivate Users</a>
 				</li>
 			</ul>
 		</div>
 		<div id="admin-content" class="flex-1 overflow-y-auto p-6 bg-primary-light dark:bg-primary-dark">
-			@UserActivationTable(users)
+			@UserTable(users)
 		</div>
 	</div>
-}
-
-templ UserActivationTable(users []models.UserView) {
-	<h2 class="text-xl font-bold mb-4 text-primary-dark dark:text-text-on-dark">Inactive Users</h2>
-	<div class="overflow-x-auto rounded-lg shadow-lg">
-		<table class="min-w-full bg-primary-light dark:bg-primary-dark">
-			<thead>
-				<tr class="bg-secondary-light dark:bg-secondary-dark border-b border-border-light dark:border-border-dark">
-					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Email</th>
-					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Full Name</th>
-					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Registration Date</th>
-					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				if (len(users) == 0) {
-					<tr>
-						<td colspan="4" class="text-center p-6 text-text-on-light dark:text-text-on-dark border-b border-border-light dark:border-border-dark">No inactive users found.</td>
-					</tr>
-				} else {
-					for _, user := range users {
-						@UserRow(user)
-					}
-				}
-			</tbody>
-		</table>
-	</div>
-}
-
-templ UserRow(user models.UserView) {
-	<tr
-		class="even:bg-secondary-light dark:even:bg-secondary-dark
-								hover:bg-accent-light dark:hover:bg-accent-dark
-								text-text-on-light dark:text-text-on-dark
-								hover:text-text-on-dark hover:dark:text-text-on-light
-								dark:hover:text-primary-dark transition-colors duration-200"
-	>
-		<td class="p-4 border-b border-border-light dark:border-border-dark">{ user.Email }</td>
-		<td class="p-4 border-b border-border-light dark:border-border-dark">{ user.FullName }</td>
-		<td class="p-4 border-b border-border-light dark:border-border-dark">{ user.CreatedDate.Format("2006-01-02") }</td>
-		<td class="p-4 border-b border-border-light dark:border-border-dark">
-			<button
-				class="bg-success-dark dark:bg-success-light text-white dark:text-text-on-dark px-4 py-2 rounded-md font-medium shadow-sm
-											hover:bg-opacity-90 dark:hover:bg-opacity-90 transition-all duration-200
-											focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-75"
-				hx-post={ fmt.Sprintf("/admin/activate-user/%d", user.Id) }
-				hx-target="closest tr"
-				hx-swap="outerHTML"
-			>Activate</button>
-		</td>
-	</tr>
 }

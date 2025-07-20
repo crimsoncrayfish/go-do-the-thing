@@ -11,8 +11,8 @@ templ Login(form form_models.LoginForm) {
 
 templ LoginFormOOB(form form_models.LoginForm) {
 	<div
-		id="login-form"
-		hx-swap-oob="outerHTML:#main-body"
+		id="sign-up-in-form"
+		hx-swap-oob="true"
 		class="w-full max-w-md"
 	>
 		@loginForm(form)
@@ -20,7 +20,7 @@ templ LoginFormOOB(form form_models.LoginForm) {
 }
 
 templ LoginFormContainer(form form_models.LoginForm) {
-	<div id="login-form" class="w-full max-w-md">
+	<div id="sign-up-in-form" class="w-full max-w-md">
 		@loginForm(form)
 	</div>
 }
@@ -76,8 +76,6 @@ templ LoginFormContent(form form_models.LoginForm) {
 		Don’t have an account yet? <a
 	hx-get="register"
 	hx-replace-url="true"
-	hx-target="#main-body"
-	hx-swap="outerHTML"
 	href="#"
 	class="font-medium text-text-on-light hover:underline dark:text-text-on-dark"
 >Sign up</a>

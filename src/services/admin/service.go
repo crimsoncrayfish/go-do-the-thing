@@ -22,27 +22,47 @@ func SetupAdminService(repo_container *repos.RepoContainer) AdminService {
 	}
 }
 
-func (s *AdminService) ListInactiveUsers(currentUserId int64) ([]models.UserView, error) {
-	s.logger.Debug("ListInactiveUsers called by userId: %d", currentUserId)
+func (s *AdminService) ListUsers(currentUserId int64) ([]models.UserView, error) {
+	s.logger.Debug("ListUsers called by userId: %d", currentUserId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
 	if err != nil {
-		s.logger.Error(err, "failed to get current user for ListInactiveUsers")
+		s.logger.Error(err, "failed to get current user for ListUsers")
 		return nil, err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User %d attempted to list inactive users without admin rights", currentUserId)
+		s.logger.Warn("User %d attempted to list users without admin rights", currentUserId)
 		return nil, errors.New("only admins can view inactive users")
 	}
-	users, err := s.usersRepo.GetInactiveUsers()
+	users, err := s.usersRepo.GetUsers()
 	if err != nil {
 		s.logger.Error(err, "failed to get inactive users")
 		return nil, err
 	}
-	inactive := make([]models.UserView, 0, len(users))
-	for _, user := range users {
-		inactive = append(inactive, user.ToViewModel())
+	user_views := make([]models.UserView, len(users))
+	for i, user := range users {
+		user_views[i] = user.ToViewModel()
 	}
-	return inactive, nil
+	return user_views, nil
+}
+
+func (s *AdminService) GetUserById(currentUserId int64, user_id int64) (models.UserView, error) {
+	s.logger.Debug("ListUsers called by userId: %d", currentUserId)
+	currentUser, err := s.usersRepo.GetUserById(currentUserId)
+	if err != nil {
+		s.logger.Error(err, "failed to get current user for ListUsers")
+		return models.UserView{}, err
+	}
+	if currentUser == nil || !currentUser.IsAdmin {
+		s.logger.Warn("User %d attempted to list users without admin rights", currentUserId)
+		return models.UserView{}, errors.New("only admins can view inactive users")
+	}
+
+	user, err := s.usersRepo.GetUserById(user_id)
+	if err != nil {
+		s.logger.Error(err, "AuthenticateUser: failed to get user by id - id: %d", user_id)
+		return models.UserView{}, err
+	}
+	return user.ToViewModel(), nil
 }
 
 func (s *AdminService) ActivateUser(currentUserId, userId int64) (string, error) {
@@ -56,5 +76,19 @@ func (s *AdminService) ActivateUser(currentUserId, userId int64) (string, error)
 		s.logger.Warn("User %d attempted to activate user %d without admin rights", currentUserId, userId)
 		return "", errors.New("only admins can activate users")
 	}
-	return s.usersRepo.ActivateUser(userId)
+	return s.usersRepo.UpdateUserEnabled(userId, true)
+}
+
+func (s *AdminService) DeactivateUser(currentUserId, userId int64) (string, error) {
+	s.logger.Debug("DeactivateUser called by userId: %d for userId: %d", currentUserId, userId)
+	currentUser, err := s.usersRepo.GetUserById(currentUserId)
+	if err != nil {
+		s.logger.Error(err, "failed to get current user for DeactivateUser")
+		return "", err
+	}
+	if currentUser == nil || !currentUser.IsAdmin {
+		s.logger.Warn("User %d attempted to deactivate user %d without admin rights", currentUserId, userId)
+		return "", errors.New("only admins can deactivate users")
+	}
+	return s.usersRepo.UpdateUserEnabled(userId, false)
 }

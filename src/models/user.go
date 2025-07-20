@@ -1,8 +1,6 @@
 package models
 
 import (
-	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
 	"time"
 )
 
@@ -27,14 +25,15 @@ type UserView struct {
 	Email       string     `json:"email,omitempty"`
 	FullName    string     `json:"full_name,omitempty"`
 	CreatedDate *time.Time `json:"create_date,omitempty"`
+	IsEnabled   bool       `json:"is_enabled,omitempty"`
 }
 
 func (u *User) ToViewModel() UserView {
-	assert.NotNil(u, helpers.PrevCallerName(2), "user cant be nil")
 	return UserView{
 		Id:          u.Id,
 		Email:       u.Email,
 		FullName:    u.FullName,
 		CreatedDate: u.CreateDate,
+		IsEnabled:   u.IsEnabled,
 	}
 }
