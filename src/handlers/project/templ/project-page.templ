@@ -159,7 +159,7 @@ templ ProjectContent(project models.ProjectView, is_editing bool, errors map[str
 			@projectEditActions(is_editing)
 		</div>
 	</form>
-	@projectTagList(project.Tags)
+	//@projectTagList(project.Tags)
 }
 
 templ projectTagList(tags []models.TagView) {

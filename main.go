@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"errors"
+	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	"go-do-the-thing/src/handlers/admin"
@@ -37,21 +38,49 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, faviconLocation)
 }
 
+const (
+	DEV  = "development"
+	PROD = "production"
+)
+
 func main() {
 	logger := slog.NewLogger("Main")
-	workingDir, err := os.Getwd()
-	assert.NoError(err, "Main", "could not get working dir")
-	logger.Info("Running project in dir %s", workingDir)
-	jwtHandler := security.NewJwtHandler(workingDir + "/keys/")
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = DEV
+	}
+	logger.Debug("This is the env: %s", env)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	logger.Debug("This is the port: %s", port)
+
+	var db_connection_string string
+	if env == DEV {
+		db_connection_string = "postgres://admin:admin@localhost:5432/todo_db?sslmode=disable"
+	} else {
+		db_connection_string = os.Getenv("DATABASE_URL")
+	}
+
+	if db_connection_string == "" {
+		logger.Fatal("FATAL: DATABASE_URL environment variable not set.")
+	}
+
+	working_dir, err := os.Getwd()
+	assert.NoError(err, "Main", "could not get working dir")
+	jwtHandler := security.NewJwtHandler(env, working_dir)
 	router := http.NewServeMux()
-	faviconLocation = workingDir + "/static/img/todo.ico"
-	manifestLocation = workingDir + "/static/json/manifest.json"
-	swjsLocation = workingDir + "/static/json/manifest.json"
+
+	// GET Static content
+	faviconLocation = working_dir + "/static/img/todo.ico"
+	manifestLocation = working_dir + "/static/json/manifest.json"
+	swjsLocation = working_dir + "/static/json/manifest.json"
 
 	logger.Info("Setting Up Database")
-	connectionString := "postgres://admin:admin@localhost:5432/todo_db?sslmode=disable"
-	dbConnection := database.Init(connectionString)
+
+	dbConnection := database.Init(db_connection_string)
 	defer dbConnection.Close()
 
 	reposContainer := repos.NewContainer(dbConnection)
@@ -77,14 +106,17 @@ func main() {
 	admin.SetupAdminHandler(admin_service, router, middleware_admin)
 	setupStaticContent(router)
 
-	// This is for https
 	server := http.Server{
-		Addr:    ":8079",
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: router,
 	}
-
-	logger.Info("Start server")
-	err = server.ListenAndServeTLS("server.crt", "server.key")
+	if env == DEV {
+		logger.Info("Start TLS server")
+		err = server.ListenAndServeTLS("server.crt", "server.key")
+	} else {
+		logger.Info("Start server")
+		err = server.ListenAndServe()
+	}
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Info("Something went wrong")
 		assert.NoError(err, "Main", "Failed to start HTTPS server")

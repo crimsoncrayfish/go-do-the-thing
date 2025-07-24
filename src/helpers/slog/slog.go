@@ -25,6 +25,27 @@ const (
 )
 
 // Type - date - message - errorMsg
+const fatalLogFormat = "%s%s - %s - %s - '%s'%s\n"
+
+func (l *Logger) Fatal(msg string, a ...any) {
+	message := fmt.Sprintf(msg, a...)
+	_, file, line, _ := runtime.Caller(2)
+	shortFile := file
+
+	for i := len(file) - 1; i > 0; i-- {
+		if file[i] == '/' {
+			shortFile = file[i+1:]
+			break
+		}
+	}
+
+	logMessage := fmt.Sprintf("%s:%d %s", shortFile, line, message)
+
+	fmt.Printf(fatalLogFormat, colorRed, l.Name, time.Now().Format("2006-01-02 15:04:05"), "FATAL", logMessage, colorNone)
+	panic(1)
+}
+
+// Type - date - message - errorMsg
 const errLogFormat = "%s%s - %s - %s - '%s' - '%s'%s\n"
 
 func (l *Logger) Error(err error, msg string, a ...any) {
@@ -64,9 +85,9 @@ func (l *Logger) Info(msg string, a ...any) {
 const debugLogFormat = "%s %s - %s - %s \n%s %s\n"
 
 func (l *Logger) Debug(msg string, a ...any) {
-	/*if !DebugEnabled {
+	if !DebugEnabled {
 		return
-	}*/
+	}
 	message := fmt.Sprintf(msg, a...)
 	fmt.Printf(debugLogFormat, colorYellow, time.Now().Format("2006-01-02 15:04:05"), "DEBUG", l.Name, message, colorNone)
 }

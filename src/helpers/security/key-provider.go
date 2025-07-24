@@ -4,9 +4,10 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 )
@@ -19,20 +20,28 @@ type SecretKeyProvider struct {
 
 var source = "KeyProvider"
 
-func newKeyProvider(keysLocation string) *SecretKeyProvider {
+func newKeyProvider(env, working_dir string) *SecretKeyProvider {
 	logger := slog.NewLogger(source)
+	var keylist []*rsa.PrivateKey
+	var err error
+	if env == "development" {
+		keylist, err = loadKeysFromFile(filepath.Join(working_dir, "keys"), logger)
+	} else {
+		keylist, err = loadKeysFromEnv(logger)
+	}
 
+	if err != nil {
+		logger.Fatal("FATAL: Could not load security keys: %v", err)
+	}
 	keys := make(map[string]*rsa.PrivateKey)
-	kids := make([]string, 10)
+	kids := make([]string, len(keylist))
 
-	keysList := readKeys(keysLocation, logger)
-
-	for i, key := range keysList {
+	for i, key := range keylist {
 		kid := uuid.New().String()
 		keys[kid] = key
 		kids[i] = kid
 	}
-
+	logger.Info("KeyProvider created", "keys_loaded", len(keylist))
 	return &SecretKeyProvider{
 		keyList: keys,
 		kidList: kids,
@@ -41,53 +50,78 @@ func newKeyProvider(keysLocation string) *SecretKeyProvider {
 }
 
 func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
-	// TODO: improve this so it doesnt just use the first kid
+	if len(skp.kidList) == 0 {
+		return nil
+	}
 	return skp.keyList[skp.kidList[0]]
 }
 
-func readKeys(keysLocation string, logger slog.Logger) []*rsa.PrivateKey {
-	keys := make([]*rsa.PrivateKey, 10)
-	// TODO: add code to read from mulitple locations for multiple rotating keys
-	key := readKey(keysLocation, logger)
+func parseRSAKeys(privateKeyPEM, publicKeyPEM []byte) (*rsa.PrivateKey, error) {
+	privatePemBlock, _ := pem.Decode(privateKeyPEM)
+	if privatePemBlock == nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "failed to decode private key PEM block")
+	}
+	privateKeyAny, err := x509.ParsePKCS8PrivateKey(privatePemBlock.Bytes)
+	if err != nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "could not parse private key: %w", err)
+	}
+	privateKey, ok := privateKeyAny.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "key is not an RSA private key")
+	}
 
-	keys[0] = key
-	return keys
+	publicPemBlock, _ := pem.Decode(publicKeyPEM)
+	if publicPemBlock == nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "failed to decode public key PEM block")
+	}
+	publicKeyAny, err := x509.ParsePKIXPublicKey(publicPemBlock.Bytes)
+	if err != nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "could not parse public key: %w", err)
+	}
+	publicKey, ok := publicKeyAny.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "public key is not an RSA public key")
+	}
+
+	privateKey.PublicKey = *publicKey
+	return privateKey, nil
 }
 
-func readKey(keyLocation string, logger slog.Logger) *rsa.PrivateKey {
-	privateKeyName := "private.key"
-	logger.Info("Reading file at $s$s", keyLocation, privateKeyName)
+func loadKeysFromFile(keysLocation string, logger slog.Logger) ([]*rsa.PrivateKey, error) {
+	logger.Info("Reading keys from filesystem: %s", keysLocation)
 
-	privateKeyFile, err := os.ReadFile(keyLocation + privateKeyName)
-	assert.NoError(err, source, "Could not read private key at location %s", keyLocation+privateKeyName)
+	privateKeyFile, err := os.ReadFile(filepath.Join(keysLocation, "private.key"))
+	if err != nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "could not read private.key: %w", err)
+	}
 
-	privatePem, _ := pem.Decode(privateKeyFile)
-	assert.IsTrue(privatePem != nil, source,
-		"Failed to decode private key file content for file at %s",
-		keyLocation+privateKeyName)
+	publicKeyFile, err := os.ReadFile(filepath.Join(keysLocation, "public.key"))
+	if err != nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "could not read public.key: %w", err)
+	}
 
-	privateKeyAny, err := x509.ParsePKCS8PrivateKey(privatePem.Bytes)
-	assert.NoError(err, source, "Could not parse private key file. Content potentially malformed")
+	key, err := parseRSAKeys(privateKeyFile, publicKeyFile)
+	if err != nil {
+		return nil, err
+	}
 
-	privateKey, ok := privateKeyAny.(*rsa.PrivateKey)
-	assert.IsTrue(ok, source, "The private key at location '%s' is not an RSA private key", keyLocation+privateKeyName)
+	return []*rsa.PrivateKey{key}, nil
+}
 
-	publicKeyName := "public.key"
-	publicKeyFile, err := os.ReadFile(keyLocation + publicKeyName)
-	assert.NoError(err, source, "Could not read public key at location %s", keyLocation+privateKeyName)
+func loadKeysFromEnv(logger slog.Logger) ([]*rsa.PrivateKey, error) {
+	logger.Info("Reading keys from environment variables")
 
-	publicKeyPem, _ := pem.Decode(publicKeyFile)
-	assert.IsTrue(publicKeyPem != nil, source,
-		"Failed to decode public key file content for file at %s",
-		keyLocation+publicKeyName)
+	privateKeyStr := os.Getenv("JWT_PRIVATE_KEY")
+	publicKeyStr := os.Getenv("JWT_PUBLIC_KEY")
 
-	certificate, err := x509.ParsePKIXPublicKey(publicKeyPem.Bytes)
-	assert.NoError(err, source, "Could not parse public key. Content potentially malformed")
+	if privateKeyStr == "" || publicKeyStr == "" {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "JWT_PRIVATE_KEY or JWT_PUBLIC_KEY env var not set")
+	}
 
-	publicKey, ok := certificate.(*rsa.PublicKey)
-	assert.IsTrue(ok, source, "Public key was not an RSA public key")
-	privateKey.PublicKey = *publicKey
+	key, err := parseRSAKeys([]byte(privateKeyStr), []byte(publicKeyStr))
+	if err != nil {
+		return nil, err
+	}
 
-	logger.Info("Successfully read keys")
-	return privateKey
+	return []*rsa.PrivateKey{key}, nil
 }
