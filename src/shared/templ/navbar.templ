@@ -10,7 +10,7 @@ templ NavBar(activeScreen models.Screen) {
 		class="z-20 flex justify-between items-center h-[5rem] w-full bg-secondary-light border-b border-border-light dark:border-border-dark dark:bg-secondary-dark"
 	>
 		<button
-			onclick="toggleClassForId('-translate-x-full', 'sidebar-container');"
+			onclick="toggleClassForId('-translate-x-full', 'sidebar');toggleClassForId('hidden', 'sidebar-overlay')"
 			class="text-text-on-light pl-3 flex items-center justify-center hover:text-primary-600 dark:text-text-on-dark dark:hover:text-primary-300"
 		>
 			<span class="sr-only">

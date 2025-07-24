@@ -20,10 +20,6 @@ var repoName = "UsersRepo"
 
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
-	//TODO: Cleanup
-	//_, err := connection.Exec(createTable)
-	//assert.NoError(err, repoName, "Failed to create Users table")
-
 	logger := slog.NewLogger(repoName)
 	return &UsersRepo{db: connection, logger: logger}
 }
@@ -50,9 +46,9 @@ func scanUsersFromRows(rows pgx.Rows, user *models.User) error {
 		&user.FullName,
 		&user.SessionId,
 		&user.SessionStartTime,
-		&user.IsDeleted,
 		&user.IsAdmin,
 		&user.IsEnabled,
+		&user.IsDeleted,
 		&user.CreateDate,
 		&user.AccessGrantedBy,
 	)
@@ -101,10 +97,10 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 const updateUserSession = `SELECT sp_update_user_session($1, $2, $3)`
 
 func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *time.Time) error {
-	r.logger.Debug("UpdateSession called - sql: %s, params: %v", updateUserSession, []interface{}{userId, sessionId, sessionStartTime})
+	r.logger.Debug("UpdateSession called - sql: %s, params: %v", updateUserSession, []any{userId, sessionId, sessionStartTime})
 	_, err := r.db.Exec(updateUserSession, userId, sessionId, sessionStartTime)
 	if err != nil {
-		r.logger.Error(err, "failed to set user session - sql: %s, params: %v", updateUserSession, []interface{}{userId, sessionId, sessionStartTime})
+		r.logger.Error(err, "failed to set user session - sql: %s, params: %v", updateUserSession, []any{userId, sessionId, sessionStartTime})
 		return fmt.Errorf("failed to set user session: %w", err)
 	}
 	r.logger.Debug("UpdateSession succeeded - id: %d", userId)
@@ -142,16 +138,12 @@ const getUserByEmail = `SELECT * FROM sp_get_user_by_email($1)`
 func (r *UsersRepo) GetUserByEmail(name string) (*models.User, error) {
 	r.logger.Debug("GetUserByEmail called - sql: %s, params: %s", getUserByEmail, name)
 
-	// Log the exact SQL being executed
-	executedSQL := fmt.Sprintf("SELECT * FROM sp_get_user_by_email('%s')", name)
-	r.logger.Debug("Executing SQL - sql: %s", executedSQL)
-
 	row := r.db.QueryRow(getUserByEmail, name)
 
 	temp := &models.User{}
 	err := scanUserFromRow(row, temp)
 	if err != nil {
-		r.logger.Error(err, "failed to get user by email - sql: %s, params: %s, executed_sql: %s", getUserByEmail, name, executedSQL)
+		r.logger.Error(err, "failed to get user by email - sql: %s, params: %s", getUserByEmail, name)
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	r.logger.Debug("GetUserByEmail succeeded - id: %d, params: %s", temp.Id, name)
@@ -232,43 +224,17 @@ func (r *UsersRepo) Logout(userId int64) error {
 	return nil
 }
 
-const activateUser = `SELECT sp_update_user_is_enabled($1, $2)`
+const updateUserEnabled = `SELECT * FROM sp_update_user_is_enabled($1, $2)`
 
-func (r *UsersRepo) ActivateUser(id int64) error {
-	r.logger.Debug("ActivateUser called - sql: %s, params: %d", getUser, id)
-	_, err := r.db.Exec(activateUser, id)
+func (r *UsersRepo) UpdateUserEnabled(id int64, enabled bool) (string, error) {
+	r.logger.Debug("UpdateUserEnabled called - sql: %s, params: %d, enabled: %t", updateUserEnabled, id, enabled)
+	row := r.db.QueryRow(updateUserEnabled, id, enabled)
+	var email string
+	err := row.Scan(&email)
 	if err != nil {
-		r.logger.Error(err, "failed to activate user - sql: %s, params: %d", activateUser, id)
-		return fmt.Errorf("failed to activate user: %w", err)
+		r.logger.Error(err, "failed to update user enabled status - sql: %s, params: %d, enabled: %t", updateUserEnabled, id, enabled)
+		return "", fmt.Errorf("failed to update user enabled status: %w", err)
 	}
-	r.logger.Debug("ActivateUser succeeded - id: %d", id)
-	return nil
-}
-
-const getInactiveUsers = `SELECT * FROM sp_get_users_inactive()`
-
-func (r *UsersRepo) GetInactiveUsers() ([]models.User, error) {
-	r.logger.Debug("GetInactiveUsers called - sql: %s", getInactiveUsers)
-	rows, err := r.db.Query(getInactiveUsers)
-	if err != nil {
-		r.logger.Error(err, "query failed to get inactive users - sql: %s", getInactiveUsers)
-		return nil, err
-	}
-	users := make([]models.User, 0)
-	for rows.Next() {
-		user := models.User{}
-		err := scanUsersFromRows(rows, &user)
-		if err != nil {
-			r.logger.Error(err, "scan failed to get inactive users")
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	err = rows.Err()
-	if err != nil {
-		r.logger.Error(err, "rows.Err() in GetInactiveUsers")
-		return nil, err
-	}
-	r.logger.Debug("GetInactiveUsers succeeded - count: %d", len(users))
-	return users, nil
+	r.logger.Debug("UpdateUserEnabled succeeded - id: %d, enabled: %t", id, enabled)
+	return email, nil
 }

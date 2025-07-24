@@ -159,6 +159,77 @@ templ ProjectContent(project models.ProjectView, is_editing bool, errors map[str
 			@projectEditActions(is_editing)
 		</div>
 	</form>
+	//@projectTagList(project.Tags)
+}
+
+templ projectTagList(tags []models.TagView) {
+	<div class="text-text-on-light dark:text-text-on-dark">
+		<div id="tag-list" class="flex gap-2">
+			for _, tag := range tags {
+				@TagItem(tag)
+			}
+		</div>
+		<div
+			class="flex items-center gap-4 rounded-lg border px-4 py-3 shadow-sm
+        border-border-light bg-primary-light
+        dark:border-border-dark dark:bg-primary-dark"
+		>
+			<input
+				type="text"
+				id="new-tag-name-input"
+				placeholder="New tag name"
+				class="flex-grow rounded-md border px-3 py-2
+          placeholder:text-text-on-light
+          focus:outline-none focus:ring-2
+          border-border-light bg-secondary-light text-text-on-light focus:ring-accent-light
+          transition-colors duration-200
+          dark:border-border-dark dark:bg-secondary-dark dark:text-text-on-dark dark:placeholder:text-text-on-dark dark:focus:ring-accent-dark"
+			/>
+			<input
+				type="color"
+				id="new-tag-color-input"
+				value="#B197FC"
+				class="block h-10 w-14 cursor-pointer rounded-lg border p-1
+          disabled:pointer-events-none disabled:opacity-50
+          border-border-light bg-secondary-light
+          dark:border-border-dark dark:bg-secondary-dark"
+				title="Choose your color"
+			/>
+			<button
+				id="add-tag-button"
+				class="rounded-md p-2
+          text-white
+          bg-success-light hover:bg-success-dark
+          transition-colors duration-200"
+				aria-label="Add tag"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+						clip-rule="evenodd"
+					></path>
+				</svg>
+			</button>
+		</div>
+	</div>
+}
+
+templ TagItem(tag models.TagView) {
+	<span
+		onclick={ templ.JSFuncCall("toggleTagEditorPopup", tag.Id) }
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		class="inline-flex items-center gap-1 text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm cursor-pointer hover:shadow-md transition-shadow mb-1 sm:mb-0"
+		style={ fmt.Sprintf("background-color:%s", tag.Color) }
+	>
+		@ts.SvgHexTag(tag.Color)
+		{ tag.Name }
+	</span>
 }
 
 templ ProjectContentOOB(project models.ProjectView, is_editing bool, errors map[string]string) {

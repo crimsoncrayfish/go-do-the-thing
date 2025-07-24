@@ -1,0 +1,71 @@
+package templ_admin
+
+import (
+	"fmt"
+	"go-do-the-thing/src/models"
+)
+
+templ UserTable(users []models.UserView) {
+	<h2 class="text-xl font-bold mb-4 text-primary-dark dark:text-text-on-dark">Inactive Users</h2>
+	<div class="overflow-x-auto rounded-lg shadow-lg">
+		<table class="min-w-full bg-primary-light dark:bg-primary-dark">
+			<thead>
+				<tr class="bg-secondary-light dark:bg-secondary-dark border-b border-border-light dark:border-border-dark">
+					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Email</th>
+					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Full Name</th>
+					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Registration Date</th>
+					<th class="p-4 text-left uppercase text-sm font-semibold text-text-on-light dark:text-text-on-dark">Action</th>
+				</tr>
+			</thead>
+			<tbody id="user-rows">
+				if (len(users) == 0) {
+					<tr>
+						<td colspan="4" class="text-center p-6 text-text-on-light dark:text-text-on-dark border-b border-border-light dark:border-border-dark">No inactive users found.</td>
+					</tr>
+				} else {
+					for _, user := range users {
+						@UserRow(user)
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ UserRow(user models.UserView) {
+	<tr
+		id={ fmt.Sprintf("user-row-%d", user.Id) }
+		class="even:bg-secondary-light dark:even:bg-secondary-dark
+								hover:bg-accent-light dark:hover:bg-accent-dark
+								text-text-on-light dark:text-text-on-dark
+								hover:text-text-on-dark hover:dark:text-text-on-light
+								dark:hover:text-primary-dark transition-colors duration-200"
+	>
+		<td class="p-4 border-b border-border-light dark:border-border-dark">{ user.Email }</td>
+		<td class="p-4 border-b border-border-light dark:border-border-dark">{ user.FullName }</td>
+		<td class="p-4 border-b border-border-light dark:border-border-dark">{ user.CreatedDate.Format("2006-01-02") }</td>
+		<td class="p-4 border-b border-border-light dark:border-border-dark">
+			if (!user.IsEnabled) {
+				<button
+					class="bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark 
+											px-4 py-2 rounded-md font-medium shadow-sm
+											hover:bg-opacity-90 dark:hover:bg-opacity-90 transition-all duration-200
+											focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-75"
+					hx-post={ fmt.Sprintf("/admin/activate-user/%d", user.Id) }
+					hx-target="closest tr"
+					hx-swap="outerHTML"
+				>Activate</button>
+			} else {
+				<button
+					class="bg-danger-light dark:bg-danger-dark text-text-on-light dark:text-text-on-dark 
+											px-4 py-2 rounded-md font-medium shadow-sm
+											hover:bg-opacity-90 dark:hover:bg-opacity-90 transition-all duration-200
+											focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-75"
+					hx-post={ fmt.Sprintf("/admin/deactivate-user/%d", user.Id) }
+					hx-target="closest tr"
+					hx-swap="outerHTML"
+				>Deactivate</button>
+			}
+		</td>
+	</tr>
+}

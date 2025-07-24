@@ -312,7 +312,10 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 			defaultForm.Errors["Project"] = err.Error()
 		}
 
-		if err = templ_todo.TaskItemContent(task, models.ProjectListToMap(projects)).Render(r.Context(), w); err != nil {
+		if err = templ_shared.RenderTempls(
+			templ_todo.TaskItemContent(task, models.ProjectListToMap(projects)),
+			templ_todo.TaskCardFrontOOB(task),
+		).Render(r.Context(), w); err != nil {
 			errors.InternalServerError(w, r, h.logger, err, "Failed to display updated task")
 			return
 		}

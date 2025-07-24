@@ -9,14 +9,15 @@ import (
 type AppErrorCode string
 
 const (
-	ErrAccessDenied     AppErrorCode = "no access"
-	ErrPermissionDenied AppErrorCode = "no permission"
-	ErrNotFound         AppErrorCode = "not found"
-	ErrDBReadFailed     AppErrorCode = "db read failed"
-	ErrDBInsertFailed   AppErrorCode = "db insert failed"
-	ErrDBUpdateFailed   AppErrorCode = "db update failed"
-	ErrDBDeleteFailed   AppErrorCode = "db delete failed"
-	ErrDBGenericError   AppErrorCode = "db error"
+	ErrAccessDenied       AppErrorCode = "no access"
+	ErrPermissionDenied   AppErrorCode = "no permission"
+	ErrNotFound           AppErrorCode = "not found"
+	ErrDBReadFailed       AppErrorCode = "db read failed"
+	ErrDBInsertFailed     AppErrorCode = "db insert failed"
+	ErrDBUpdateFailed     AppErrorCode = "db update failed"
+	ErrDBDeleteFailed     AppErrorCode = "db delete failed"
+	ErrDBGenericError     AppErrorCode = "db error"
+	ErrKeysNotLoadedError AppErrorCode = "keys not loaded"
 )
 
 type AppError struct {

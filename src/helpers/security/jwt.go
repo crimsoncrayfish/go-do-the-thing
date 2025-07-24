@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/helpers/slog"
-
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,12 +15,14 @@ type JwtHandler struct {
 	logger slog.Logger
 }
 
-func NewJwtHandler(keysLocation string) JwtHandler {
-	keyProvider := newKeyProvider(keysLocation)
+func NewJwtHandler(env, working_dir string) JwtHandler {
+	logger := slog.NewLogger("JWT Handler")
 
+	// 4. Inject the loaded keys into the provider
+	provider := newKeyProvider(env, working_dir)
 	return JwtHandler{
-		SecretKeyProvider: keyProvider,
-		logger:            slog.NewLogger("JWT Handler"),
+		SecretKeyProvider: provider,
+		logger:            logger,
 	}
 }
 
@@ -36,10 +37,10 @@ func (s *JwtHandler) NewToken(userId, session string, expiry time.Time) (string,
 
 func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(signedToken, &claims, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(signedToken, &claims, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			s.logger.Error(errors.New("unexpected signing method"), "Unexpected signing method: %v", t.Header["alg"])
-			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 
 		return s.SecretKeyProvider.getKey().Public(), nil

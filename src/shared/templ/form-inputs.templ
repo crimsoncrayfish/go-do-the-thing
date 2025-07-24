@@ -21,7 +21,7 @@ templ FormContainer(postTo string, content templ.Component) {
 					<p class="font-bold text-text-on-light text-xl dark:text-text-on-dark">TODO:</p>
 					<button
 						class="text-text-on-light dark:text-text-on-dark"
-						onclick="swapClassForId('max-h-0', 'max-h-[50rem]','create-form-container');swapClassForId('opacity-0', 'opacity-100','create-form-container');"
+						onclick="toggleClassForId('max-h-0','create-form-container'); toggleClassForId('max-h-[50rem]','create-form-container');toggleClassForId('opacity-100','create-form-container');toggleClassForId('opacity-0','create-form-container');"
 					>
 						@SvgClose()
 					</button>

@@ -79,7 +79,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.logger.Debug("LoginUI: login attempt - email: %s", email)
-	user, sessionId, err := h.userService.AuthenticateUser(email, password)
+	user, err := h.userService.AuthenticateUser(email, password)
 	if err != nil {
 		h.logger.Error(err, "LoginUI: login failed - email: %s", email)
 		form.Errors["login"] = err.Error()
@@ -92,7 +92,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.logger.Debug("LoginUI: login succeeded - email: %s, user_id: %d", email, user.Id)
-	tokenString, err := h.security.NewToken(user.Email, sessionId, user.SessionStartTime.Add(time.Duration(time.Hour*4)))
+	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Add(time.Duration(time.Hour*24)))
 	if err != nil {
 		http.SetCookie(w, &emptyAuthCookie)
 		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display login page")
@@ -187,8 +187,8 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email
-	err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w)
-	if err != nil {
+
+	if err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w); err != nil {
 		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to complete registration")
 		return
 	}

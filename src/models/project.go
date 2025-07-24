@@ -19,6 +19,7 @@ type Project struct {
 	ModifiedDate *time.Time
 	IsComplete   bool
 	IsDeleted    bool
+	Tags         []Tag
 }
 
 func (p *Project) AssertHealthyNew() {
@@ -60,6 +61,7 @@ type ProjectView struct {
 	IsDeleted      bool
 	CompletedTasks int64
 	TotalTasks     int64
+	Tags           []TagView
 }
 
 func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {

@@ -23,12 +23,6 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
 });
 
-function removeClassForId(className, elementId) {
-  const elem = document.getElementById(elementId);
-  if (elem.classList.contains(className)) {
-    elem.classList.remove(className);
-  }
-}
 function addClassForId(className, elementId) {
   const elem = document.getElementById(elementId);
   if (!elem.classList.contains(className)) {
@@ -44,28 +38,7 @@ function toggleClassForId(className, elementId) {
   }
   elem.classList.add(className);
 }
-function toggleClassForIdExact(className, elementId, on) {
-  const elem = document.getElementById(elementId);
-  if (elem.classList.contains(className) && !on) {
-    elem.classList.remove(className);
-    return;
-  }
-  if (!elem.classList.contains(className) && on) {
-    elem.classList.add(className);
-  }
-}
 
-function swapClassForId(class1Name, class2Name, elementId) {
-  const elem = document.getElementById(elementId);
-  if (elem.classList.contains(class1Name)) {
-    elem.classList.remove(class1Name);
-    elem.classList.add(class2Name);
-    return;
-  }
-
-  elem.classList.add(class1Name);
-  elem.classList.remove(class2Name);
-}
 function swapClassesForId(class1List, class2List, elementId) {
   for (let i = 0; i < class1List.length; i++) {
     const elem = document.getElementById(elementId);
