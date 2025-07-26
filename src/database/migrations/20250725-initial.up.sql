@@ -1,8 +1,9 @@
--- INITIAL MIGRATION (Updated with Date/Time Types)
+-- INITIAL MIGRATION
+-- Date: 2024-07-25
 
 -- Table: users
 CREATE TABLE IF NOT EXISTS users (
-  id                  SERIAL PRIMARY KEY,
+  id                  BIGSERIAL PRIMARY KEY,
   email               TEXT UNIQUE,
   full_name           TEXT DEFAULT '',
   session_id          TEXT DEFAULT '',
@@ -10,12 +11,15 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash       TEXT DEFAULT '',
   is_deleted          BOOLEAN DEFAULT FALSE,
   is_admin            BOOLEAN DEFAULT FALSE,
-  create_date         TIMESTAMP NOT NULL DEFAULT NOW()
+  is_enabled          BOOLEAN NOT NULL DEFAULT FALSE,
+  access_granted_by   BIGINT,
+  create_date         TIMESTAMP NOT NULL DEFAULT NOW(),
+  FOREIGN KEY (access_granted_by) REFERENCES users (id)
 );
 
 -- Table: roles
 CREATE TABLE IF NOT EXISTS roles (
-  id          SERIAL PRIMARY KEY,
+  id          BIGSERIAL PRIMARY KEY,
   name        TEXT DEFAULT '' NOT NULL,
   description TEXT DEFAULT '' NOT NULL
 );
@@ -31,15 +35,15 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Table: projects
 CREATE TABLE IF NOT EXISTS projects (
-  id            SERIAL PRIMARY KEY,
+  id            BIGSERIAL PRIMARY KEY,
   name          TEXT DEFAULT '' NOT NULL,
   description   TEXT,
-  owner         INTEGER,
+  owner         BIGINT,
   start_date    TIMESTAMP DEFAULT NULL, 
   due_date      TIMESTAMP DEFAULT NULL, 
-  created_by    INTEGER,
+  created_by    BIGINT,
   created_date  TIMESTAMP NOT NULL DEFAULT NOW(), 
-  modified_by   INTEGER,
+  modified_by   BIGINT,
   modified_date TIMESTAMP DEFAULT NULL, 
   is_complete   BOOLEAN DEFAULT FALSE,
   is_deleted    BOOLEAN DEFAULT FALSE,
@@ -48,36 +52,19 @@ CREATE TABLE IF NOT EXISTS projects (
   FOREIGN KEY (modified_by) REFERENCES users (id)
 );
 
--- Table: tags
-CREATE TABLE IF NOT EXISTS tags (
-  id      SERIAL PRIMARY KEY,
-  name    TEXT,
-  user_id INTEGER,
-  FOREIGN KEY (user_id) REFERENCES users (id)
-);
-
--- Table: project_tags
-CREATE TABLE IF NOT EXISTS project_tags (
-  project_id INTEGER,
-  tag_id     INTEGER,
-  PRIMARY KEY (project_id, tag_id),
-  FOREIGN KEY (project_id) REFERENCES projects (id),
-  FOREIGN KEY (tag_id) REFERENCES tags (id)
-);
-
--- Table: items (representing tasks based on foreign keys)
-CREATE TABLE IF NOT EXISTS items (
-  id            SERIAL PRIMARY KEY,
+-- Table: tasks (representing tasks based on foreign keys)
+CREATE TABLE IF NOT EXISTS tasks (
+  id            BIGSERIAL PRIMARY KEY,
   name          TEXT DEFAULT '' NOT NULL,
   description   TEXT,
-  assigned_to   INTEGER,
-  project_id    INTEGER,
+  assigned_to   BIGINT,
+  project_id    BIGINT,
   status        INTEGER DEFAULT 0,
   complete_date TIMESTAMP DEFAULT NULL, 
   due_date      TIMESTAMP DEFAULT NULL, 
-  created_by    INTEGER,
+  created_by    BIGINT,
   created_date  TIMESTAMP NOT NULL DEFAULT NOW(), 
-  modified_by   INTEGER,
+  modified_by   BIGINT,
   modified_date TIMESTAMP DEFAULT NULL, 
   is_deleted    BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (assigned_to) REFERENCES users (id),
@@ -86,20 +73,11 @@ CREATE TABLE IF NOT EXISTS items (
   FOREIGN KEY (project_id) REFERENCES projects (id)
 );
 
--- Table: task_tags
-CREATE TABLE IF NOT EXISTS task_tags (
-  task_id INTEGER,
-  tag_id  INTEGER,
-  PRIMARY KEY (task_id, tag_id),
-  FOREIGN KEY (task_id) REFERENCES items (id),
-  FOREIGN KEY (tag_id) REFERENCES tags (id)
-);
-
 -- Table: project_users
 CREATE TABLE IF NOT EXISTS project_users (
-  project_id INTEGER,
-  user_id    INTEGER,
-  role_id    INTEGER,
+  project_id BIGINT,
+  user_id    BIGINT,
+  role_id    BIGINT,
   PRIMARY KEY (project_id, user_id),
   FOREIGN KEY (project_id) REFERENCES projects (id),
   FOREIGN KEY (user_id) REFERENCES users (id),

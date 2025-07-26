@@ -1,13 +1,49 @@
 -- Migration: Update tags table and project tag stored procedures
--- Date: 2024-07-10
+-- Date: 2024-07-28
 
--- 1. Add Color column to tags table
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tags' AND column_name='color') THEN
-        ALTER TABLE tags ADD COLUMN color TEXT;
+-- Create tag_color ENUM
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tag_color') THEN
+        CREATE TYPE tag_color AS ENUM (
+            'red',
+            'blue',
+            'green',
+            'yellow',
+            'purple',
+            'orange',
+            'pink',
+            'brown',
+            'black',
+            'white'
+        );
     END IF;
-END$$;
+END $$;
+
+-- Table: tags
+CREATE TABLE IF NOT EXISTS tags (
+  id      BIGSERIAL PRIMARY KEY,
+  name    TEXT NOT NULL,
+  user_id BIGINT NOT NULL,
+  color tag_color NOT NULL DEFAULT 'blue',
+  FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+-- Table: project_tags
+CREATE TABLE IF NOT EXISTS project_tags (
+  project_id BIGINT,
+  tag_id     BIGINT,
+  PRIMARY KEY (project_id, tag_id),
+  FOREIGN KEY (project_id) REFERENCES projects (id),
+  FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
+);
+-- Table: task_tags
+CREATE TABLE IF NOT EXISTS task_tags (
+  task_id BIGINT,
+  tag_id  BIGINT,
+  PRIMARY KEY (task_id, tag_id),
+  FOREIGN KEY (task_id) REFERENCES items (id),
+  FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
+);
 
 -- 2. Create tag
 DROP FUNCTION IF EXISTS sp_insert_tag(TEXT, BIGINT, BIGINT);

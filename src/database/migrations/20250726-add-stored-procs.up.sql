@@ -48,11 +48,35 @@ BEGIN
     UPDATE users SET is_deleted = TRUE WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_get_user_by_email(TEXT);
+DROP FUNCTION sp_get_user_by_email(TEXT);
 CREATE OR REPLACE FUNCTION sp_get_user_by_email(_email TEXT)
-RETURNS TABLE(id BIGINT, email TEXT, full_name TEXT, session_id TEXT, session_start_time TIMESTAMP WITHOUT TIME ZONE, is_admin BOOLEAN, is_deleted BOOLEAN, create_date TIMESTAMP WITHOUT TIME ZONE) AS $$
+RETURNS TABLE(
+    id BIGINT,
+    email TEXT,
+    full_name TEXT,
+    session_id TEXT,
+    session_start_time TIMESTAMP WITHOUT TIME ZONE,
+    is_admin BOOLEAN,
+    is_enabled BOOLEAN,
+    is_deleted BOOLEAN,
+    create_date TIMESTAMP WITHOUT TIME ZONE,
+    access_granted_by INTEGER
+) AS $$
 BEGIN
-    RETURN QUERY SELECT users.id, users.email, users.full_name, users.session_id, users.session_start_time, users.is_admin, users.is_deleted, users.create_date FROM users WHERE users.email = _email;
+    RETURN QUERY
+    SELECT
+        users.id,
+        users.email,
+        users.full_name,
+        users.session_id,
+        users.session_start_time,
+        users.is_admin,
+        users.is_enabled,
+        users.is_deleted,
+        users.create_date,
+        users.access_granted_by
+    FROM users
+    WHERE users.email = _email;
 END; $$ LANGUAGE plpgsql;
 
 DROP FUNCTION IF EXISTS sp_get_user_password(BIGINT);
@@ -66,16 +90,75 @@ END; $$ LANGUAGE plpgsql;
 
 DROP FUNCTION IF EXISTS sp_get_user_by_id(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_user_by_id(_id BIGINT)
-RETURNS TABLE(id BIGINT, email TEXT, full_name TEXT, session_id TEXT, session_start_time TIMESTAMP WITHOUT TIME ZONE, is_admin BOOLEAN, is_deleted BOOLEAN, create_date TIMESTAMP WITHOUT TIME ZONE) AS $$
+RETURNS TABLE(
+    id BIGINT,
+    email TEXT,
+    full_name TEXT,
+    session_id TEXT,
+    session_start_time TIMESTAMP WITHOUT TIME ZONE,
+    is_admin BOOLEAN,
+    is_enabled BOOLEAN,
+    is_deleted BOOLEAN,
+    create_date TIMESTAMP WITHOUT TIME ZONE,
+    access_granted_by INTEGER
+) AS $$
 BEGIN
-    RETURN QUERY SELECT users.id, users.email, users.full_name, users.session_id, users.session_start_time, users.is_admin, users.is_deleted, users.create_date FROM users WHERE users.id = _id;
+    RETURN QUERY
+    SELECT
+        users.id,
+        users.email,
+        users.full_name,
+        users.session_id,
+        users.session_start_time,
+        users.is_admin,
+        users.is_enabled,
+        users.is_deleted,
+        users.create_date,
+        users.access_granted_by
+    FROM users
+    WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
+
 
 DROP FUNCTION IF EXISTS sp_get_users_not_deleted();
 CREATE OR REPLACE FUNCTION sp_get_users_not_deleted()
-RETURNS TABLE(id BIGINT, email TEXT, full_name TEXT, session_id TEXT, session_start_time TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, is_admin BOOLEAN, create_date TIMESTAMP WITHOUT TIME ZONE) AS $$
+RETURNS TABLE(
+    id BIGINT,
+    email TEXT,
+    full_name TEXT,
+    session_id TEXT,
+    session_start_time TIMESTAMP WITHOUT TIME ZONE,
+    is_admin BOOLEAN,
+    is_enabled BOOLEAN,
+    is_deleted BOOLEAN,
+    create_date TIMESTAMP WITHOUT TIME ZONE,
+    access_granted_by INTEGER
+) AS $$
 BEGIN
-    RETURN QUERY SELECT users.id, users.email, users.full_name, users.session_id, users.session_start_time, users.is_deleted, users.is_admin, users.create_date FROM users WHERE users.is_deleted = FALSE;
+    RETURN QUERY
+    SELECT
+        users.id,
+        users.email,
+        users.full_name,
+        users.session_id,
+        users.session_start_time,
+        users.is_admin,
+        users.is_enabled,
+        users.is_deleted,
+        users.create_date,
+        users.access_granted_by
+    FROM users
+    WHERE users.is_deleted = FALSE;
+END; $$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS sp_update_user_is_enabled(_id BIGINT, _is_enabled BOOLEAN);
+CREATE OR REPLACE FUNCTION sp_update_user_is_enabled(_id BIGINT, _is_enabled BOOLEAN)
+RETURNS TEXT AS $$
+DECLARE _email TEXT;
+BEGIN
+    UPDATE users SET is_enabled = _is_enabled WHERE users.id = _id;
+    SELECT users.email INTO _email FROM users WHERE users.id = _id;
+    RETURN _email;
 END; $$ LANGUAGE plpgsql;
 
 DROP FUNCTION IF EXISTS sp_logout_user(BIGINT);
@@ -130,79 +213,99 @@ CREATE OR REPLACE FUNCTION sp_get_project_count(_user_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _count BIGINT;
 BEGIN
-    SELECT COUNT(items.id) INTO _count FROM items WHERE items.is_deleted = FALSE AND items.assigned_to = _user_id;
+    SELECT COUNT(tasks.id) INTO _count FROM tasks WHERE tasks.is_deleted = FALSE AND tasks.assigned_to = _user_id;
     RETURN _count;
 END; $$ LANGUAGE plpgsql;
 
--- TASKS (ITEMS)
-DROP FUNCTION IF EXISTS sp_insert_item(TEXT, TEXT, INTEGER, BIGINT, DATE, BIGINT, TIMESTAMP, BIGINT, TIMESTAMP, BIGINT);
-CREATE OR REPLACE FUNCTION sp_insert_item(_name TEXT, _description TEXT, _status INTEGER, _assigned_to BIGINT, _due_date DATE, _created_by BIGINT, _created_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE, _project_id BIGINT)
+-- TASKS (TASKS)
+DROP FUNCTION IF EXISTS sp_insert_task(TEXT, TEXT, INTEGER, BIGINT, DATE, BIGINT, TIMESTAMP, BIGINT, TIMESTAMP, BIGINT);
+CREATE OR REPLACE FUNCTION sp_insert_task(_name TEXT, _description TEXT, _status INTEGER, _assigned_to BIGINT, _due_date DATE, _created_by BIGINT, _created_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE, _project_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _id BIGINT;
 BEGIN
-    INSERT INTO items (name, description, status, assigned_to, due_date, created_by, created_date, modified_by, modified_date, project_id)
+    INSERT INTO tasks (name, description, status, assigned_to, due_date, created_by, created_date, modified_by, modified_date, project_id)
     VALUES (_name, _description, _status, _assigned_to, _due_date, _created_by, _created_date, _modified_by, _modified_date, _project_id)
     RETURNING id INTO _id;
     RETURN _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_update_item(BIGINT, TEXT, TEXT, BIGINT, DATE, BIGINT);
-CREATE OR REPLACE FUNCTION sp_update_item(_id BIGINT, _name TEXT, _description TEXT, _assigned_to BIGINT, _due_date DATE, _project_id BIGINT)
+DROP FUNCTION IF EXISTS sp_update_task(BIGINT, TEXT, TEXT, BIGINT, DATE, BIGINT);
+CREATE OR REPLACE FUNCTION sp_update_task(_id BIGINT, _name TEXT, _description TEXT, _assigned_to BIGINT, _due_date DATE, _project_id BIGINT)
 RETURNS VOID AS $$
 BEGIN
-    UPDATE items SET name = _name, description = _description, assigned_to = _assigned_to, due_date = _due_date, project_id = _project_id WHERE items.id = _id;
+    UPDATE tasks 
+    SET name = _name, description = _description, assigned_to = _assigned_to, due_date = _due_date, project_id = _project_id 
+    WHERE tasks.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_update_item_status(BIGINT, INTEGER, TIMESTAMP, BIGINT, TIMESTAMP);
-CREATE OR REPLACE FUNCTION sp_update_item_status(_id BIGINT, _status INTEGER, _complete_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
+DROP FUNCTION IF EXISTS sp_update_task_status(BIGINT, INTEGER, TIMESTAMP, BIGINT, TIMESTAMP);
+CREATE OR REPLACE FUNCTION sp_update_task_status(_id BIGINT, _status INTEGER, _complete_date TIMESTAMP WITHOUT TIME ZONE, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
-    UPDATE items SET status = _status, complete_date = _complete_date, modified_by = _modified_by, modified_date = _modified_date WHERE items.id = _id;
+    UPDATE tasks 
+    SET status = _status, complete_date = _complete_date, modified_by = _modified_by, modified_date = _modified_date 
+    WHERE tasks.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_delete_item(BIGINT, BIGINT, TIMESTAMP);
-CREATE OR REPLACE FUNCTION sp_delete_item(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
+DROP FUNCTION IF EXISTS sp_delete_task(BIGINT, BIGINT, TIMESTAMP);
+CREATE OR REPLACE FUNCTION sp_delete_task(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
-    UPDATE items SET is_deleted = TRUE, modified_by = _modified_by, modified_date = _modified_date WHERE items.id = _id;
+    UPDATE tasks SET is_deleted = TRUE, modified_by = _modified_by, modified_date = _modified_date WHERE tasks.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_restore_item(BIGINT, BIGINT, TIMESTAMP);
-CREATE OR REPLACE FUNCTION sp_restore_item(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
+DROP FUNCTION IF EXISTS sp_restore_task(BIGINT, BIGINT, TIMESTAMP);
+CREATE OR REPLACE FUNCTION sp_restore_task(_id BIGINT, _modified_by BIGINT, _modified_date TIMESTAMP WITHOUT TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
-    UPDATE items SET is_deleted = FALSE, modified_by = _modified_by, modified_date = _modified_date WHERE items.id = _id;
+    UPDATE tasks SET is_deleted = FALSE, modified_by = _modified_by, modified_date = _modified_date WHERE tasks.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_get_items_by_user(BIGINT);
-CREATE OR REPLACE FUNCTION sp_get_items_by_user(_user_id BIGINT)
+DROP FUNCTION IF EXISTS sp_get_tasks_by_user(BIGINT);
+CREATE OR REPLACE FUNCTION sp_get_tasks_by_user(_user_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT, status INTEGER, assigned_to BIGINT, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, project_id BIGINT, complete_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
-    RETURN QUERY SELECT items.id, items.name, items.description, items.status, items.assigned_to, items.due_date, items.created_by, items.created_date, items.modified_by, items.modified_date, items.is_deleted, items.project_id, items.complete_date FROM items WHERE items.is_deleted = FALSE AND items.assigned_to = _user_id;
+    RETURN QUERY SELECT tasks.id, tasks.name, tasks.description, tasks.status, tasks.assigned_to, tasks.due_date, tasks.created_by, tasks.created_date, tasks.modified_by, tasks.modified_date, tasks.is_deleted, tasks.project_id, tasks.complete_date FROM tasks WHERE tasks.is_deleted = FALSE AND tasks.assigned_to = _user_id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_get_items_by_user_and_project(BIGINT, BIGINT);
-CREATE OR REPLACE FUNCTION sp_get_items_by_user_and_project(_user_id BIGINT, _project_id BIGINT)
+DROP FUNCTION IF EXISTS sp_get_tasks_by_user_and_project(BIGINT, BIGINT);
+CREATE OR REPLACE FUNCTION sp_get_tasks_by_user_and_project(_user_id BIGINT, _project_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT, status INTEGER, assigned_to BIGINT, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, project_id BIGINT, complete_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
-    RETURN QUERY SELECT items.id, items.name, items.description, items.status, items.assigned_to, items.due_date, items.created_by, items.created_date, items.modified_by, items.modified_date, items.is_deleted, items.project_id, items.complete_date FROM items WHERE items.is_deleted = FALSE AND items.assigned_to = _user_id AND items.project_id = _project_id;
+    RETURN QUERY SELECT tasks.id, tasks.name, tasks.description, tasks.status, tasks.assigned_to, tasks.due_date, tasks.created_by, tasks.created_date, tasks.modified_by, tasks.modified_date, tasks.is_deleted, tasks.project_id, tasks.complete_date FROM tasks WHERE tasks.is_deleted = FALSE AND tasks.assigned_to = _user_id AND tasks.project_id = _project_id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_get_item(BIGINT);
-CREATE OR REPLACE FUNCTION sp_get_item(_id BIGINT)
+DROP FUNCTION IF EXISTS sp_get_task(BIGINT);
+CREATE OR REPLACE FUNCTION sp_get_task(_id BIGINT)
 RETURNS TABLE(id BIGINT, name TEXT, description TEXT, status INTEGER, assigned_to BIGINT, due_date TIMESTAMP WITHOUT TIME ZONE, created_by BIGINT, created_date TIMESTAMP WITHOUT TIME ZONE, modified_by BIGINT, modified_date TIMESTAMP WITHOUT TIME ZONE, is_deleted BOOLEAN, project_id BIGINT, complete_date TIMESTAMP WITHOUT TIME ZONE) AS $$
 BEGIN
-    RETURN QUERY SELECT items.id, items.name, items.description, items.status, items.assigned_to, items.due_date, items.created_by, items.created_date, items.modified_by, items.modified_date, items.is_deleted, items.project_id, items.complete_date FROM items WHERE items.id = _id;
+    RETURN QUERY SELECT tasks.id, tasks.name, tasks.description, tasks.status, tasks.assigned_to, tasks.due_date, tasks.created_by, tasks.created_date, tasks.modified_by, tasks.modified_date, tasks.is_deleted, tasks.project_id, tasks.complete_date FROM tasks WHERE tasks.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS sp_get_items_count(BIGINT);
-CREATE OR REPLACE FUNCTION sp_get_items_count(_user_id BIGINT)
+DROP FUNCTION IF EXISTS sp_get_tasks_count(BIGINT);
+CREATE OR REPLACE FUNCTION sp_get_tasks_count(_user_id BIGINT)
 RETURNS BIGINT AS $$
 DECLARE _count BIGINT;
 BEGIN
-    SELECT COUNT(items.id) INTO _count FROM items WHERE items.is_deleted = FALSE AND items.assigned_to = _user_id;
+    SELECT COUNT(tasks.id) INTO _count FROM tasks WHERE tasks.is_deleted = FALSE AND tasks.assigned_to = _user_id;
     RETURN _count;
 END; $$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS sp_get_total_project_tasks(BIGINT);
+CREATE OR REPLACE FUNCTION sp_get_total_project_tasks(_project_id BIGINT)
+RETURNS BIGINT AS $$
+BEGIN
+    RETURN (SELECT COUNT(*) FROM tasks WHERE project_id = _project_id AND is_deleted = FALSE);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS sp_get_completed_project_tasks(BIGINT);
+CREATE OR REPLACE FUNCTION sp_get_completed_project_tasks(_project_id BIGINT)
+RETURNS BIGINT AS $$
+BEGIN
+    RETURN (SELECT COUNT(*) FROM tasks WHERE project_id = _project_id AND is_deleted = FALSE AND status = 1);
+END;
+$$ LANGUAGE plpgsql;
 
 -- PROJECT_USERS
 DROP FUNCTION IF EXISTS sp_insert_project_user(BIGINT, BIGINT, BIGINT);
