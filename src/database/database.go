@@ -15,9 +15,12 @@ type DatabaseConnection struct {
 
 var source = "Database"
 
-func Init(connectionString string) DatabaseConnection {
+func Init(connectionString, clientId string) DatabaseConnection {
 	conf, err := pgxpool.ParseConfig(connectionString)
 	assert.NoError(err, source, "Failed to parse connectionstring")
+	if clientId != "" {
+		conf.ConnConfig.User = clientId
+	}
 	pool, err := pgxpool.NewWithConfig(context.Background(), conf)
 	assert.NoError(err, source, "Failed to connect to db")
 	return DatabaseConnection{pool}
