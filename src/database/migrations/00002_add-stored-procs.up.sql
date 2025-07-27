@@ -100,7 +100,7 @@ RETURNS TABLE(
     is_enabled BOOLEAN,
     is_deleted BOOLEAN,
     create_date TIMESTAMP WITHOUT TIME ZONE,
-    access_granted_by INTEGER
+    access_granted_by BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -132,7 +132,7 @@ RETURNS TABLE(
     is_enabled BOOLEAN,
     is_deleted BOOLEAN,
     create_date TIMESTAMP WITHOUT TIME ZONE,
-    access_granted_by INTEGER
+    access_granted_by BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
