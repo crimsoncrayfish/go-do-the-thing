@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS task_tags (
   task_id BIGINT,
   tag_id  BIGINT,
   PRIMARY KEY (task_id, tag_id),
-  FOREIGN KEY (task_id) REFERENCES items (id),
+  FOREIGN KEY (task_id) REFERENCES tasks (id),
   FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
 );
 
@@ -49,11 +49,12 @@ CREATE TABLE IF NOT EXISTS task_tags (
 DROP FUNCTION IF EXISTS sp_insert_tag(TEXT, BIGINT, BIGINT);
 CREATE OR REPLACE FUNCTION sp_insert_tag(_name TEXT, _user_id BIGINT, _project_id BIGINT)
 RETURNS BIGINT AS $$
-DECLARE _id BIGINT;
+DECLARE
+    _id BIGINT;
 BEGIN
     INSERT INTO tags (name, user_id)
-    VALUES (_tag_name, _user_id)
-    RETURNING id INTO _new_tag_id;
+    VALUES (_name, _user_id) 
+    RETURNING id INTO _id;
 
     INSERT INTO project_tags (project_id, tag_id)
     VALUES (_project_id, _id);

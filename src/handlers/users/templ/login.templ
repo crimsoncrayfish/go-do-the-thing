@@ -25,6 +25,12 @@ templ LoginFormContainer(form form_models.LoginForm) {
 	</div>
 }
 
+templ LoginFormContainerOOB(form form_models.LoginForm) {
+	<div hx-swap-oob="true" id="sign-up-in-form" class="w-full max-w-md">
+		@loginForm(form)
+	</div>
+}
+
 templ loginForm(form form_models.LoginForm) {
 	<div
 		class="w-full bg-secondary-light rounded-lg shadow border border-border-light md:mt-0 sm:max-w-md xl:p-0 dark:bg-secondary-dark dark:border-border-dark"
@@ -62,8 +68,8 @@ templ LoginFormContent(form form_models.LoginForm) {
 		<a href="#" class="text-sm font-medium text-text-on-light hover:underline dark:text-text-on-dark">Forgot password?</a>
 	</div>
 	for _, v := range form.Errors {
-		<div class="py-4 text-error">
-			{ v }
+		<div class="py-2 px-3 bg-danger-light/10 dark:bg-danger-dark/10 border border-danger-light dark:border-danger-dark rounded-lg">
+			<span class="text-danger-light dark:text-danger-dark text-sm">{ v }</span>
 		</div>
 	}
 	<button
@@ -75,6 +81,7 @@ templ LoginFormContent(form form_models.LoginForm) {
 	<p class="text-sm font-light text-text-on-light dark:text-text-on-dark">
 		Don’t have an account yet? <a
 	hx-get="register"
+	hx-swap
 	hx-replace-url="true"
 	href="#"
 	class="font-medium text-text-on-light hover:underline dark:text-text-on-dark"

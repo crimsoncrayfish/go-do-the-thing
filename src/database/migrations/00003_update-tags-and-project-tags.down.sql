@@ -12,7 +12,7 @@ DROP FUNCTION IF EXISTS sp_insert_tag(TEXT, BIGINT, BIGINT);
 DROP TABLE IF EXISTS project_tags;
 DROP TABLE IF EXISTS task_tags;
 
-DROP TABLE IF EXISTS task;
+DROP TABLE IF EXISTS tags;
 
 -- 4. Drop the tag_color ENUM type
 DROP TYPE IF EXISTS tag_color;

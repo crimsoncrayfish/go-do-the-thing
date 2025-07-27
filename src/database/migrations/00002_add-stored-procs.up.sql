@@ -48,7 +48,7 @@ BEGIN
     UPDATE users SET is_deleted = TRUE WHERE users.id = _id;
 END; $$ LANGUAGE plpgsql;
 
-DROP FUNCTION sp_get_user_by_email(TEXT);
+DROP FUNCTION IF EXISTS sp_get_user_by_email(TEXT);
 CREATE OR REPLACE FUNCTION sp_get_user_by_email(_email TEXT)
 RETURNS TABLE(
     id BIGINT,
@@ -60,7 +60,7 @@ RETURNS TABLE(
     is_enabled BOOLEAN,
     is_deleted BOOLEAN,
     create_date TIMESTAMP WITHOUT TIME ZONE,
-    access_granted_by INTEGER
+    access_granted_by BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY

@@ -82,7 +82,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userService.AuthenticateUser(email, password)
 	if err != nil {
 		h.logger.Error(err, "LoginUI: login failed - email: %s", email)
-		form.Errors["login"] = err.Error()
+		form.Errors["login"] = "failed to log in with an error"
 		w.WriteHeader(http.StatusUnauthorized)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "Failed to render template for formData")
@@ -105,9 +105,17 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewLoginForm()
-	if err := templ_users.Login(form).Render(r.Context(), w); err != nil {
-		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display login page")
-		return
+	contentType := r.Header.Get("accept")
+	if contentType == "text/html" {
+		if err := templ_users.LoginFormOOB(form).Render(r.Context(), w); err != nil {
+			fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display login page")
+			return
+		}
+	} else {
+		if err := templ_users.Login(form).Render(r.Context(), w); err != nil {
+			fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display login page")
+			return
+		}
 	}
 }
 
@@ -126,9 +134,17 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewRegistrationForm()
-	if err := templ_users.Register(form).Render(r.Context(), w); err != nil {
-		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display registration page")
-		return
+	contentType := r.Header.Get("accept")
+	if contentType == "text/html" {
+		if err := templ_users.RegistrationFormContianerOOB(form).Render(r.Context(), w); err != nil {
+			fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display registration page")
+			return
+		}
+	} else {
+		if err := templ_users.Register(form).Render(r.Context(), w); err != nil {
+			fe_errors.InternalServerError(w, r, h.logger, err, "Failed to display registration page")
+			return
+		}
 	}
 }
 

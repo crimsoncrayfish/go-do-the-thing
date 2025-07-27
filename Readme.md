@@ -17,9 +17,55 @@ https://github.com/user-attachments/assets/019db6ad-4cd1-4796-8665-d72cd45a4e12
 
 https://github.com/user-attachments/assets/6a16eeb7-5d24-4a81-9319-715e0ea25b3c
 
+## Migrations
+
+All migrations are in `.sql` files in the `/src/database/migrations/` folder
+
+Each migration should have an UP and a DOWN variant. To apply migrations use the [Golang Migrate Tool](github.com/golang-migrate/migrate/v4)
+
+Usage:
+```cmd
+--Get the tool
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+--Create new migrations file
+migrate create -ext sql -dir db/migrations -seq create_users_table
+--Apply migrations
+migrate -database ${POSTGRESQL_URL} -path db/migrations up
+```
+
+For local development the `docker-compose-db-local.yml` file was created. (If on windows run the following commands in a wsl instance)
+
+```
+--Create the db and apply migrations
+docker compose -f docker-compose-db-local.yml up -d
+--Tear down and remove the db
+docker compose -f docker-compose-db-local.yml down -v
+
+--Run up migration
+docker run -v ./src/database/migrations:/migrations --network go-do-the-thing_default migrate/migrate -path=/migrations/ -database postgres://admin:admin@db:5432/todo_db?sslmode=disable up
+--Run down migration
+docker run -v ./src/database/migrations:/migrations --network go-do-the-thing_default migrate/migrate -path=/migrations/ -database postgres://admin:admin@db:5432/todo_db?sslmode=disable down -all
+```
+
+## Containerized
+
+There is a DOCKERFILE in the root directory for building this project to run in the cloud.
+
+Use the following commands to test the dockerfile locally
+```
+--Build docker container
+docker build -t todo-app:local .
+--Run (remove -rm if it crashes and you need logs)
+docker run -rm -d -p 8080:8080 --network go-do-the-thing_default --name todo-app-container --env-file .env todo-app:local
+--Extra
+docker stop todo-app-container
+docker logs -f todo-app-container
+docker rm todo-app-container
+```
 
 ## Some requirements
 
+!!NB currently htmx is added via a cdn. Should be switched to npm
 for htmx
 ```cmd
 npm install htmx.org@2.0.1
