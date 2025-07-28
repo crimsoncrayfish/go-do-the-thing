@@ -33,11 +33,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Database Migrations
-        uses: golang-migrate/migrate-action@v1
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          database: ${{ secrets.AZURE_POSTGRES_CONNECTION_STRING }}
-          path: "src/database/migrations"
+          go-version: '1.24'
+
+      - name: Install golang-migrate
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+      - name: Apply Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          migrate -path ./src/database/migrations -database $DATABASE_URL up
 
   deploy:
     runs-on: ubuntu-latest
