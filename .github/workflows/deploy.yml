@@ -3,13 +3,8 @@ name: Build and Deploy to Azure
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
-
-env:
-  AZURE_WEBAPP_NAME: "crimsoncrayfishtodo"
-  ACR_LOGIN_SERVER: "crimsoncrayfishtodo.azurecr.io"
-  IMAGE_NAME: "todo-app"
 
 jobs:
   build:
