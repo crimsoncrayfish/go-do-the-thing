@@ -43,10 +43,8 @@ jobs:
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
       - name: Apply Migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          migrate -path ./src/database/migrations -database $DATABASE_URL up
+          migrate -path ./src/database/migrations -database ${{ secrets.DATABASE_URL }} up
 
   deploy:
     runs-on: ubuntu-latest
