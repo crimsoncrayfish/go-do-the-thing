@@ -22,6 +22,8 @@ jobs:
         uses: azure/docker-login@v2
         with:
           login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ null }}
+          password: ${{ null }}
 
       - name: Build and push Docker image
         run: |
