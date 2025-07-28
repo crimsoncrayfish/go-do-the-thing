@@ -3,13 +3,8 @@ name: Build and Deploy to Azure
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
-
-env:
-  AZURE_WEBAPP_NAME: "crimsoncrayfishtodo"
-  ACR_LOGIN_SERVER: "crimsoncrayfishtodo.azurecr.io"
-  IMAGE_NAME: "todo-app"
 
 jobs:
   build:
@@ -27,6 +22,8 @@ jobs:
         uses: azure/docker-login@v2
         with:
           login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ null }}
+          password: ${{ null }}
 
       - name: Build and push Docker image
         run: |
