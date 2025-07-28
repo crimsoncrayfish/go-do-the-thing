@@ -18,7 +18,6 @@ type JwtHandler struct {
 func NewJwtHandler(env, working_dir string) JwtHandler {
 	logger := slog.NewLogger("JWT Handler")
 
-	// 4. Inject the loaded keys into the provider
 	provider := newKeyProvider(env, working_dir)
 	return JwtHandler{
 		SecretKeyProvider: provider,

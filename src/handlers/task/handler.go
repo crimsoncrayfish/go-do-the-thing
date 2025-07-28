@@ -26,10 +26,7 @@ type Handler struct {
 	project_service projects_service.ProjectService
 }
 
-var (
-	source      = "TasksHandler"
-	defaultForm = fm.NewDefaultTaskForm()
-)
+const source = "TasksHandler"
 
 func SetupTodoHandler(
 	taskService task_service.TaskService,
@@ -129,7 +126,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 
 	err = templ_shared.RenderTempls(
 		templ_todo.TaskItemCardOOB(taskView),
-		templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(defaultForm, models.ProjectListToMap(projects))),
+		templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(fm.NewDefaultTaskForm(), models.ProjectListToMap(projects))),
 		templ_shared.ToastMessage("Task created successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
@@ -309,7 +306,8 @@ func (h *Handler) updateItemStatus(w http.ResponseWriter, r *http.Request) {
 	if source == "task_page" {
 		projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 		if err != nil {
-			defaultForm.Errors["Project"] = err.Error()
+			errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve projects")
+			return
 		}
 
 		if err = templ_shared.RenderTempls(
@@ -336,7 +334,8 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 
 	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
-		defaultForm.Errors["Project"] = err.Error()
+		errors.InternalServerError(w, r, h.logger, err, "failed to retrieve projects")
+		return
 	}
 
 	form := fm.NewDefaultTaskForm()
@@ -489,9 +488,6 @@ func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve projects")
 		return
 	}
-
-	form := fm.NewTaskForm()
-	form.Task = *task
 
 	if err := templ_shared.EditPanel("Edit Task", templ_todo.TaskItemContent(task, models.ProjectListToMap(projects))).Render(r.Context(), w); err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to render task edit panel")

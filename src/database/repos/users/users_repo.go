@@ -135,18 +135,18 @@ func (r *UsersRepo) Delete(user models.User) error {
 
 const getUserByEmail = `SELECT * FROM sp_get_user_by_email($1)`
 
-func (r *UsersRepo) GetUserByEmail(name string) (*models.User, error) {
-	r.logger.Debug("GetUserByEmail called - sql: %s, params: %s", getUserByEmail, name)
+func (r *UsersRepo) GetUserByEmail(email string) (*models.User, error) {
+	r.logger.Debug("GetUserByEmail called - sql: %s, params: %s", getUserByEmail, email)
 
-	row := r.db.QueryRow(getUserByEmail, name)
+	row := r.db.QueryRow(getUserByEmail, email)
 
 	temp := &models.User{}
 	err := scanUserFromRow(row, temp)
 	if err != nil {
-		r.logger.Error(err, "failed to get user by email - sql: %s, params: %s", getUserByEmail, name)
+		r.logger.Error(err, "failed to get user by email - sql: %s, params: %s", getUserByEmail, email)
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
-	r.logger.Debug("GetUserByEmail succeeded - id: %d, params: %s", temp.Id, name)
+	r.logger.Debug("GetUserByEmail succeeded - id: %d, params: %s", temp.Id, email)
 	return temp, nil
 }
 

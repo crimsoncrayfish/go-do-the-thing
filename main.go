@@ -79,8 +79,10 @@ func main() {
 	swjsLocation = working_dir + "/static/json/manifest.json"
 
 	logger.Info("Setting Up Database")
+	clientId := os.Getenv("AZURE_CLIENT_ID")
 
-	dbConnection := database.Init(db_connection_string)
+	logger.Info("connecting to postgres db with connection string '%s' and client id '%s'", db_connection_string, clientId)
+	dbConnection := database.Init(db_connection_string, clientId)
 	defer dbConnection.Close()
 
 	reposContainer := repos.NewContainer(dbConnection)

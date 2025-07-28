@@ -53,7 +53,7 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 		IsDeleted:    false,
 	}
 
-	id, err := s.tasksRepo.InsertItem(task)
+	id, err := s.tasksRepo.InsertTask(task)
 	if err != nil {
 		// NOTE: Errors from repo are wrapped
 		return 0, err
@@ -85,7 +85,7 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		Project:      project_id,
 		IsDeleted:    false,
 	}
-	err = s.tasksRepo.UpdateItem(task)
+	err = s.tasksRepo.UpdateTask(task)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
 		return err
 	}
 
-	task, err := s.tasksRepo.GetItem(task_id)
+	task, err := s.tasksRepo.GetTask(task_id)
 	if err != nil {
 		// NOTE: Take action
 		return err
@@ -113,7 +113,7 @@ func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
 	// NOTE: Take action
 	task.ToggleStatus(user_id)
 
-	return s.tasksRepo.UpdateItemStatus(task_id, task.CompleteDate, int64(task.Status), user_id)
+	return s.tasksRepo.UpdateTaskStatus(task_id, task.CompleteDate, int64(task.Status), user_id)
 }
 
 func (s *TaskService) DeleteTask(user_id, task_id int64) error {
@@ -124,7 +124,7 @@ func (s *TaskService) DeleteTask(user_id, task_id int64) error {
 		return err
 	}
 
-	return s.tasksRepo.DeleteItem(task_id, user_id)
+	return s.tasksRepo.DeleteTask(task_id, user_id)
 }
 
 func (s *TaskService) RestoreTask(user_id, task_id int64) error {
@@ -135,11 +135,11 @@ func (s *TaskService) RestoreTask(user_id, task_id int64) error {
 		return err
 	}
 
-	return s.tasksRepo.RestoreItem(task_id, user_id)
+	return s.tasksRepo.RestoreTask(task_id, user_id)
 }
 
 func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
-	task, err := s.tasksRepo.GetItem(id)
+	task, err := s.tasksRepo.GetTask(id)
 	if err != nil {
 		// NOTE: Errors from function already wrapped
 		return nil, err
@@ -154,7 +154,7 @@ func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 }
 
 func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error) {
-	tasks, err := s.tasksRepo.GetItemsForUser(user_id)
+	tasks, err := s.tasksRepo.GetTasksForUser(user_id)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error)
 }
 
 func (s *TaskService) GetProjectTaskViewList(user_id, project_id int64) ([]*models.TaskView, error) {
-	tasks, err := s.tasksRepo.GetItemsForUserAndProject(user_id, project_id)
+	tasks, err := s.tasksRepo.GetTasksForUserAndProject(user_id, project_id)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (s *TaskService) GetProjectTaskViewList(user_id, project_id int64) ([]*mode
 }
 
 func (s *TaskService) GetTaskCount(user_id int64) (int64, error) {
-	task_count, err := s.tasksRepo.GetItemsCount(user_id)
+	task_count, err := s.tasksRepo.GetTasksCount(user_id)
 	if err != nil {
 		return 0, err
 	}
@@ -297,7 +297,7 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 }
 
 func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err error) {
-	task, err := s.tasksRepo.GetItem(task_id)
+	task, err := s.tasksRepo.GetTask(task_id)
 	if err != nil {
 		// NOTE: Take action
 		return err

@@ -3,6 +3,7 @@ package security
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
@@ -59,7 +60,7 @@ func (skp *SecretKeyProvider) getKey() *rsa.PrivateKey {
 func parseRSAKeys(privateKeyPEM, publicKeyPEM []byte) (*rsa.PrivateKey, error) {
 	privatePemBlock, _ := pem.Decode(privateKeyPEM)
 	if privatePemBlock == nil {
-		return nil, errors.New(errors.ErrKeysNotLoadedError, "failed to decode private key PEM block")
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "failed to decode private key PEM block %s", privateKeyPEM)
 	}
 	privateKeyAny, err := x509.ParsePKCS8PrivateKey(privatePemBlock.Bytes)
 	if err != nil {
@@ -111,11 +112,21 @@ func loadKeysFromFile(keysLocation string, logger slog.Logger) ([]*rsa.PrivateKe
 func loadKeysFromEnv(logger slog.Logger) ([]*rsa.PrivateKey, error) {
 	logger.Info("Reading keys from environment variables")
 
-	privateKeyStr := os.Getenv("JWT_PRIVATE_KEY")
-	publicKeyStr := os.Getenv("JWT_PUBLIC_KEY")
+	privateKeyB64 := os.Getenv("JWT_PRIVATE_KEY")
+	publicKeyB64 := os.Getenv("JWT_PUBLIC_KEY")
 
-	if privateKeyStr == "" || publicKeyStr == "" {
+	if privateKeyB64 == "" || publicKeyB64 == "" {
 		return nil, errors.New(errors.ErrKeysNotLoadedError, "JWT_PRIVATE_KEY or JWT_PUBLIC_KEY env var not set")
+	}
+
+	privateKeyStr, err := base64.StdEncoding.DecodeString(privateKeyB64)
+	if err != nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "failed to decode private key from base64: %w", err)
+	}
+
+	publicKeyStr, err := base64.StdEncoding.DecodeString(publicKeyB64)
+	if err != nil {
+		return nil, errors.New(errors.ErrKeysNotLoadedError, "failed to decode public key from base64: %w", err)
 	}
 
 	key, err := parseRSAKeys([]byte(privateKeyStr), []byte(publicKeyStr))
