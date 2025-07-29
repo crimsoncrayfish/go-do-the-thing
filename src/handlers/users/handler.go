@@ -4,6 +4,7 @@ import (
 	"go-do-the-thing/src/handlers"
 	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/errors"
 	fe_errors "go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
@@ -207,9 +208,12 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Successfully created user %s", user.Email)
 	loginForm := form_models.NewLoginForm()
 	loginForm.Email = user.Email
-
-	if err = templ_users.LoginFormOOB(loginForm).Render(r.Context(), w); err != nil {
-		fe_errors.InternalServerError(w, r, h.logger, err, "Failed to complete registration")
+	err = templ_shared.RenderTempls(
+		templ_users.LoginFormOOB(loginForm),
+		templ_shared.ToastMessage("Registered successfully!", "success"),
+	).Render(r.Context(), w)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display new task")
 		return
 	}
 }

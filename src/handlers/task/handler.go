@@ -124,9 +124,11 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	new_form := fm.NewDefaultTaskForm()
+	new_form.Task.ProjectId = taskView.ProjectId
 	err = templ_shared.RenderTempls(
 		templ_todo.TaskItemCardOOB(taskView),
-		templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(fm.NewDefaultTaskForm(), models.ProjectListToMap(projects))),
+		templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(new_form, models.ProjectListToMap(projects))),
 		templ_shared.ToastMessage("Task created successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
