@@ -36,10 +36,6 @@ func (s *UserService) AuthenticateUser(email, password string) (*models.User, er
 		s.logger.Error(err, "AuthenticateUser: failed to get user by email - email: %s", email)
 		return nil, err
 	}
-	if !user.IsEnabled {
-		s.logger.Warn("AuthenticateUser: user is not activated - email: %s", email)
-		return nil, errors.New("login failed")
-	}
 	if user.IsDeleted {
 		s.logger.Info("AuthenticateUser: user is deleted - email: %s", email)
 		return nil, errors.New("login failed")
@@ -55,6 +51,10 @@ func (s *UserService) AuthenticateUser(email, password string) (*models.User, er
 	if !security.CheckPassword(password, passwordHash) {
 		s.logger.Info("AuthenticateUser: invalid password - email: %s", email)
 		return nil, errors.New("login failed")
+	}
+	if !user.IsEnabled {
+		s.logger.Warn("AuthenticateUser: user is not activated - email: %s", email)
+		return nil, errors.New("user not enabled")
 	}
 	// Generate new session ID
 	sessionId := uuid.New().String()

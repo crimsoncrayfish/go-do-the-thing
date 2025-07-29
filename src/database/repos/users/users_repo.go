@@ -61,7 +61,7 @@ func (r *UsersRepo) Create(user *models.User) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now()).Scan(&id)
 	if err != nil {
-		r.logger.Error(err, "failed to insert user - sql: %s, params: %+v", insertUser, user)
+		r.logger.Error(err, "failed to insert user - sql: %s, params: %s", insertUser, user.Email)
 		return 0, errors.New(errors.ErrDBInsertFailed, "failed to insert user: %w", err)
 	}
 	r.logger.Info("User created successfully - id: %d, email: %s", id, user.Email)

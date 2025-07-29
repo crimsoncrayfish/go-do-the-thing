@@ -58,7 +58,9 @@ templ RegistrationFormContent(form form_models.RegistrationForm) {
 	@templ_shared.FormPasswordInput("Confirm password", "password2", "••••••••")
 	<div class="text-error">
 		for _, v := range form.Errors {
-			<p class="py-2">{ v }</p>
+			<div class="py-2 px-3 bg-danger-light/10 dark:bg-danger-dark/10 border border-danger-light dark:border-danger-dark rounded-lg">
+				<span class="text-danger-light dark:text-danger-dark text-sm">{ v }</span>
+			</div>
 		}
 	</div>
 	<button
