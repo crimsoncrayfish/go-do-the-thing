@@ -81,8 +81,12 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("LoginUI: login attempt - email: %s", email)
 	user, err := h.userService.AuthenticateUser(email, password)
 	if err != nil {
-		h.logger.Error(err, "LoginUI: login failed - email: %s", email)
-		form.Errors["login"] = "failed to log in with an error"
+		if err.Error() == "user not enabled" {
+			form.Errors["login"] = "user not enabled"
+		} else {
+			h.logger.Error(err, "LoginUI: login failed - email: %s", email)
+			form.Errors["login"] = "failed to log in with an error"
+		}
 		w.WriteHeader(http.StatusUnauthorized)
 		if err := templ_users.LoginFormContent(form).Render(r.Context(), w); err != nil {
 			h.logger.Error(err, "Failed to render template for formData")
