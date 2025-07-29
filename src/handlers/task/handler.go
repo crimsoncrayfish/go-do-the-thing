@@ -18,6 +18,7 @@ import (
 	templ_shared "go-do-the-thing/src/shared/templ"
 
 	"github.com/a-h/templ"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type Handler struct {
@@ -90,7 +91,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		form.Errors["Due Date"] = err.Error()
 	}
 
-	if due_date.Before(time.Now()) {
+	if due_date.Before(time.Now().Add(-24 * time.Hour)) {
 		form.Errors["Due Date"] = "Due date cannot be in the past"
 	}
 	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
