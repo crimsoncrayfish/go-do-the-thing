@@ -153,6 +153,20 @@ func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	return s.taskToViewModel(task)
 }
 
+func (s *TaskService) Search(user_id int64, search_text string) ([]*models.TaskView, error) {
+	tasks, err := s.tasksRepo.Search(user_id, search_text)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(tasks, func(i, j int) bool {
+		if tasks[i].Status != tasks[j].Status {
+			return tasks[i].Status < tasks[j].Status
+		}
+		return tasks[i].DueDate.Before(*tasks[j].DueDate)
+	})
+	return s.taskListToViewModels(tasks)
+}
+
 func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error) {
 	tasks, err := s.tasksRepo.GetTasksForUser(user_id)
 	if err != nil {

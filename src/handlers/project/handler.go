@@ -179,7 +179,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description := models.GetPropertyFromRequest(r, "description", "Description")
+	description := models.GetPropertyFromRequest(r, "description")
 
 	if description == "" {
 		form.Errors["Description"] = "Description is required"
@@ -257,7 +257,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description := models.GetPropertyFromRequest(r, "description", "Description")
+	description := models.GetPropertyFromRequest(r, "description")
 
 	if description == "" {
 		form.Errors["Description"] = "Description is required"

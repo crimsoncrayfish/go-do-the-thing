@@ -255,3 +255,35 @@ func (r *TasksRepo) GetProjectTaskCompletion(projectId int64) (int64, int64, err
 	}
 	return completed, total, nil
 }
+
+const searchTasks = `SELECT * FROM sp_get_tasks_by_search($1, $2)`
+
+func (r TasksRepo) Search(user_id int64, search_text string) (tasks []*models.Task, err error) {
+	r.logger.Debug("GetTasksBySearch called - sql: %s, params: %v", searchTasks, user_id)
+	rows, err := r.database.Query(searchTasks, user_id, search_text)
+	if err != nil {
+		r.logger.Error(err, "failed to read tasks for user - sql: %s, params: %v", searchTasks, user_id)
+		return nil, errors.New(errors.ErrDBReadFailed, "failed to search for tasks: %w", err)
+	}
+	defer rows.Close()
+
+	tasks = make([]*models.Task, 0)
+	for rows.Next() {
+		task := &models.Task{}
+
+		err = scanFromRows(rows, task)
+		if err != nil {
+			// NOTE: Already wrapped
+			r.logger.Error(err, "failed to scan row in GettasksForUser - params: %v", user_id)
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	err = rows.Err()
+	if err != nil {
+		r.logger.Error(err, "rows.Err() in SearchTasks - params: %v", user_id)
+		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+	}
+	r.logger.Debug("Search succeeded - count: %d, params: %v", len(tasks), user_id)
+	return tasks, nil
+}

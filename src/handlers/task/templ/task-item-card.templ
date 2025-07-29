@@ -8,6 +8,29 @@ import (
 	"time"
 )
 
+templ NoDataTaskCard(task *models.TaskView) {
+	<div
+		id={ fmt.Sprintf("task-card-%d", task.Id) }
+		class="relative [perspective:1000px]
+           overflow-visible z-0
+           focus-within:z-10 transition-all mb-4"
+		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.Id) }
+		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.Id) }
+		hx-on--after-request.from="closest button"
+	>
+		<div class="task-card-slide-wrapper">
+			<div
+				id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
+				class="task-card-child w-full transition-transform duration-500 relative
+             [transform-style:preserve-3d]"
+			>
+				@TaskCardFront(task)
+				@cardBack(task)
+			</div>
+		</div>
+	</div>
+}
+
 templ TaskItemCard(task *models.TaskView) {
 	<div
 		id={ fmt.Sprintf("task-card-%d", task.Id) }

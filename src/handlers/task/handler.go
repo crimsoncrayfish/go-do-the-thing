@@ -45,6 +45,7 @@ func SetupTodoHandler(
 	router.Handle("GET /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.getItem)))
 	router.Handle("GET /todo/items", mw_stack(http.HandlerFunc(todoHandler.listItems)))
 	router.Handle("GET /tasks/lazy", mw_stack(http.HandlerFunc(todoHandler.listItemsLazy)))
+	router.Handle("POST /tasks/search", mw_stack(http.HandlerFunc(todoHandler.search)))
 	router.Handle("POST /todo/item/status/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItemStatus)))
 	router.Handle("POST /todo/item", mw_stack(http.HandlerFunc(todoHandler.createItem)))
 	router.Handle("POST /todo/item/{id}", mw_stack(http.HandlerFunc(todoHandler.updateItem)))
@@ -66,7 +67,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description := models.GetPropertyFromRequest(r, "description", "Description")
+	description := models.GetPropertyFromRequest(r, "description")
 
 	if description == "" {
 		form.Errors["Description"] = "Description is required"
@@ -158,7 +159,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["name"] = err.Error()
 	}
-	description := models.GetPropertyFromRequest(r, "description", "Description")
+	description := models.GetPropertyFromRequest(r, "description")
 
 	if description == "" {
 		form.Errors["Description"] = "Description is required"
@@ -340,9 +341,32 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form := fm.NewDefaultTaskForm()
-	tmpl := templ_todo.TaskListWithBody(models.ScreenTodo, form, models.ProjectListToMap(projects))
+	tmpl := templ_todo.TaskListWithBody(models.ScreenTodo, fm.NewTaskSearchForm(), models.ProjectListToMap(projects))
 	if err := tmpl.Render(r.Context(), w); err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display task list")
+		return
+	}
+}
+
+func (h *Handler) search(w http.ResponseWriter, r *http.Request) {
+	current_user_id, current_user_email, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+	search_text := models.GetPropertyFromRequest(r, "search")
+	tags := models.GetPropertyFromRequest(r, "tags")
+	project := models.GetPropertyFromRequest(r, "project")
+	status := models.GetPropertyFromRequest(r, "project")
+	h.logger.Debug("Got search fields '%s:%s:%s:%s'", search_text, tags, project, status)
+	tasks, err := h.task_service.Search(current_user_id, search_text)
+	if err != nil {
+		h.logger.Error(err, "failed to search for tasks with error for %s", current_user_email)
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve tasks")
+		return
+	}
+
+	if err := templ_todo.TaskListContentOOB(tasks).Render(r.Context(), w); err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to display task list")
 		return
 	}
