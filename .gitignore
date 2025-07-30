@@ -11,3 +11,5 @@
 go.work.sum
 *_templ.go
 .env
+*htmx.min.js
+

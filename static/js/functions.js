@@ -11,16 +11,14 @@ document.addEventListener("DOMContentLoaded", (_) => {
     evt.detail.headers["accept"] = "text/html";
     // Authentication is handled via cookies, no need for authorization header
   });
-  document.addEventListener("htmx:afterSwap", function (_) {
-    if (typeof initFlowbite === "function") {
-      initFlowbite();
-    } else if (
-      typeof Flowbite !== "undefined" &&
-      typeof Flowbite.init === "function"
-    ) {
-      Flowbite.init();
-    }
+  document.body.addEventListener("htmx:afterSwap", () => {
+    autoInitSuperDatePickers();
   });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", autoInitSuperDatePickers);
+  } else {
+    autoInitSuperDatePickers();
+  }
 });
 
 function addClassForId(className, elementId) {
@@ -32,6 +30,12 @@ function addClassForId(className, elementId) {
 
 function toggleClassForId(className, elementId) {
   const elem = document.getElementById(elementId);
+  if (!elem) {
+    console.error(
+      `could not toggle class ${className} for element ${elementId}`,
+    );
+    return;
+  }
   if (elem.classList.contains(className)) {
     elem.classList.remove(className);
     return;
@@ -62,4 +66,46 @@ if ("dark-mode" in localStorage) {
   document.querySelector("html").classList.add("dark");
 } else {
   document.querySelector("html").classList.remove("dark");
+}
+
+if (!window.showAndHideToast) {
+  let showToastTimer = null;
+  let hideToastTimer = null;
+
+  function hideToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+      clearTimeout(showToastTimer);
+      clearTimeout(hideToastTimer);
+
+      toast.classList.remove("opacity-100");
+      toast.classList.add("opacity-0");
+
+      setTimeout(() => {
+        toast.classList.remove("flex");
+        toast.classList.add("hidden");
+      }, 500);
+    }
+  }
+
+  function showAndHideToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+      clearTimeout(showToastTimer);
+      clearTimeout(hideToastTimer);
+
+      showToastTimer = setTimeout(() => {
+        toast.classList.remove("hidden");
+        toast.classList.add("flex");
+        setTimeout(() => {
+          toast.classList.remove("opacity-0");
+          toast.classList.add("opacity-100");
+        }, 10);
+      }, 10);
+
+      hideToastTimer = setTimeout(() => {
+        hideToast(toastId);
+      }, 5000);
+    }
+  }
 }

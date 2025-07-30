@@ -43,7 +43,8 @@ function flipProjectCardUpdateToBack(event, id) {
         return;
     }
     if (method === "POST") {
-        toggleClassForId('hidden', 'project-card-back-update-'+id)
+	    console.error('not implemented')
+	    return
     } else if (method === "DELETE") {
         toggleClassForId('hidden', 'project-card-back-delete-'+id)
     }
@@ -57,7 +58,6 @@ function flipProjectCardUpdateToFront(event, id) {
     if (!inner) return;
     inner.style.transform = 'rotateX(0deg)';
     inner.addEventListener('transitionend', function hideBack() {
-	toggleClassForId('hidden', 'project-card-back-update-'+id);
 	toggleClassForId('hidden', 'project-card-back-delete-'+id);
 	inner.removeEventListener('transitionend', hideBack);
     });

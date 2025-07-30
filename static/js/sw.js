@@ -1,10 +1,10 @@
-const CACHE_NAME = "todo-pwa-cache-v1";
+const CACHE_NAME = "todo-pwa-cache-v2";
 const urlsToCache = [
   "/",
   "/static/css/style.css",
-  "/static/js/flowbite.js",
+  "/static/js/datepicker.js",
   "/static/js/functions.js",
-  "/static/js/htmx.js",
+  "/static/js/htmx.min.js",
   "/static/img/logo192x192.png",
   "/static/img/logo512x512.png",
 ];
