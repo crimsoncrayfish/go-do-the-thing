@@ -116,6 +116,9 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to delete project")
 		return
 	}
+	if !hasProjects {
+		h.logger.Warn("TODO: Implement a no-data-row for projects")
+	}
 
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
@@ -125,7 +128,6 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 	err = templ_shared.RenderTempls(
 		templ_project.ProjectCardFront(*project_view),
-		templ_shared.NoDataRowOOB(hasProjects),
 	).Render(r.Context(), w)
 	if err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to display project deletion result")
