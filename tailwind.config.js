@@ -2,7 +2,7 @@ const plugin = require("tailwindcss/plugin");
 
 module.exports = {
   darkMode: "class",
-  content: ["./**/*.gohtml", "./**/*.templ", "./node_modules/flowbite/**/*.js"],
+  content: ["./**/*.gohtml", "./**/*.templ", "./static/js/datepicker.js"],
   theme: {
     extend: {
       colors: {
@@ -39,15 +39,15 @@ module.exports = {
         "tag-10": "#f87171",
       },
       screens: {
-        'xs': '475px',
+        xs: "475px",
       },
       containers: {
-        'xs': '475px',
-        'sm': '640px',
-        'md': '768px',
-        'lg': '1024px',
-        'xl': '1280px',
-        '2xl': '1536px',
+        xs: "475px",
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
       },
       transitionProperty: {
         "max-height": "max-height",
@@ -68,7 +68,6 @@ module.exports = {
     },
   },
   plugins: [
-    require("flowbite/plugin"),
     require("@tailwindcss/line-clamp"),
     require("@tailwindcss/container-queries"),
     plugin(function ({ matchUtilities, theme }) {
@@ -83,34 +82,4 @@ module.exports = {
       );
     }),
   ],
-  flowbite: {
-    theme: {
-      light: {
-        datepicker: {
-          cell: {
-            hover: "bg-accent-light",
-            selected: "bg-secondary-light",
-          },
-          controls: {
-            prevBtn: "hover:bg-secondary-light",
-            nextBtn: "hover:bg-secondary-light",
-            viewSwitch: "hover:bg-secondary-light",
-          },
-        },
-      },
-      dark: {
-        datepicker: {
-          cell: {
-            hover: "dark:bg-accent-dark",
-            selected: "dark:bg-secondary-dark",
-          },
-          controls: {
-            prevBtn: "dark:hover:bg-secondary-dark",
-            nextBtn: "dark:hover:bg-secondary-dark",
-            viewSwitch: "dark:hover:bg-secondary-dark",
-          },
-        },
-      },
-    },
-  },
 };

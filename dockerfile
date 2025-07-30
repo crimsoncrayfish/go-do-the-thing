@@ -1,5 +1,7 @@
 FROM golang:1.24.1-alpine AS builder
 
+RUN apk add --no-cache nodejs npm
+
 WORKDIR /app
 
 COPY go.mod go.sum ./
@@ -10,6 +12,9 @@ RUN go install github.com/a-h/templ/cmd/templ@latest
 COPY . .
 
 RUN templ generate
+
+RUN npm install htmx.org
+RUN mv node_modules/htmx.org/dist/htmx.min.js static/js/htmx.min.js
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/main .
 
