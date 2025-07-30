@@ -11,16 +11,6 @@ document.addEventListener("DOMContentLoaded", (_) => {
     evt.detail.headers["accept"] = "text/html";
     // Authentication is handled via cookies, no need for authorization header
   });
-  document.addEventListener("htmx:afterSwap", function (_) {
-    if (typeof initFlowbite === "function") {
-      initFlowbite();
-    } else if (
-      typeof Flowbite !== "undefined" &&
-      typeof Flowbite.init === "function"
-    ) {
-      Flowbite.init();
-    }
-  });
 });
 
 function addClassForId(className, elementId) {

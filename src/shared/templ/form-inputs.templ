@@ -76,7 +76,7 @@ templ FormDatePicker(title, name, id string, date *time.Time) {
 		<div class="mt-2 relative">
 			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 				<svg
-					class="w-4 h-4 text-text-on-light dark:text-text-on-dark"
+					class="z-10 w-4 h-4 text-text-on-light dark:text-text-on-dark"
 					aria-hidden="true"
 					xmlns="http://www.w3.org/2000/svg"
 					fill="currentColor"
@@ -93,9 +93,8 @@ templ FormDatePicker(title, name, id string, date *time.Time) {
 				value={ date.Format(constants.DateFormat) }
 				placeholder={ title }
 				id={ id }
-				datepicker
-				datepicker-format="yyyy-mm-dd"
-				class=" border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5
+				data-super-datepicker
+				class="border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5
 				bg-primary-light dark:bg-primary-dark dark:border-border-dark 
 				dark:placeholder-accent-dark placeholder-accent-light
 				dark:text-text-on-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark"
