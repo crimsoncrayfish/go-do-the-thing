@@ -312,8 +312,6 @@ templ editActions(is_editing bool) {
 
             toggleClassForId('hidden','edit-actions');
             toggleClassForId('hidden','task-edit-errors');
-
-            toggleClassForId('hidden','task-options-menu');
     }
 	</script>
 	<div id="edit-actions" class={ templ.KV("hidden",!is_editing), "mt-6 flex justify-end gap-2" }>

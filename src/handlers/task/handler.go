@@ -360,6 +360,9 @@ func (h *Handler) listItemsLazy(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve tasks")
 		return
 	}
+	if len(tasks) == 0 {
+		h.logger.Warn("TODO: Implement a no-data-row for tasks")
+	}
 
 	err = templ_todo.TaskListContent(tasks).Render(r.Context(), w)
 	if err != nil {

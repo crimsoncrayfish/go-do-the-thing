@@ -177,45 +177,4 @@ templ EmptyToast() {
 		id="toast-message"
 		class="opacity-0"
 	></div>
-	<script>
-let showToastTimer = null;
-let hideToastTimer = null;
-
-function hideToast(toastId) {
-  const toast = document.getElementById(toastId);
-  if (toast) {
-    clearTimeout(showToastTimer);
-    clearTimeout(hideToastTimer);
-
-    toast.classList.remove('opacity-100');
-    toast.classList.add('opacity-0');
-
-    setTimeout(() => {
-      toast.classList.remove('flex');
-      toast.classList.add('hidden');
-    }, 500);
-  }
-}
-
-function showAndHideToast(toastId) {
-  const toast = document.getElementById(toastId);
-  if (toast) {
-    clearTimeout(showToastTimer);
-    clearTimeout(hideToastTimer);
-
-    showToastTimer = setTimeout(() => {
-      toast.classList.remove('hidden');
-      toast.classList.add('flex'); 
-      setTimeout(() => {
-        toast.classList.remove('opacity-0');
-        toast.classList.add('opacity-100');
-      }, 10);
-    }, 10);
-
-    hideToastTimer = setTimeout(() => {
-      hideToast(toastId);
-    }, 5000);
-  }
-}
-	</script>
 }
