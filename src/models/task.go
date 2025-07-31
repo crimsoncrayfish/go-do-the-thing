@@ -72,6 +72,16 @@ type TaskView struct {
 	IsDeleted     bool
 }
 
+func (t *TaskView) IsOverDue() bool {
+	if t.DueDate == nil {
+		return false
+	}
+	if t.DueDate.Before(time.Now().Add(-24 * time.Hour)) {
+		return true
+	}
+	return false
+}
+
 func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Project) *TaskView {
 	assert.NotNil(assignedTo, helpers.PrevCallerName(2), "task assigned to cant be nil")
 	assert.NotNil(createdBy, helpers.PrevCallerName(2), "task creator cant be nil")

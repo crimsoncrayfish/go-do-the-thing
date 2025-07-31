@@ -5,7 +5,6 @@ import (
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	"go-do-the-thing/src/shared/templ"
-	"time"
 )
 
 templ TaskItemCard(task *models.TaskView) {
@@ -231,7 +230,7 @@ templ taskStatusChip(task *models.TaskView) {
 		>
 			In Progress
 		</span>
-	} else if task.DueDate.Before(time.Now()) {
+	} else if task.IsOverDue() {
 		<span
 			class="bg-danger-light dark:bg-danger-dark
 					text-white text-xs font-bold py-1 px-3 rounded-full shadow-sm mb-1 @sm:mb-0"
@@ -298,14 +297,16 @@ func getTaskBorderStyle(task *models.TaskView) string {
 	if task.Status == models.Completed {
 		return "shadow-lg opacity-50 border-border-light dark:border-border-dark"
 	}
-	if task.DueDate.Before(time.Now()) {
+	if task.IsOverDue() {
 		return "border-danger-light dark:border-danger-dark"
 	}
 	return "border-border-light dark:border-border-dark"
 }
+
 func getPosAnd3dStyles() string {
 	return "relative [backface-visibility:hidden] overflow-visible z-0"
 }
+
 func getThemingStyles(task *models.TaskView) string {
 	if task.IsDeleted {
 		return "opacity-50 line-through theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col @sm:flex-row"

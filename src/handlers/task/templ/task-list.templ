@@ -20,7 +20,7 @@ templ TaskListPage(activeScreen m.Screen, formdata mf.TaskForm, projects map[int
 	>
 		<div
 			id="main-content"
-			class="overflow-y-auto h-[calc(100vh-5rem)] transition-opacity duration-300 ease-in-out @container"
+			class="relative overflow-y-auto h-[calc(100vh-5rem)] transition-opacity duration-300 ease-in-out @container"
 		>
 			<div class="px-1 sm:px-[5%] xl:px-[10%] w-full text-text-on-light dark:text-text-on-dark mb-10">
 				<div class="mx-auto px-4 flex pt-4 items-center justify-between mb-4">
@@ -33,14 +33,28 @@ templ TaskListPage(activeScreen m.Screen, formdata mf.TaskForm, projects map[int
 							hx-indicator="#edit-panel-loader"
 							onclick="openEditPanel()"
 							class="bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold py-2 px-4 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-success-dark focus:ring-opacity-50 flex items-center"
+							aria-label="New Task"
 						>
-							@ts.SvgPlus()
+							@ts.SvgCirclePlus()
 							&nbsp;New Task
 						</button>
 					</div>
 				</div>
 				@searchBar(projects)
 				<div hx-get="/tasks/lazy" hx-trigger="load" hx-indicator="#loader-page" id="task-list-container"></div>
+			</div>
+			<div id="new-task-fab-container" class="absolute bottom-6 right-6 z-50">
+				<button
+					class="theme-transition bg-success-light dark:bg-success-dark hover:opacity-80 text-text-on-light dark:text-white font-bold rounded-full p-4 shadow-lg transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50"
+					hx-get="/todo/item/create/panel"
+					hx-target="#edit-panel"
+					hx-swap="outerHTML"
+					hx-indicator="#edit-panel-loader"
+					onclick="openEditPanel()"
+					aria-label="New Task"
+				>
+					@ts.SvgPlus()
+				</button>
 			</div>
 		</div>
 		@ts.EditPanel("Edit Task", taskEditContent())
