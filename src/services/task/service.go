@@ -172,12 +172,6 @@ func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error)
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(tasks, func(i, j int) bool {
-		if tasks[i].Status != tasks[j].Status {
-			return tasks[i].Status < tasks[j].Status
-		}
-		return tasks[i].DueDate.Before(*tasks[j].DueDate)
-	})
 	return s.taskListToViewModels(tasks)
 }
 
@@ -186,12 +180,6 @@ func (s *TaskService) GetProjectTaskViewList(user_id, project_id int64) ([]*mode
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(tasks, func(i, j int) bool {
-		if tasks[i].Status != tasks[j].Status {
-			return tasks[i].Status < tasks[j].Status
-		}
-		return tasks[i].DueDate.Before(*tasks[j].DueDate)
-	})
 	return s.taskListToViewModels(tasks)
 }
 
@@ -200,7 +188,6 @@ func (s *TaskService) GetTaskCount(user_id int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	return task_count, nil
 }
 
@@ -208,7 +195,6 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 	taskViews = make([]*models.TaskView, len(tasks))
 	users := make(map[int64]*models.User)
 	projects := make(map[int64]*models.Project)
-
 	for i, task := range tasks {
 		var assigned_to *models.User
 
@@ -263,6 +249,12 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by, *project)
 	}
 
+	sort.Slice(taskViews, func(i, j int) bool {
+		if taskViews[i].Status != taskViews[j].Status {
+			return taskViews[i].Status < taskViews[j].Status
+		}
+		return taskViews[i].DueDate.Before(*taskViews[j].DueDate)
+	})
 	return taskViews, nil
 }
 
