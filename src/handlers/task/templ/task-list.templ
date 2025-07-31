@@ -109,26 +109,57 @@ templ searchBar(projects map[int64]string) {
 			hx-trigger="submit, keyup delay:500ms changed"
 			hx-target="#task-list"
 			hx-swap="innerHTML"
-			class="grid grid-cols-1 md:grid-cols-3 gap-4"
 		>
-			@templ_shared.FormTextInput("", "Search", "Search...", "")
-			@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
-			@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
+			<div class="flex md:grid  md:grid-cols-2 gap-4">
+				<div class="flex-grow">
+					@templ_shared.FormTextInput("", "Search", "Search...", "")
+				</div>
+				<button
+					class="self-center justify-end text-link flex items-center font-semibold py-2 px-4 rounded  underline"
+					onclick="swapClassesForId(['max-h-0', 'opacity-0'], ['max-h-screen', 'opacity-100'], 'advanced-search');toggleClassForId('rotate-180', 'arrow-icon')"
+					aria-label="More Search Options"
+				>
+					Advanced
+					<svg
+						id="arrow-icon"
+						class="ml-2 h-4 w-4 transform transition-transform duration-300 ease-in-out"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M19 9l-7 7-7-7"
+						></path>
+					</svg>
+				</button>
+			</div>
+			<div
+				id="advanced-search"
+				class="overflow-hidden transition-all duration-500 ease-in-out max-h-0 opacity-0"
+			>
+				<div>
+					@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
+					@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
+				</div>
+				<div class="flex flex-wrap gap-2 pt-2">
+					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+						All
+					</button>
+					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+						Completed
+					</button>
+					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+						Incomplete
+					</button>
+					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
+						Overdue
+					</button>
+				</div>
+			</div>
 		</form>
-		<div class="flex flex-wrap gap-2 pt-2">
-			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-				All
-			</button>
-			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-				Completed
-			</button>
-			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-				Incomplete
-			</button>
-			<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-				Overdue
-			</button>
-		</div>
 	</div>
 }
 

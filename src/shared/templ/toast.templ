@@ -6,9 +6,10 @@ templ ToastMessage(message string, toastType string) {
 		hx-swap-oob="outerHTML"
 		hx-on--load="showAndHideToast('toast-message')"
 		class={
-			"opacity-0 p-6 border relative min-h-[80px]",
-			"rounded-xl shadow-lg z-50 w-72 overflow-hidden relative ",
-			"duration-500 ease-in-out theme-transition transition-opacity",
+			"fixed top-0 left-0 w-full",
+			"opacity-0 p-6 md:w-auto md:top-auto md:left-auto md:border md:relative md:min-h-[80px]",
+			"md:rounded-xl md:w-72 md:relative ",
+			"overflow-hidden shadow-lg z-50 duration-500 ease-in-out theme-transition transition-opacity",
 			"bg-secondary-light dark:bg-secondary-dark",
 			templ.KV(
 				"border-success-light dark:border-success-dark text-white",
