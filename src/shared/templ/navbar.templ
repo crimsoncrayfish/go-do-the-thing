@@ -42,7 +42,7 @@ templ NavBar(activeScreen models.Screen) {
 			onclick="toggleClassForId('hidden', 'profile-menu')"
 			class="cursor-pointer flex items-center text-text-on-light dark:text-text-on-dark pr-5 py-4"
 		>
-			<p class="text-text-on-light dark:text-text-on-dark pr-5 py-4">
+			<p class="hidden md:flex text-text-on-light dark:text-text-on-dark pr-5 py-4">
 				{ helpers.GetNameFromContext(ctx) }
 			</p>
 			<div>
