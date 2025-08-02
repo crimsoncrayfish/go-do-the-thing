@@ -7,12 +7,11 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-// Main task list page with lazy loading
-templ TaskListWithBody(activeScreen m.Screen, formdata mf.TaskForm, projects map[int64]string) {
-	@ts.Main(TaskListPage(activeScreen, formdata, projects))
+templ TaskListWithBody(activeScreen m.Screen, searchForm mf.TaskSearchForm, projects map[int64]string) {
+	@ts.Main(TaskListPage(activeScreen, searchForm, projects))
 }
 
-templ TaskListPage(activeScreen m.Screen, formdata mf.TaskForm, projects map[int64]string) {
+templ TaskListPage(activeScreen m.Screen, searchForm mf.TaskSearchForm, projects map[int64]string) {
 	@ts.NavBar(activeScreen)
 	<div
 		id="main-layout"
@@ -42,7 +41,7 @@ templ TaskListPage(activeScreen m.Screen, formdata mf.TaskForm, projects map[int
 						</button>
 					</div>
 				</div>
-				@searchBar(projects)
+				@searchBar(searchForm, projects)
 				<div hx-get="/tasks/lazy" hx-trigger="load" hx-indicator="#loader-page" id="task-list-container"></div>
 			</div>
 			<div
@@ -97,27 +96,46 @@ function flipTaskCardUpdateToFront(event, id) {
 }
 
 templ TaskListContent(tasks []*m.TaskView) {
-	for _, task := range tasks {
-		@TaskItemCard(task)
-	}
+	<div id="task-list-content">
+		if len(tasks) > 0 {
+			for _, task := range tasks {
+				@TaskItemCard(task)
+			}
+		} else {
+			@noTasksCard()
+		}
+	</div>
 }
 
-templ searchBar(projects map[int64]string) {
+templ TaskListContentOOB(tasks []*m.TaskView) {
+	<div id="task-list-content" hx-swap-oob="true">
+		if len(tasks) > 0 {
+			for _, task := range tasks {
+				@TaskItemCard(task)
+			}
+		} else {
+			@noTasksCard()
+		}
+	</div>
+}
+
+templ searchBar(searchForm mf.TaskSearchForm, projects map[int64]string) {
 	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 pb-4 px-4 pt-2 border border-border-light dark:border-border-dark rounded-lg">
 		<form
-			hx-get="/tasks"
+			hx-post="/tasks/search"
 			hx-trigger="submit, keyup delay:500ms changed"
-			hx-target="#task-list"
-			hx-swap="innerHTML"
+			hx-target="#task-list-content"
+			hx-swap="outerHTML"
 		>
 			<div class="flex md:grid  md:grid-cols-2 gap-4">
 				<div class="flex-grow">
-					@templ_shared.FormTextInput("", "Search", "Search...", "")
+					@templ_shared.FormTextInput("", "search", "Search...", searchForm.SearchText)
 				</div>
 				<button
 					class="self-center justify-end text-link flex items-center font-semibold py-2 px-4 rounded  underline"
 					onclick="swapClassesForId(['max-h-0', 'opacity-0'], ['max-h-screen', 'opacity-100'], 'advanced-search');toggleClassForId('rotate-180', 'arrow-icon')"
 					aria-label="More Search Options"
+					type="button"
 				>
 					Advanced
 					<svg
@@ -141,8 +159,8 @@ templ searchBar(projects map[int64]string) {
 				class="overflow-hidden transition-all duration-500 ease-in-out max-h-0 opacity-0"
 			>
 				<div>
-					@templ_shared.FormListInputWithAllOption("", "Project", 0, projects)
-					@templ_shared.FormTextInput("", "Tag", "Tags comma separated...", "")
+					@templ_shared.FormListInputWithAllOption("", "project", searchForm.ProjectFilter, projects)
+					@templ_shared.FormTextInput("", "tag", "Tags comma separated...", "")
 				</div>
 				<div class="flex flex-wrap gap-2 pt-2">
 					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">

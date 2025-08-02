@@ -10,6 +10,6 @@
 /keys
 go.work.sum
 *_templ.go
-.env
+.env*
 *htmx.min.js
 

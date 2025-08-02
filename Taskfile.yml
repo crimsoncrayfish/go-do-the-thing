@@ -1,0 +1,79 @@
+version: '3'
+
+vars:
+  MIGRATIONS_PATH: ./src/database/migrations/
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+    silent: true
+
+  _migrate:run:
+    internal: true
+    cmds:
+      - migrate -path {{.MIGRATIONS_PATH}} -database "$DATABASE_URL" {{.CLI_ARGS}}
+    silent: true
+
+  _confirm:prod:
+    internal: true
+    cmds:
+      - |
+        #!/bin/sh
+        printf "⚠️  WARNING: You are about to run a migration on the PRODUCTION database.\n"
+        printf "Are you absolutely sure you want to continue? (y/N): "
+        read -r confirm
+        case "$confirm" in
+          [yY] | [yY][eE][sS])
+            printf "Confirmation received. Proceeding...\n"
+            ;;
+          *)
+            printf "Migration cancelled by user.\n"
+            exit 1
+            ;;
+        esac
+    silent: true
+
+  local:migrate:
+    desc: "Runs migrations on LOCAL db (e.g., `task local:migrate up`)"
+    env:
+      DOTENV: [".env.dev"]
+    cmds:
+      - echo "Running LOCAL migration..."
+      - task: _migrate:run
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  local:migrate:goto:
+    desc: "Migrates LOCAL db to a specific version (e.g., `task local:migrate:goto V=...`)"
+    env:
+      DOTENV: [".env.dev"]
+    preconditions:
+      - sh: 'test -n "{{.V}}"'
+        msg: "You must provide a version number. Usage: task local:migrate:goto V=2025..."
+    cmds:
+      - echo "Running LOCAL migration to version {{.V}}..."
+      - task: _migrate:run
+        vars: { CLI_ARGS: 'goto {{.V}}' }
+
+  prod:migrate:
+    desc: "Runs migrations on PRODUCTION db (e.g., `task prod:migrate up`)"
+    env:
+      DOTENV: [".env.prod"]
+    cmds:
+      - task: _confirm:prod
+      - task: _migrate:run
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  prod:migrate:goto:
+    desc: "Migrates PRODUCTION db to a specific version (e.g., `task prod:migrate:goto V=...`)"
+    env:
+      DOTENV: [".env.prod"]
+    preconditions:
+      - sh: 'test -n "{{.V}}"'
+        msg: "You must provide a version number. Usage: task prod:migrate:goto V=2025..."
+    cmds:
+      - task: _confirm:prod
+      - echo "Running PRODUCTION migration to version {{.V}}..."
+      - task: _migrate:run
+        vars: { CLI_ARGS: 'goto {{.V}}' }
+
