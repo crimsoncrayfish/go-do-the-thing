@@ -19,6 +19,9 @@ func AcceptHeaderSwitch(w http.ResponseWriter, r *http.Request, jsonFunc func(w 
 }
 
 func Redirect(location string, w http.ResponseWriter) {
-	// TODO: Add ability to let user know why redirect happened (message on screen?)
 	w.Header().Set("HX-Location", location)
+}
+
+func RedirectFull(location string, w http.ResponseWriter) {
+	w.Header().Set("HX-Redirect", location)
 }

@@ -9,16 +9,37 @@ templ AdminDashboardWithBody(activeScreen models.Screen, users []models.UserView
 
 templ AdminDashboard(activeScreen models.Screen, users []models.UserView) {
 	@templ_shared.NavBar(activeScreen)
-	<div class="flex h-[calc(100vh-4rem)]">
-		<div id="admin-sidebar" class="w-64 bg-secondary-light dark:bg-secondary-dark border-r border-border-light dark:border-border-dark transition-all duration-300 ease-in-out flex flex-col">
-			<button id="collapse-btn" class="p-2 text-xs self-end text-primary-dark dark:text-text-on-dark" onclick="document.getElementById('admin-sidebar').classList.toggle('w-16')">☰</button>
-			<ul class="flex-1">
-				<li>
-					<a href="#" hx-get="/admin/inactive-users" hx-target="#admin-content" hx-swap="innerHTML" class="block p-4 hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark">Activate/Deactivate Users</a>
+	<div class="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
+		<div
+			id="admin-sidebar"
+			class="w-full md:w-64 bg-secondary-light dark:bg-secondary-dark border-b md:border-b-0 md:border-r border-border-light dark:border-border-dark transition-all duration-300 ease-in-out flex flex-col"
+		>
+			<button
+				id="collapse-btn"
+				class="p-2 text-xs self-end text-primary-dark dark:text-text-on-dark hidden md:block"
+				onclick="document.getElementById('admin-sidebar').classList.toggle('md:w-16')"
+			>
+				☰
+			</button>
+			<ul class="flex flex-row md:flex-col flex-1">
+				<li class="flex-1 md:flex-none">
+					<a
+						href="#"
+						hx-get="/admin/inactive-users"
+						hx-target="#admin-content"
+						hx-swap="innerHTML"
+						class="block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark"
+					>
+						<span class="md:hidden">Users</span>
+						<span class="hidden md:inline">Activate/Deactivate Users</span>
+					</a>
 				</li>
 			</ul>
 		</div>
-		<div id="admin-content" class="flex-1 overflow-y-auto p-6 bg-primary-light dark:bg-primary-dark">
+		<div
+			id="admin-content"
+			class="flex-1 overflow-y-auto p-4 md:p-6 bg-primary-light dark:bg-primary-dark"
+		>
 			@UserTable(users)
 		</div>
 	</div>

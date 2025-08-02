@@ -158,12 +158,6 @@ func (s *TaskService) Search(user_id int64, search_text string) ([]*models.TaskV
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(tasks, func(i, j int) bool {
-		if tasks[i].Status != tasks[j].Status {
-			return tasks[i].Status < tasks[j].Status
-		}
-		return tasks[i].DueDate.Before(*tasks[j].DueDate)
-	})
 	return s.taskListToViewModels(tasks)
 }
 

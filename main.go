@@ -94,7 +94,7 @@ func main() {
 
 	middleware_admin := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication, adminMW.IsAdmin)
 	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication)
-	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging)
+	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.OptionalAuthentication)
 
 	user_service := user_service.SetupUserService(reposContainer)
 	task_service := taskService.SetupTaskService(reposContainer)
