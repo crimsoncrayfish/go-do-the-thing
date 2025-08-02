@@ -17,6 +17,19 @@ func (u HttpContext) Get(key constants.ContextKey) string {
 	return u.Values[key]
 }
 
+func IsAuthenticatedFromContext(r *http.Request) bool {
+	context, ok := r.Context().Value(constants.AuthContext).(HttpContext)
+	if !ok {
+		return false
+	}
+	isAuthedString := context.Get(constants.AuthIsAuthenticated)
+	isAuthed, err := strconv.ParseBool(isAuthedString)
+	if err != nil {
+		return false
+	}
+	return isAuthed
+}
+
 func GetUserFromContext(r *http.Request) (id int64, email string, name string, err error) {
 	context, ok := r.Context().Value(constants.AuthContext).(HttpContext)
 	if !ok {

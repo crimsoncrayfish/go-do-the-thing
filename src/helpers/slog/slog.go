@@ -9,13 +9,19 @@ import (
 )
 
 type Logger struct {
-	Name string
+	Name         string
+	DebugEnabled bool
 }
 
-var DebugEnabled = os.Getenv("DEBUG_LOGGING") == "true"
+const (
+	DEV  = "development"
+	PROD = "production"
+)
 
 func NewLogger(name string) Logger {
-	return Logger{Name: name}
+	env := os.Getenv("ENV")
+	debugEnabled := env == DEV || env == ""
+	return Logger{Name: name, DebugEnabled: debugEnabled}
 }
 
 const (
@@ -85,7 +91,7 @@ func (l *Logger) Info(msg string, a ...any) {
 const debugLogFormat = "%s %s - %s - %s \n%s %s\n"
 
 func (l *Logger) Debug(msg string, a ...any) {
-	if !DebugEnabled {
+	if !l.DebugEnabled {
 		return
 	}
 	message := fmt.Sprintf(msg, a...)
@@ -93,7 +99,7 @@ func (l *Logger) Debug(msg string, a ...any) {
 }
 
 func (l *Logger) DebugStruct(msg string, a any) {
-	if !DebugEnabled {
+	if !l.DebugEnabled {
 		return
 	}
 	stringStruct, err := json.MarshalIndent(a, "", "\t")
