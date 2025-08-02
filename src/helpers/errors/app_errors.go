@@ -9,6 +9,7 @@ import (
 type AppErrorCode string
 
 const (
+	AuthFailed            AppErrorCode = "auth checks failed"
 	ErrAccessDenied       AppErrorCode = "no access"
 	ErrPermissionDenied   AppErrorCode = "no permission"
 	ErrNotFound           AppErrorCode = "not found"

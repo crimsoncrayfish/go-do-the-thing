@@ -28,6 +28,6 @@ func GetRequiredPropertyFromRequest(r *http.Request, propName, title string) (st
 	return value, nil
 }
 
-func GetPropertyFromRequest(r *http.Request, propName, title string) string {
+func GetPropertyFromRequest(r *http.Request, propName string) string {
 	return r.FormValue(propName)
 }

@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/constants"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/helpers/slog"
 	"net/http"
@@ -30,89 +30,90 @@ func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo users_repo.U
 // API code to intercept all requests
 func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var token string
-		for _, c := range r.Cookies() {
-			if c.Name == "token" {
-				token = c.Value
-			}
-		}
-		if token == "" {
-			redirectOnErr(w, r, a.Logger, errors.New("cookiejar is empty"), "/login", "Missing token")
-			return
-		}
-
-		claims, err := a.JwtHandler.ValidateToken(token)
+		request, err := a.tryAuthenticateUser(r)
 		if err != nil {
 			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, err, "/login", "Invalid token")
+			redirectOnErr(w, r, a.Logger, err, "/login", "Missing token")
 			return
 		}
-
-		// Validate token expiry time
-		exp := claims["expiry"]
-		if exp == "" {
-			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, errors.New("no expiry on token"), "/login", "Invalid token, expiry time missing")
-			return
-		}
-		userId := claims["user_id"]
-		if userId == "" {
-			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, errors.New("no user in token"), "/login", "Invalid token, user_id missing")
-			return
-		}
-		session := claims["session_id"]
-		if session == "" {
-			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, errors.New("no session id in token"), "/login", "Invalid token, session missing")
-			return
-		}
-
-		expDate, err := time.Parse(constants.DateTimeFormat, exp.(string))
-		if err != nil {
-			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, err, "/login", "Token expiry malformed %s", exp)
-			// TODO : redo this to pass in params for message
-			return
-		}
-		if expDate.Before(time.Now()) {
-			clearTokenCookie(w)
-
-			// TODO: reset session for user
-			redirectOnErr(w, r, a.Logger, errors.New("token expired"), "/login", "Token expired for user_id %d. Exp date: %s", userId, exp)
-			return
-		}
-
-		user, err := a.UsersRepo.GetUserByEmail(userId.(string))
-		if err != nil {
-			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, err, "/login", "failed to get user from db")
-			return
-		}
-
-		if user.SessionId != session.(string) {
-			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, errors.New("session id does not match user session id"), "/login", "session id mismatch")
-			return
-		}
-
-		shouldRefresh := expDate.After(time.Now().Add(time.Duration(time.Hour)))
-		if shouldRefresh {
-			// TODO: refresh token
-			a.Logger.Info("Token for user %s is close to expiring", userId)
-		}
-
-		values := helpers.HttpContext{Values: map[constants.ContextKey]string{
-			constants.AuthUserId:    strconv.FormatInt(user.Id, 10),
-			constants.AuthUserEmail: user.Email,
-			constants.AuthUserName:  user.FullName,
-			constants.AuthIsAdmin:   strconv.FormatBool(user.IsAdmin),
-		}}
-		ctx := context.WithValue(r.Context(), constants.AuthContext, values)
-		request := r.WithContext(ctx)
 
 		next.ServeHTTP(w, request)
 	})
+}
+
+func (a *AuthenticationMiddleware) OptionalAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.Logger.Debug("This is the optional auth path")
+		request, _ := a.tryAuthenticateUser(r)
+		next.ServeHTTP(w, request)
+	})
+}
+
+func (a *AuthenticationMiddleware) tryAuthenticateUser(r *http.Request) (*http.Request, error) {
+	var token string
+	for _, c := range r.Cookies() {
+		if c.Name == "token" {
+			token = c.Value
+			break
+		}
+	}
+	if token == "" {
+		return r, errors.New(errors.AuthFailed, "Missing token cookie")
+	}
+
+	claims, err := a.JwtHandler.ValidateToken(token)
+	if err != nil {
+		return r, errors.New(errors.AuthFailed, "Invalid token: %w", err)
+	}
+
+	exp, ok := claims["expiry"].(string)
+	if !ok || exp == "" {
+		return r, errors.New(errors.AuthFailed, "Invalid token, expiry time missing or malformed")
+	}
+	userId, ok := claims["user_id"].(string)
+	if !ok || userId == "" {
+		return r, errors.New(errors.AuthFailed, "Invalid token, user_id missing or malformed")
+	}
+	session, ok := claims["session_id"].(string)
+	if !ok || session == "" {
+		return r, errors.New(errors.AuthFailed, "Invalid token, session_id missing or malformed")
+	}
+
+	expDate, err := time.Parse(constants.DateTimeFormat, exp)
+	if err != nil {
+		return r, errors.New(errors.AuthFailed, "Token expiry malformed: %s, error: %w", exp, err)
+	}
+	if expDate.Before(time.Now()) {
+		// TODO: reset session for user
+		return r, errors.New(errors.AuthFailed, "Token expired for user_id %s. Exp date: %s", userId, exp)
+	}
+
+	user, err := a.UsersRepo.GetUserByEmail(userId)
+	if err != nil {
+		return r, errors.New(errors.AuthFailed, "Failed to get user from DB for user_id %s: %w", userId, err)
+	}
+
+	if user.SessionId != session {
+		return r, errors.New(errors.AuthFailed, "Session ID mismatch for user %s. Token session: %s, User session: %s", userId, session, user.SessionId)
+	}
+
+	shouldRefresh := expDate.After(time.Now().Add(time.Duration(time.Hour)))
+	if shouldRefresh {
+		// TODO: refresh token
+		a.Logger.Info("Token for user %s is close to expiring", userId)
+	}
+
+	values := helpers.HttpContext{Values: map[constants.ContextKey]string{
+		constants.AuthIsAuthenticated: strconv.FormatBool(true),
+		constants.AuthUserId:          strconv.FormatInt(user.Id, 10),
+		constants.AuthUserEmail:       user.Email,
+		constants.AuthUserName:        user.FullName,
+		constants.AuthIsAdmin:         strconv.FormatBool(user.IsAdmin),
+	}}
+	ctx := context.WithValue(r.Context(), constants.AuthContext, values)
+	request := r.WithContext(ctx)
+
+	return request, nil
 }
 
 func clearTokenCookie(w http.ResponseWriter) {

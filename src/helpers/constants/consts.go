@@ -9,9 +9,10 @@ const (
 type ContextKey string
 
 const (
-	AuthContext   ContextKey = "auth.middleware.context"
-	AuthUserId    ContextKey = "security.middleware.userId"
-	AuthUserEmail ContextKey = "security.middleware.userEmail"
-	AuthUserName  ContextKey = "security.middleware.userName"
-	AuthIsAdmin   ContextKey = "security.middleware.isAdmin"
+	AuthIsAuthenticated ContextKey = "security.middleware.isAuthenticated"
+	AuthContext         ContextKey = "auth.middleware.context"
+	AuthUserId          ContextKey = "security.middleware.userId"
+	AuthUserEmail       ContextKey = "security.middleware.userEmail"
+	AuthUserName        ContextKey = "security.middleware.userName"
+	AuthIsAdmin         ContextKey = "security.middleware.isAdmin"
 )

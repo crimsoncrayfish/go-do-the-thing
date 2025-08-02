@@ -66,12 +66,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Name"] = err.Error()
 	}
-	description := models.GetPropertyFromRequest(r, "description", "Description")
-
-	if description == "" {
-		form.Errors["Description"] = "Description is required"
-	}
-
+	description := models.GetPropertyFromRequest(r, "description")
 	project, err := models.GetRequiredPropertyFromRequest(r, "project", "Project")
 	if err != nil {
 		form.Errors["Project"] = err.Error()
@@ -80,7 +75,6 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Project"] = err.Error()
 	}
-
 	dateRaw, err := models.GetRequiredPropertyFromRequest(r, "due_date", "Due on")
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
@@ -158,7 +152,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["name"] = err.Error()
 	}
-	description := models.GetPropertyFromRequest(r, "description", "Description")
+	description := models.GetPropertyFromRequest(r, "description")
 
 	if description == "" {
 		form.Errors["Description"] = "Description is required"
