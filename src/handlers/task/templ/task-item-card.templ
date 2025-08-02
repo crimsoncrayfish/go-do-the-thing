@@ -53,6 +53,31 @@ templ TaskItemCard(task *models.TaskView) {
 	</div>
 }
 
+templ noTasksCard() {
+	<div
+		class="relative [perspective:1000px]
+           overflow-visible z-0
+           focus-within:z-10 transition-all mb-4"
+	>
+		<div class="task-card-slide-wrapper">
+			<div
+				class="task-card-child w-full transition-transform duration-500 relative
+             [transform-style:preserve-3d]"
+			>
+				<div
+					class={
+						"relative [backface-visibility:hidden] overflow-visible z-0",
+						"shadow-lg opacity-50 border-border-light dark:border-border-dark",
+						" theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg flex flex-col @sm:flex-row",
+					}
+				>
+					No Tasks Available
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
 templ TaskItemCardOOB(task *models.TaskView) {
 	<div id="task-list-container" hx-swap-oob="afterbegin">
 		@TaskItemCard(task)
