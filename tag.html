@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inline Tag Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  </head>
+  <body
+    class="flex min-h-screen items-center justify-center p-5 font-sans text-white">
+    <div id="tag-container" class="group relative">
+      <div
+        id="tag-view"
+        onclick="toggleClassForId('is-editing', 'tag-container')"
+        style="background-color: #ef4444;"
+        class="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-4 flex-shrink-0">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6 6h.008v.008H6V6Z"></path>
+        </svg>
+        <span id="tag-text">Frontend</span>
+      </div>
+      <form
+        id="tag-edit-form"
+        style="background-color: #ef4444;"
+        class="hidden items-center gap-2 rounded-full px-3 py-1 group-[.is-editing]:inline-flex">
+        <input
+          type="text"
+          id="new-tag-text-input"
+          name="tag-text"
+          value="Frontend"
+          class="w-24 rounded-md border-none bg-black/20 px-2 py-0.5 text-sm text-white placeholder-gray-200 shadow-inner focus:ring-2 focus:ring-white/75" />
+
+        <input
+          type="hidden"
+          id="tag-color-input"
+          name="tag-color"
+          value="#ef4444" />
+        <button
+          type="button"
+          id="custom-color-dropdown-button"
+          class="flex h-6 w-6 items-center justify-center rounded-full hover:bg-black/20"
+          onclick="toggleClassForId('hidden', 'color-options-dropdown')">
+          <span
+            id="selected-color-swatch"
+            class="inline-block h-4 w-4 rounded-full border border-gray-700"
+            style="background-color: #ef4444;"></span>
+        </button>
+        <button
+          type="submit"
+          class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-green-600 text-xs text-white transition-opacity hover:opacity-80"
+          title="Save Changes">
+          <i class="fa-solid fa-check"></i>
+        </button>
+        <button
+          type="button"
+          id="delete-tag-button"
+          class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-red-600 text-xs text-white transition-opacity hover:opacity-80"
+          title="Delete Tag">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+        <button
+          type="button"
+          class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-xs text-white transition-opacity hover:opacity-80"
+          title="Cancel"
+          onclick="exitEditMode()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </form>
+      <div
+        id="color-options-dropdown"
+        class="absolute bottom-full z-20 mb-2 left-1/2 -translate-x-1/2 hidden w-max rounded-md border border-gray-700 bg-gray-800 p-1 shadow-lg">
+        <div class="grid grid-cols-5 gap-2">
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#9333ea"
+            style="background-color: #9333ea;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#3b82f6"
+            style="background-color: #3b82f6;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#22c55e"
+            style="background-color: #22c55e;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#ef4444"
+            style="background-color: #ef4444;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#f59e0b"
+            style="background-color: #f59e0b;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#8b5cf6"
+            style="background-color: #8b5cf6;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#ec4899"
+            style="background-color: #ec4899;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#14b8a6"
+            style="background-color: #14b8a6;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#64748b"
+            style="background-color: #64748b;"></button>
+          <button
+            type="button"
+            class="color-option-btn flex h-6 w-6 items-center justify-center rounded-md"
+            data-color="#a855f7"
+            style="background-color: #a855f7;"></button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // No changes to the JavaScript are needed.
+      function toggleClassForId(className, elementId) {
+        const elem = document.getElementById(elementId);
+        if (elem) {
+          elem.classList.toggle(className);
+        }
+      }
+
+      function exitEditMode() {
+        document.getElementById("tag-container").classList.remove("is-editing");
+        document
+          .getElementById("color-options-dropdown")
+          .classList.add("hidden");
+      }
+
+      const colorInput = document.getElementById("tag-color-input");
+      const colorOptionButtons = document.querySelectorAll(".color-option-btn");
+      const colorOptionsDropdown = document.getElementById(
+        "color-options-dropdown",
+      );
+      const selectedColorSwatch = document.getElementById(
+        "selected-color-swatch",
+      );
+      colorOptionButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          const selectedColor = event.currentTarget.dataset.color;
+          editForm.style.backgroundColor = selectedColor;
+          selectedColorSwatch.style.backgroundColor = selectedColor;
+          colorInput.value = selectedColor;
+          colorOptionsDropdown.classList.add("hidden");
+        });
+      });
+
+      const tagTextElement = document.getElementById("tag-text");
+      const textInput = document.getElementById("new-tag-text-input");
+      const editForm = document.getElementById("tag-edit-form");
+      editForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const viewState = document.getElementById("tag-view");
+        viewState.style.backgroundColor = colorInput.value;
+        tagTextElement.textContent = textInput.value;
+        exitEditMode();
+      });
+
+      const tagContainer = document.getElementById("tag-container");
+      const deleteButton = document.getElementById("delete-tag-button");
+      deleteButton.addEventListener("click", () => {
+        if (window.confirm("Are you sure you want to delete this tag?")) {
+          tagContainer.remove();
+        }
+      });
+    </script>
+  </body>
+</html>
