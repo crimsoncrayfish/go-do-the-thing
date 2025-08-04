@@ -121,7 +121,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !hasProjects {
-		h.logger.Warn("TODO: Implement a no-data-row for projects")
+		h.logger.TODO("TODO: Implement a no-data-row for projects")
 	}
 
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)
@@ -358,7 +358,11 @@ func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project")
 		return
 	}
-	project.Tags = []models.TagView{models.NewTag(1, "red"), models.NewTag(2, "blue"), models.NewTag(3, "orange")}
+	project.Tags, err = h.project_service.GetProjectTags(current_user_id, id)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project")
+		return
+	}
 
 	form := form_models.NewProjectForm()
 	form.Project = *project
@@ -378,7 +382,7 @@ func formDataFromProject(project models.ProjectView) form_models.ProjectForm {
 }
 
 func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
-	_, _, _, err := helpers.GetUserFromContext(r)
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
 		return
@@ -389,16 +393,28 @@ func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Tag Name")
-	color, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
-	h.logger.Error(errors.New(errors.AuthFailed, "testing"), "New tag request submitted with name '%s' and color '%s' for project %d", name, color, project_id)
+	if name == "" {
+		errors.BadRequest(w, r, h.logger, err, "Tag must have a name")
+		return
+	}
+	colorString, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
+	color, err := models.ParseTagColor(colorString)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to read tag color")
+		return
+	}
+
+	new_id, err := h.project_service.CreateProjectTag(current_user_id, project_id, name, color)
+
 	tag := models.TagView{
-		Id:    1,
+		Id:    new_id,
 		Name:  name,
 		Color: color,
 	}
 	err = templ_shared.RenderTempls(
 		templ_project.NewTagForm(project_id),
 		templ_project.TagItemOOB(tag),
+		templ_shared.ToastMessage("Tag Created", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to display project update result")

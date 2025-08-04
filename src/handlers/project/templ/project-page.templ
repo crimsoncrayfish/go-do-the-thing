@@ -247,7 +247,7 @@ templ TagItemOOB(tag models.TagView) {
 				fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
 			}
 		>
-			@ts.SvgHexTag(tag.Color)
+			@ts.SvgHexTag("text-text-on-light dark:text-text-on-dark")
 			{ tag.Name }
 		</span>
 	</div>
@@ -262,7 +262,7 @@ templ TagItem(tag models.TagView) {
 			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
 		}
 	>
-		@ts.SvgHexTag(tag.Color)
+		@ts.SvgHexTag("text-text-on-light dark:text-text-on-dark")
 		{ tag.Name }
 	</span>
 }
