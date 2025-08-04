@@ -109,3 +109,13 @@ if (!window.showAndHideToast) {
     }
   }
 }
+
+function replaceClassWithPrefix(element, prefix, newClass) {
+  const classToRemove = [...element.classList].find((cls) =>
+    cls.startsWith(prefix),
+  );
+  if (classToRemove) {
+    element.classList.remove(classToRemove);
+  }
+  element.classList.add(newClass);
+}

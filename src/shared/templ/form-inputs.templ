@@ -1,6 +1,7 @@
 package templ_shared
 
 import (
+	"fmt"
 	"go-do-the-thing/src/helpers/constants"
 	"strconv"
 	"time"
@@ -142,4 +143,117 @@ templ FormListInputWithAllOption(title, name string, value int64, opts map[int64
 			</select>
 		</label>
 	</div>
+}
+
+var colorNames = []string{
+	"red", "orange", "amber", "green", "cyan",
+	"blue", "indigo", "purple", "fuchsia", "rose",
+}
+
+templ FormColorPickerInput(element_id, selectedColor string) {
+	<div id={ element_id } class="relative">
+		<input
+			type="hidden"
+			class="color-input"
+			name="color"
+			value={ selectedColor }
+		/>
+		<button
+			type="button"
+			id="custom-color-dropdown-button"
+			class="flex h-6 w-6 items-center justify-center rounded-full
+            transition-colors hover:bg-black/10 dark:hover:bg-white/10"
+			onclick="toggleClassForId('hidden', 'color-options-dropdown')"
+		>
+			<span
+				class={ fmt.Sprintf(
+					"selected-color-swatch inline-block h-4 w-4 rounded-full border border-border-light dark:border-border-dark bg-%s-light dark:bg-%s-dark",
+					selectedColor,
+					selectedColor,
+				) }
+			></span>
+		</button>
+		<div
+			id="color-options-dropdown"
+			class="color-options-dropdown absolute bottom-full z-20 mb-2 hidden w-max
+            rounded-md border p-1 shadow-lg
+            left-1/2 -translate-x-1/2
+            bg-secondary-light border-border-light
+            dark:bg-secondary-dark dark:border-border-dark"
+		>
+			<div class="grid grid-cols-5 gap-1 p-1">
+				for _, color := range colorNames {
+					@colorButton(color)
+				}
+			</div>
+		</div>
+	</div>
+	<script>
+	if (window.colorInputContainer == undefined) {
+      const colorInputContainer = document.getElementById({{ element_id }});
+      const colorInput= colorInputContainer.querySelector(".color-input");
+      const colorOptionButtons = colorInputContainer.querySelectorAll(".color-option-btn");
+      const colorOptionsDropdown = colorInputContainer.querySelector(
+        ".color-options-dropdown",
+      );
+      const selectedColorSwatch = colorInputContainer.querySelector(
+        ".selected-color-swatch",
+      );
+
+      colorOptionButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          const selectedColor = event.currentTarget.dataset.color;
+          replaceClassWithPrefix(selectedColorSwatch, "bg-", `bg-${selectedColor}-light`)
+          replaceClassWithPrefix(selectedColorSwatch, "dark:bg-", `dark:bg-${selectedColor}-dark`)
+          colorInput.value = selectedColor;
+          colorOptionsDropdown.classList.add("hidden");
+        });
+      });
+		} else {
+      colorInputContainer = document.getElementById({{ element_id }});
+      colorInput= colorInputContainer.querySelector(".color-input");
+      colorOptionButtons = colorInputContainer.querySelectorAll(".color-option-btn");
+      colorOptionsDropdown = colorInputContainer.querySelector(
+        ".color-options-dropdown",
+      );
+      selectedColorSwatch = colorInputContainer.querySelector(
+        ".selected-color-swatch",
+      );
+      colorOptionButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          const selectedColor = event.currentTarget.dataset.color;
+          replaceClassWithPrefix(selectedColorSwatch, "bg-", `bg-${selectedColor}-light`)
+          replaceClassWithPrefix(selectedColorSwatch, "dark:bg-", `dark:bg-${selectedColor}-dark`)
+          colorInput.value = selectedColor;
+          colorOptionsDropdown.classList.add("hidden");
+        });
+      });
+			}
+    
+	</script>
+}
+
+templ colorButton(color string) {
+	<button
+		type="button"
+		class={
+			"color-option-btn h-6 w-6 rounded-md",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark", color, color),
+		}
+		data-color={ color }
+	></button>
+}
+
+//This function ensures that tailwind loads the colors
+templ loadColors() {
+	<div class="bg-red-light dark:bg-red-dark"></div>
+	<div class="bg-orange-light dark:bg-orange-dark"></div>
+	<div class="bg-green-light dark:bg-green-dark"></div>
+	<div class="bg-cyan-light dark:bg-cyan-dark"></div>
+	<div class="bg-blue-light dark:bg-blue-dark"></div>
+	<div class="bg-indigo-light dark:bg-indigo-dark"></div>
+	<div class="bg-purple-light dark:bg-purple-dark"></div>
+	<div class="bg-fuchsia-light dark:bg-fuchsia-dark"></div>
+	<div class="bg-rose-light dark:bg-rose-dark"></div>
+	<div class="bg-amber-light dark:bg-amber-dark"></div>
 }

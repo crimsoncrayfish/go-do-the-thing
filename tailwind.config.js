@@ -27,16 +27,46 @@ module.exports = {
         transparent: "transparent",
         current: "currentColor",
         link: "#3b82f6",
-        "tag-1": "#c084fc",
-        "tag-2": "#f472b6",
-        "tag-3": "#fb923c",
-        "tag-4": "#60a5fa",
-        "tag-5": "#a78bfa",
-        "tag-6": "#fcd34d",
-        "tag-7": "#4ade80",
-        "tag-8": "#e879f9",
-        "tag-9": "#22d3ee",
-        "tag-10": "#f87171",
+        red: {
+          light: "#FECACA",
+          dark: "#B91C1C",
+        },
+        orange: {
+          light: "#FED7AA",
+          dark: "#C2410C",
+        },
+        amber: {
+          light: "#FDE68A",
+          dark: "#B45309",
+        },
+        green: {
+          light: "#A7F3D0",
+          dark: "#047857",
+        },
+        cyan: {
+          light: "#A5F3FC",
+          dark: "#0E7490",
+        },
+        blue: {
+          light: "#BFDBFE",
+          dark: "#1D4ED8",
+        },
+        indigo: {
+          light: "#C7D2FE",
+          dark: "#4338CA",
+        },
+        purple: {
+          light: "#DDD6FE",
+          dark: "#7E22CE",
+        },
+        fuchsia: {
+          light: "#F5D0FE",
+          dark: "#C026D3",
+        },
+        rose: {
+          light: "#FECDD3",
+          dark: "#BE123C",
+        },
       },
       screens: {
         xs: "475px",

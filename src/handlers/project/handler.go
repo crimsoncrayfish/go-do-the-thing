@@ -48,6 +48,10 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 
 	router.Handle("GET /project/create/panel", mw_stack(http.HandlerFunc(projectsHandler.getCreatePanel)))
 	router.Handle("GET /project/{id}/edit/panel", mw_stack(http.HandlerFunc(projectsHandler.getEditPanel)))
+
+	router.Handle("POST /project/{id}/tag", mw_stack(http.HandlerFunc(projectsHandler.createProjectTag)))
+	// router.Handle("PUT /project/tag/{id}", mw_stack(http.HandlerFunc(projectsHandler.updateProjectTag)))
+	// router.Handle("DELETE /project/tag/{id}", mw_stack(http.HandlerFunc(projectsHandler.deleteProjectTag)))
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
@@ -354,7 +358,7 @@ func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project")
 		return
 	}
-	project.Tags = []models.TagView{models.NewTag(1, "#33FF57"), models.NewTag(2, "#ff5733"), models.NewTag(3, "#5733FF")}
+	project.Tags = []models.TagView{models.NewTag(1, "red"), models.NewTag(2, "blue"), models.NewTag(3, "orange")}
 
 	form := form_models.NewProjectForm()
 	form.Project = *project
@@ -371,4 +375,33 @@ func formDataFromProject(project models.ProjectView) form_models.ProjectForm {
 	formData.Project.Description = project.Description
 	formData.Project.DueDate = project.DueDate
 	return formData
+}
+
+func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
+	_, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		return
+	}
+	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Tag Name")
+	color, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
+	h.logger.Error(errors.New(errors.AuthFailed, "testing"), "New tag request submitted with name '%s' and color '%s' for project %d", name, color, project_id)
+	tag := models.TagView{
+		Id:    1,
+		Name:  name,
+		Color: color,
+	}
+	err = templ_shared.RenderTempls(
+		templ_project.NewTagForm(project_id),
+		templ_project.TagItemOOB(tag),
+	).Render(r.Context(), w)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project update result")
+		return
+	}
 }
