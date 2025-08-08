@@ -1,0 +1,204 @@
+package templ_project
+
+import (
+	"fmt"
+	"go-do-the-thing/src/models"
+	"go-do-the-thing/src/shared/templ"
+)
+
+templ projectTagListEdit(project_id int64, tags []models.TagView) {
+	<div class="text-text-on-light dark:text-text-on-dark">
+		<div id="tag-list" class="flex flex-wrap gap-2">
+			@NewTagForm(project_id)
+			for _, tag := range tags {
+				@TagItemEditable(project_id, tag)
+			}
+		</div>
+	</div>
+}
+
+templ projectTagList(project_id int64, tags []models.TagView) {
+	<div class="text-text-on-light dark:text-text-on-dark">
+		<div id="tag-list" class="flex flex-wrap gap-2">
+			for _, tag := range tags {
+				@TagItem(tag)
+			}
+		</div>
+	</div>
+}
+
+templ NewTagForm(project_id int64) {
+	<form
+		hx-post={ fmt.Sprintf("/project/%d/tag", project_id) }
+		id="project-new-tag-form"
+		hx-indicator="#tag-form-loader"
+		hx-swap="outerHTML"
+		class="inline-flex items-center gap-2 rounded-full border px-3 py-1
+        text-sm font-medium shadow-sm relative
+        border-border-light bg-primary-light text-text-on-light
+        dark:border-border-dark dark:bg-primary-dark dark:text-text-on-dark"
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke-width="1.5"
+			stroke="currentColor"
+			class="size-4 flex-shrink-0"
+		>
+			<path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
+			></path>
+			<path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				d="M6 6h.008v.008H6V6Z"
+			></path>
+		</svg>
+		<input
+			type="text"
+			id="new-tag-name-input"
+			placeholder="New tag"
+			name="name"
+			class="flex w-20 bg-transparent placeholder:text-accent-light placeholder:dark:text-accent-dark
+          focus:outline-none focus:ring-0"
+		/>
+		@templ_shared.FormColorPickerInput("new-tag-form", "red")
+		<button
+			id="add-tag-button"
+			type="submit"
+			class="flex items-center justify-center rounded-full p-1
+          text-current transition-colors duration-200
+          hover:bg-black/10 dark:hover:bg-white/10"
+			aria-label="Add tag"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-4 w-4"
+				viewBox="0 0 20 20"
+				fill="currentColor"
+			>
+				<path
+					fill-rule="evenodd"
+					d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+					clip-rule="evenodd"
+				></path>
+			</svg>
+		</button>
+		<div id="tag-form-loader" class="absolute inset-0 flex justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
+			<div class="loader-bounce flex space-x-2">
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.2s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.4s"></div>
+			</div>
+		</div>
+	</form>
+}
+
+templ TagItemOOB(tag models.TagView) {
+	<div id="tag-list" hx-swap-oob="beforeend">
+		<span
+			onclick={ templ.JSFuncCall("toggleTagEditorPopup", tag.Id) }
+			id={ fmt.Sprintf("tag-%d", tag.Id) }
+			class={
+				"inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+				fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+			}
+		>
+			@templ_shared.SvgHexTag("text-text-on-light dark:text-text-on-dark")
+			{ tag.Name }
+		</span>
+	</div>
+}
+
+templ TagItem(tag models.TagView) {
+	<span
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		class={
+			"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+		}
+	>
+		@templ_shared.SvgHexTag("text-text-on-light dark:text-text-on-dark")
+		{ tag.Name }
+	</span>
+}
+
+templ TagItemEditable(project_id int64, tag models.TagView) {
+	<button
+		hx-get={ fmt.Sprintf("/project/%d/tag/%d", project_id, tag.Id) }
+		id="project-new-tag-form"
+		hx-indicator="#tag-loader"
+		hx-swap="outerHTML"
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		type="button"
+		class={
+			"relative inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+		}
+	>
+		@templ_shared.SvgHexTag("text-text-on-light dark:text-text-on-dark")
+		{ tag.Name }
+		<div id="tag-loader" class="absolute inset-0 flex justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
+			<div class="loader-bounce flex space-x-2">
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.2s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.4s"></div>
+			</div>
+		</div>
+	</button>
+}
+
+templ TagItemEditorOOB(project_id int64, tag models.TagView) {
+	<form
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		class={
+			"relative inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+		}
+		hx-post=""
+	>
+		<input
+			type="text"
+			id="new-tag-name-input"
+			placeholder="New tag"
+			name="name"
+			class="flex w-20 bg-transparent placeholder:text-accent-light placeholder:dark:text-accent-dark
+          focus:outline-none focus:ring-0"
+		/>
+		@templ_shared.FormColorPickerInput("new-tag-form", "red")
+		<button
+			type="submit"
+			class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full divide-success-light dark:bg-success-dark text-xs text-text-on-light dark:text-text-on-dark transition-opacity hover:opacity-80"
+			title="Save Changes"
+		>
+			<i class="fa-solid fa-check"></i>
+		</button>
+		<!--button
+			type="button"
+			hx-delete=""
+			id="delete-tag-button"
+			class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-red-600 text-xs text-white transition-opacity hover:opacity-80"
+			title="Delete Tag"
+		>
+			<i class="fa-solid fa-trash-can"></i>
+		</button-->
+		<button
+			type="button"
+			class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-xs text-white transition-opacity hover:opacity-80"
+			title="Cancel"
+			hx-get=""
+		>
+			<i class="fa-solid fa-times"></i>
+		</button>
+		<div id="tag-loader" class="absolute inset-0 flex justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
+			<div class="loader-bounce flex space-x-2">
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.2s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.4s"></div>
+			</div>
+		</div>
+	</form>
+}

@@ -94,7 +94,7 @@ func (r *ProjectTagsRepo) UpdateTag(id int64, name, color string) error {
 	return nil
 }
 
-const getTagById = `Select sp_get_tag($1, $2)`
+const getTagById = `Select * FROM sp_get_tag($1, $2)`
 
 func (r *ProjectTagsRepo) GetTagById(id, project_id int64) (*models.Tag, error) {
 	r.logger.Debug("GetTagById called - sql: %s, params: %d", getTagById, id)

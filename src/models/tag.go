@@ -60,8 +60,8 @@ type TagView struct {
 	Color TagColor
 }
 
-func (t Tag) ToView() TagView {
-	return TagView{
+func (t Tag) ToView() *TagView {
+	return &TagView{
 		t.Id,
 		t.Name,
 		t.Color,

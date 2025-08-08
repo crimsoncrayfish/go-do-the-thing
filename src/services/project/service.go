@@ -280,7 +280,7 @@ func (s ProjectService) GetProjectTags(current_user_id, id int64) (tags []models
 	}
 	tag_views := make([]models.TagView, len(project_tags))
 	for i, tag := range project_tags {
-		tag_views[i] = tag.ToView()
+		tag_views[i] = *tag.ToView()
 	}
 
 	return tag_views, nil
@@ -297,4 +297,17 @@ func (s ProjectService) CreateProjectTag(current_user_id, project_id int64, name
 		return 0, err
 	}
 	return new_id, nil
+}
+
+func (s ProjectService) GetProjectTagById(current_user_id, project_id, tag_id int64) (*models.TagView, error) {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	tag, err := s.project_tags_repo.GetTagById(tag_id, project_id)
+	if err != nil {
+		return nil, err
+	}
+	return tag.ToView(), nil
 }
