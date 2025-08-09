@@ -311,3 +311,51 @@ func (s ProjectService) GetProjectTagById(current_user_id, project_id, tag_id in
 	}
 	return tag.ToView(), nil
 }
+
+func (s ProjectService) DeleteProjectTagById(current_user_id, project_id, tag_id int64) error {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return err
+	}
+	err = s.TagBelongsToProject(tag_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return err
+	}
+	err = s.project_tags_repo.DeleteTag(tag_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s ProjectService) UpdateProjectTagById(current_user_id, project_id, tag_id int64, name string, color models.TagColor) (*models.TagView, error) {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	err = s.TagBelongsToProject(tag_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	err = s.project_tags_repo.UpdateTag(tag_id, name, color)
+	if err != nil {
+		return nil, err
+	}
+	return models.NewTag(tag_id, name, color), nil
+}
+
+func (s *ProjectService) TagBelongsToProject(tag_id, project_id int64) (err error) {
+	tag, err := s.project_tags_repo.GetTagById(tag_id, project_id)
+	if err != nil {
+		// NOTE: Errors from repo are wrapped
+		return err
+	}
+	if tag == nil {
+		return errors.New(errors.ErrAccessDenied, "permission denied: tag %d does not belong to project %d", tag_id, project_id)
+	}
+	return nil
+}

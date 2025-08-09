@@ -83,7 +83,7 @@ func (r *ProjectTagsRepo) CreateTag(name string, color models.TagColor, current_
 
 const updateTag = `SELECT sp_update_tag($1, $2, $3)`
 
-func (r *ProjectTagsRepo) UpdateTag(id int64, name, color string) error {
+func (r *ProjectTagsRepo) UpdateTag(id int64, name string, color models.TagColor) error {
 	r.logger.Debug("UpdateTag called - sql: %s, params: %d, %s, %s", updateTag, id, name, color)
 	_, err := r.database.Exec(updateTag, id, name, color)
 	if err != nil {

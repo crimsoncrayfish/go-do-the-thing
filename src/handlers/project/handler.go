@@ -52,9 +52,10 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 	router.Handle("GET /project/{id}/edit/panel", mw_stack(http.HandlerFunc(projectsHandler.getEditPanel)))
 
 	router.Handle("POST /project/{id}/tag", mw_stack(http.HandlerFunc(projectsHandler.createProjectTag)))
-	router.Handle("GET /project/{id}/tag/{tagId}", mw_stack(http.HandlerFunc(projectsHandler.getProjectTagEditor)))
-	// router.Handle("PUT /project/tag/{id}", mw_stack(http.HandlerFunc(projectsHandler.updateProjectTag)))
-	// router.Handle("DELETE /project/tag/{id}", mw_stack(http.HandlerFunc(projectsHandler.deleteProjectTag)))
+	router.Handle("GET /project/{id}/tag/{tagId}/edit", mw_stack(http.HandlerFunc(projectsHandler.getProjectTagEditor)))
+	router.Handle("GET /project/{id}/tag/{tagId}/view", mw_stack(http.HandlerFunc(projectsHandler.getProjectTagView)))
+	router.Handle("PUT /project/{id}/tag/{tagId}", mw_stack(http.HandlerFunc(projectsHandler.updateProjectTag)))
+	router.Handle("DELETE /project/{id}/tag/{tagId}", mw_stack(http.HandlerFunc(projectsHandler.deleteProjectTag)))
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +170,6 @@ func (h *Handler) getProjectEdit(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "failed to render project content for id %d", id)
 		return
 	}
-	return
 }
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
@@ -473,13 +473,21 @@ func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	colorString, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
-	color, err := models.ParseTagColor(colorString)
 	if err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to read tag color")
 		return
 	}
+	color, err := models.ParseTagColor(colorString)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to parse tag color")
+		return
+	}
 
 	new_id, err := h.project_service.CreateProjectTag(current_user_id, project_id, name, color)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "failed to create tag")
+		return
+	}
 
 	tag := models.TagView{
 		Id:    new_id,
@@ -488,7 +496,7 @@ func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
 	}
 	err = templ_shared.RenderTempls(
 		templ_project.NewTagForm(project_id),
-		templ_project.TagItemOOB(tag),
+		templ_project.TagItemEditable(project_id, tag, false),
 		templ_shared.ToastMessage("Tag Created", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
@@ -524,6 +532,118 @@ func (h *Handler) getProjectTagEditor(w http.ResponseWriter, r *http.Request) {
 	).Render(r.Context(), w)
 	if err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to display project update result")
+		return
+	}
+}
+
+func (h *Handler) getProjectTagView(w http.ResponseWriter, r *http.Request) {
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		return
+	}
+	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid tag ID provided")
+		return
+	}
+	tag, err := h.project_service.GetProjectTagById(current_user_id, project_id, tag_id)
+	if err != nil {
+		errors.NotFound(w, r, h.logger, err, "Tag not found")
+		return
+	}
+
+	err = templ_shared.RenderTempls(
+		templ_project.TagItemEditable(project_id, *tag, true),
+	).Render(r.Context(), w)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to display project update result")
+		return
+	}
+}
+
+func (h *Handler) updateProjectTag(w http.ResponseWriter, r *http.Request) {
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		return
+	}
+	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid tag ID provided")
+		return
+	}
+
+	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Tag Name")
+	if name == "" {
+		errors.BadRequest(w, r, h.logger, err, "Tag must have a name")
+		return
+	}
+	colorString, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to read tag color")
+		return
+	}
+	color, err := models.ParseTagColor(colorString)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to parse tag color")
+		return
+	}
+
+	tag, err := h.project_service.UpdateProjectTagById(current_user_id, project_id, tag_id, name, color)
+	if err != nil {
+		errors.NotFound(w, r, h.logger, err, "Tag delete failed")
+		return
+	}
+
+	err = templ_shared.RenderTempls(
+		templ_project.TagItemEditable(project_id, *tag, true),
+		templ_shared.ToastMessage("Tag Deleted", "success"),
+	).Render(r.Context(), w)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to render result")
+		return
+	}
+}
+
+func (h *Handler) deleteProjectTag(w http.ResponseWriter, r *http.Request) {
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid project ID provided")
+		return
+	}
+	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Invalid tag ID provided")
+		return
+	}
+	err = h.project_service.DeleteProjectTagById(current_user_id, project_id, tag_id)
+	if err != nil {
+		errors.NotFound(w, r, h.logger, err, "Tag delete failed")
+		return
+	}
+
+	err = templ_shared.RenderTempls(
+		templ_project.DeletedTag(tag_id),
+		templ_shared.ToastMessage("Tag Deleted", "success"),
+	).Render(r.Context(), w)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to render result")
 		return
 	}
 }

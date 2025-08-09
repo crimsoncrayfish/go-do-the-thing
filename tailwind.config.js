@@ -2,7 +2,12 @@ const plugin = require("tailwindcss/plugin");
 
 module.exports = {
   darkMode: "class",
-  content: ["./**/*.gohtml", "./**/*.templ", "./static/js/datepicker.js"],
+  content: [
+    "./**/*.gohtml",
+    "./**/*.templ",
+    "./static/js/datepicker.js",
+    "./static/js/colorpicker.js",
+  ],
   theme: {
     extend: {
       colors: {

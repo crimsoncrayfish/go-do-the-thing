@@ -6,6 +6,7 @@ import (
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/models"
 	fm "go-do-the-thing/src/models/forms"
+	"go-do-the-thing/src/shared/templ"
 	ts "go-do-the-thing/src/shared/templ"
 )
 
@@ -110,34 +111,8 @@ templ projectEditForm(project models.ProjectView, errors map[string]string) {
 			<div class="sm:flex w-full sm:justify-between items-center text-sm text-text-on-light/70 dark:text-text-on-dark/70 mt-4">
 				<p>Assigned To: <span class="text-text-on-light dark:text-text-on-dark">{ project.Owner.FullName }</span></p>
 				<div>
-					<h3 class="text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70 mb-1">Due Date</h3>
 					<div id="project-due-date-edit">
-						<div class="mt-2 relative">
-							<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-								<svg
-									class="w-4 h-4 text-text-on-light dark:text-text-on-dark"
-									aria-hidden="true"
-									xmlns="http://www.w3.org/2000/svg"
-									fill="currentColor"
-									viewBox="0 0 20 20"
-								>
-									<path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"></path>
-								</svg>
-							</div>
-							<input
-								type="text"
-								name="due_date"
-								value={ project.DueDate.Format(constants.DateFormat) }
-								placeholder="Due Date"
-								id="datepicker-format"
-								datepicker
-								datepicker-format="yyyy-mm-dd"
-								class={ "border border-border-light text-text-on-light text-sm rounded-lg block w-full ps-10 p-2.5",
-									"bg-primary-light dark:bg-primary-dark dark:border-border-dark",
-									"dark:placeholder-accent-dark placeholder-accent-light",
-									"dark:text-text-on-dark focus:ring-accent-light focus:border-border-light dark:focus:ring-accent-dark dark:focus:border-border-dark" }
-							/>
-						</div>
+						@templ_shared.FormDatePicker("Due Date", "due_date", "task-create-form-date-picker", project.DueDate)
 					</div>
 				</div>
 			</div>

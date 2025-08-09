@@ -10,10 +10,6 @@ if (window.SuperDatePickerInitialized) {
    * A customizable and accessible date picker component.
    * IMPORTANT: This library relies on Tailwind CSS being set up and processed
    *            in the consuming application for proper styling.
-   *            It specifically leverages the following Tailwind color classes from your config:
-   *            primary-dark, secondary-dark, accent-dark, border-dark
-   *            primary-light, secondary-light, accent-light, border-light
-   *            as well as generic Tailwind text-white, text-gray-900, text-gray-100, text-gray-500.
    *
    * This version REQUIRES initialization on an HTML <input> element.
    *
@@ -99,7 +95,6 @@ if (window.SuperDatePickerInitialized) {
         wrapper.appendChild(this.input);
       }
       this.container = this.input.parentElement;
-
       this.input.classList.add(
         "datepicker-input",
         "w-full",

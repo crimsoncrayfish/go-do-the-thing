@@ -1,6 +1,7 @@
 package templ_shared
 
 import (
+	"encoding/json"
 	"fmt"
 	"go-do-the-thing/src/helpers/constants"
 	"strconv"
@@ -43,7 +44,7 @@ templ FormContainer(postTo string, content templ.Component) {
 
 templ FormTextInput(title, name, placeholder, value string) {
 	<div>
-		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			{ title }
 			<input
 				type="text"
@@ -59,7 +60,7 @@ templ FormTextInput(title, name, placeholder, value string) {
 
 templ FormPasswordInput(title, name, placeholder string) {
 	<div>
-		<label for={ name } class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
+		<label for={ name } class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">{ title }</label>
 		<input
 			type="password"
 			name={ name }
@@ -73,7 +74,7 @@ templ FormPasswordInput(title, name, placeholder string) {
 
 templ FormDatePicker(title, name, id string, date *time.Time) {
 	<div>
-		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
+		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">{ title }</label>
 		<div class="mt-2 relative">
 			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 				<svg
@@ -106,7 +107,7 @@ templ FormDatePicker(title, name, id string, date *time.Time) {
 
 templ FormListInput(title, name string, value int64, opts map[int64]string) {
 	<div>
-		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			{ title }
 			<select
 				name={ name }
@@ -126,7 +127,7 @@ templ FormListInput(title, name string, value int64, opts map[int64]string) {
 
 templ FormListInputWithAllOption(title, name string, value int64, opts map[int64]string) {
 	<div>
-		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			{ title }
 			<select
 				name={ name }
@@ -148,6 +149,29 @@ templ FormListInputWithAllOption(title, name string, value int64, opts map[int64
 var colorNames = []string{
 	"red", "orange", "amber", "green", "cyan",
 	"blue", "indigo", "purple", "fuchsia", "rose",
+}
+
+func colorsToString(color_options []string) string {
+	colorsJSON, err := json.Marshal(color_options)
+	if err != nil {
+		colorsJSON = []byte("[]")
+	}
+	return string(colorsJSON)
+}
+
+templ FormSuperColorPicker(id, name, selectedColor string) {
+	<div class="input-group">
+		<input
+			type="text"
+			id={ id }
+			name="color"
+			value={ selectedColor }
+			data-super-colorpicker
+			data-colors='["red", "orange", "amber", "green", "cyan", "blue", "indigo", "purple"]'
+			data-row-width="5"
+			data-default-color="red"
+		/>
+	</div>
 }
 
 templ FormColorPickerInput(element_id, selectedColor string) {

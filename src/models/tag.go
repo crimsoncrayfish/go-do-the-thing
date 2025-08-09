@@ -60,6 +60,14 @@ type TagView struct {
 	Color TagColor
 }
 
+func NewTagView(id int64, name string, color TagColor) TagView {
+	return TagView{
+		Id:    id,
+		Name:  name,
+		Color: color,
+	}
+}
+
 func (t Tag) ToView() *TagView {
 	return &TagView{
 		t.Id,
@@ -68,10 +76,10 @@ func (t Tag) ToView() *TagView {
 	}
 }
 
-func NewTag(id int64, color TagColor) TagView {
-	return TagView{
-		Name:  fmt.Sprintf("test-%d", id),
+func NewTag(id int64, name string, color TagColor) *TagView {
+	return &TagView{
 		Id:    id,
+		Name:  name,
 		Color: color,
 	}
 }

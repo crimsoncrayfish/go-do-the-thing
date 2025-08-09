@@ -79,3 +79,10 @@ BEGIN
 
     RETURN _id;
 END; $$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS sp_update_tag(BIGINT, TEXT, TEXT);
+CREATE OR REPLACE FUNCTION sp_update_tag(_id BIGINT, _name TEXT, _color tag_color)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE tags SET name = _name, color = _color WHERE id = _id;
+END; $$ LANGUAGE plpgsql;

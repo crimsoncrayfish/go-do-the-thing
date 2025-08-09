@@ -13,11 +13,14 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
   document.body.addEventListener("htmx:afterSwap", () => {
     autoInitSuperDatePickers();
+    autoInitSuperColorPickers();
   });
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", autoInitSuperDatePickers);
+    document.addEventListener("DOMContentLoaded", autoInitSuperColorPickers);
   } else {
     autoInitSuperDatePickers();
+    autoInitSuperColorPickers();
   }
 });
 

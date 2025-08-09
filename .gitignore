@@ -12,4 +12,4 @@ go.work.sum
 *_templ.go
 *.env*
 *htmx.min.js
-
+*sweetalert2.all.min.js
