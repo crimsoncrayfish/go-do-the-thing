@@ -1,0 +1,160 @@
+package templ_shared
+
+import "go-do-the-thing/src/models"
+import "strconv"
+
+templ NotificationBell() {
+	<div class="relative">
+		<button
+			id="notifications-btn"
+			onclick="toggleClassForId('hidden', 'notifications-dropdown'); toggleClassForId('hidden', 'notifications-overlay')"
+			class="relative p-2 text-text-on-light dark:text-text-on-dark hover:text-primary-600 dark:hover:text-primary-300 focus:outline-none"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"></path>
+			</svg>
+			<!-- Notification badge -->
+			<span
+				id="notification-badge"
+				hx-get="/notifications/count"
+				hx-trigger="load, every 30s"
+				hx-swap="outerHTML"
+				class="absolute top-0 right-0 bg-danger-light dark:bg-danger-dark text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden"
+			>
+			</span>
+		</button>
+		
+		<!-- Dropdown -->
+		<div
+			id="notifications-dropdown"
+			class="hidden absolute right-0 mt-2 w-80 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg z-50"
+			hx-on:click="event.stopPropagation()"
+		>
+			<div class="p-4 border-b border-border-light dark:border-border-dark">
+				<h3 class="text-lg font-semibold text-text-on-light dark:text-text-on-dark">Notifications</h3>
+			</div>
+			<div
+				id="notifications-list"
+				hx-get="/notifications"
+				hx-trigger="load"
+				hx-swap="innerHTML"
+				class="max-h-96 overflow-y-auto"
+			>
+				<!-- Notifications will be loaded here -->
+				<div class="p-4 text-center text-text-on-light dark:text-text-on-dark opacity-75">
+					Loading...
+				</div>
+			</div>
+		</div>
+		
+		<!-- Click outside to close dropdown -->
+		<div 
+			id="notifications-overlay"
+			class="hidden fixed inset-0 z-40"
+			onclick="addClassForId('hidden', 'notifications-dropdown'); addClassForId('hidden', 'notifications-overlay')"
+		></div>
+	</div>
+}
+
+templ NotificationsList(announcements []models.AnnouncementView) {
+	if len(announcements) == 0 {
+		<div class="p-4 text-center text-text-on-light dark:text-text-on-dark opacity-75">
+			<p>No new announcements</p>
+		</div>
+	} else {
+		<div class="divide-y divide-border-light dark:divide-border-dark">
+			for _, announcement := range announcements {
+				@NotificationItem(announcement)
+			}
+		</div>
+	}
+}
+
+templ NotificationItem(announcement models.AnnouncementView) {
+	<div class="p-4 hover:bg-accent-light dark:hover:bg-accent-dark" id={ "notification-" + strconv.FormatInt(announcement.Id, 10) }>
+		<div class="flex justify-between items-start">
+			<div class="flex-1 pr-2">
+				<p class="text-sm text-text-on-light dark:text-text-on-dark">
+					{ announcement.Title }
+				</p>
+				<div class="text-xs text-text-on-light dark:text-text-on-dark opacity-75 mt-1">
+					if announcement.CreatedDate != nil {
+						<p>{ announcement.CreatedDate.Format("Jan 2, 2006") }</p>
+					}
+				</div>
+			</div>
+			<button
+				hx-post={ "/notifications/dismiss/" + strconv.FormatInt(announcement.Id, 10) }
+				hx-target="#notifications-list"
+				hx-swap="innerHTML"
+				hx-indicator={ "#loading-" + strconv.FormatInt(announcement.Id, 10) }
+				class="relative p-2 text-success-light dark:text-success-dark hover:text-success-dark dark:hover:text-success-light hover:bg-success-light/10 dark:hover:bg-success-dark/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-success-light focus:ring-opacity-50"
+				title="Mark as read"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+					<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"></path>
+				</svg>
+				<!-- Loading spinner -->
+				<div id={ "loading-" + strconv.FormatInt(announcement.Id, 10) } class="htmx-indicator absolute inset-0 flex items-center justify-center bg-secondary-light dark:bg-secondary-dark rounded-full">
+					<svg class="animate-spin h-6 w-6 text-primary-600 dark:text-primary-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					</svg>
+				</div>
+			</button>
+		</div>
+	</div>
+}
+
+templ NotificationBadge(count int) {
+	if count > 0 {
+		<span
+			id="notification-badge"
+			hx-swap-oob="outerHTML"
+			class="absolute top-0 right-0 bg-danger-light dark:bg-danger-dark text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+		>
+			if count > 9 {
+				9+
+			} else {
+				{ strconv.Itoa(count) }
+			}
+		</span>
+	} else {
+		<span id="notification-badge" hx-swap-oob="outerHTML" class="hidden"></span>
+	}
+}
+
+templ AnnouncementBanner(announcement models.AnnouncementView) {
+	<div
+		id="announcement-banner"
+		class="bg-warning-light dark:bg-warning-dark text-black dark:text-black px-4 py-3 relative shadow-lg border-b-2 border-warning-dark dark:border-warning-light"
+	>
+		<div class="flex justify-between items-center max-w-7xl mx-auto">
+			<div class="flex items-center space-x-3">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46"></path>
+				</svg>
+				<p class="text-sm font-medium">{ announcement.Title }</p>
+			</div>
+			<button
+				hx-post={ "/notifications/dismiss/" + strconv.FormatInt(announcement.Id, 10) }
+				hx-target="#announcement-banner-container"
+				hx-swap="innerHTML"
+				hx-indicator={ "#banner-loading-" + strconv.FormatInt(announcement.Id, 10) }
+				class="relative text-black dark:text-black hover:opacity-75 focus:outline-none"
+				title="Dismiss"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+				</svg>
+				<!-- Loading spinner -->
+				<div id={ "banner-loading-" + strconv.FormatInt(announcement.Id, 10) } class="htmx-indicator absolute inset-0 flex items-center justify-center bg-warning-light dark:bg-warning-dark rounded">
+					<svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					</svg>
+				</div>
+			</button>
+		</div>
+	</div>
+}

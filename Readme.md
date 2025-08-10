@@ -1,4 +1,25 @@
-# A todo app to explore GO, HTMX and Tailwind
+# Go-Do-The-Thing
+
+A modern todo application built with Go, HTMX, and Tailwind CSS, featuring user authentication, project management, and task organization.
+
+## Features
+
+- **User Authentication**: JWT-based authentication with session management
+- **Project Management**: Organize tasks into projects with user permissions
+- **Task Management**: Create, edit, and track tasks with due dates and priorities
+- **Admin Controls**: Administrative interface for user management
+- **Responsive Design**: Mobile-friendly interface built with Tailwind CSS
+- **Real-time Updates**: HTMX-powered dynamic UI without page refreshes
+- **Minimal Dependencies**: Lightweight frontend with no large JavaScript frameworks
+
+## Architecture
+
+This application follows a clean layered architecture:
+- **Handlers**: HTTP request handling and routing
+- **Services**: Business logic and validation
+- **Repositories**: Data access layer with PostgreSQL
+- **Models**: Domain models and form validation
+- **Middleware**: Authentication, logging, and rate limiting
 
 ## APP Demo
 LOGIN:
@@ -63,25 +84,44 @@ docker logs -f todo-app-container
 docker rm todo-app-container
 ```
 
-## Some requirements
+## Prerequisites
 
-!!NB currently htmx is added via a cdn. Should be switched to npm
-for htmx
-```cmd
-npm install htmx.org@2.0.1
-```
-for hot reloading
-```cmd
---installation
+### Required Tools
+- **Go 1.21+**: Main programming language
+- **Node.js & npm**: For CSS building and package management
+- **Docker & Docker Compose**: For local database setup
+- **PostgreSQL**: Database (via Docker or local installation)
+
+### Development Tools
+```bash
+# Hot reloading during development
 go install github.com/air-verse/air@latest
---running
-alias air='~/{go directory here}/air'
-air
+
+# Template generation
+go install github.com/a-h/templ/cmd/templ@latest
+
+# Database migrations
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
-for templ
-```cmd
-    go install github.com/a-h/templ/cmd/templ@latest
+
+### Frontend Dependencies
+```bash
+# Install npm dependencies for Tailwind CSS
+npm install
+
+# Note: HTMX is currently loaded via CDN to minimize build complexity
+# Small custom JavaScript functions are in static/js/ for specific needs only
 ```
+
+## Design Philosophy
+
+This project prioritizes **minimal dependencies** and **simplicity**:
+
+- **HTMX-First**: Dynamic behavior through HTMX attributes rather than JavaScript frameworks
+- **Vanilla JavaScript**: Small, focused functions in `static/js/` only when HTMX cannot handle the requirement
+- **No Large Libraries**: Avoids jQuery, React, Vue, or other heavy client-side frameworks
+- **Progressive Enhancement**: HTML-first approach with minimal JavaScript enhancement
+- **Server-Side Rendering**: Leverages Go templates (Templ) for UI logic
 
 ## Compilation issues on a Windows machine
 
@@ -112,21 +152,87 @@ openssl req -new -x509 -key private_key.pem -out certificate.pem -days 365
 - Cant get nested oob swaps to work :(
 - oob swaps with rows are [wierd](https://htmx.org/attributes/hx-swap-oob/)
 
-## Goals
+## Quick Start
 
-- [x] Home page
-- [x] Basic tasks (create, edit and list)
-- [x] JWT auth from scratch
-- [x] Registration
-- [x] Login
-- [x] Link tasks to users
-- [x] [Templ](https://templ.guide/)
-- [x] Logout
-- [x] improve task editing security
-- [x] Admin controls to enable users
-- [x] Containerize this so i can dev on Windows
-- [x] Projects for task grouping
+### 1. Clone and Setup
+```bash
+git clone <repository-url>
+cd go-do-the-thing
+npm install
+```
+
+### 2. Start Local Database
+```bash
+docker compose -f docker-compose-db-local.yml up -d
+```
+
+### 3. Run Migrations
+```bash
+docker run -v ./src/database/migrations:/migrations --network go-do-the-thing_default migrate/migrate -path=/migrations/ -database postgres://admin:admin@db:5432/todo_db?sslmode=disable up
+```
+
+### 4. Generate Templates and Build CSS
+```bash
+templ generate
+npm run build
+```
+
+### 5. Start Development Server
+```bash
+air  # Hot reloading
+# OR
+go run main.go  # Standard run
+```
+
+The application will be available at `https://localhost:8080` (development uses HTTPS).
+
+## Environment Variables
+
+### Development
+- Uses hardcoded database connection for local Docker setup
+- HTTPS certificates: `server.crt` and `server.key` required in root directory
+
+### Production
+- `DATABASE_URL`: PostgreSQL connection string
+- `PORT`: Server port (default: 8080)
+- `ENV`: Set to "production"
+- `AZURE_CLIENT_ID`: For Azure authentication (optional)
+
+## Project Status
+
+### Completed Features
+- [x] Home page and navigation
+- [x] User authentication (JWT-based)
+- [x] User registration and login
+- [x] Task management (CRUD operations)
+- [x] Project organization
+- [x] Admin user controls
+- [x] Responsive design
+- [x] Docker containerization
+- [x] Database migrations
+- [x] Templ template system
+
+### Planned Features
 - [ ] Tags on projects and tasks
 - [ ] Time logging on tasks
-- [ ] Export to csv
-- [ ] Dashboard with stats
+- [ ] CSV export functionality
+- [ ] Dashboard with statistics
+- [ ] Enhanced search and filtering
+
+## Contributing
+
+1. Follow the patterns established in `AGENTS.md`
+2. Run tests before submitting changes
+3. Ensure migrations have both UP and DOWN variants
+4. Update documentation for new features
+
+## Troubleshooting
+
+### Windows Development
+If compilation issues occur on Windows:
+```cmd
+$env:GOTMPDIR = "PATH TO TEMP DIR"
+go env -w CGO_ENABLED=1
+go env -w CC="zig cc"
+```
+Ensure ZIG is installed.

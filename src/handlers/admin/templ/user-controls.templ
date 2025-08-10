@@ -9,6 +9,24 @@ templ UserTable(users []models.UserView) {
 	<h2 class="text-xl font-bold mb-4 text-primary-dark dark:text-text-on-dark">
 		Manage Users
 	</h2>
+	<div class="mb-4">
+		<input
+			type="text"
+			name="q"
+			placeholder="Search users by email or name..."
+			class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-md
+						 bg-primary-light dark:bg-primary-dark text-text-on-light dark:text-text-on-dark
+						 focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark"
+			hx-get="/admin/search-users"
+			hx-target="#user-rows"
+			hx-trigger="input changed delay:300ms, search"
+			hx-indicator="#search-loading"
+			hx-include="this"
+		/>
+		<div id="search-loading" class="htmx-indicator mt-2">
+			<span class="text-sm text-text-on-light dark:text-text-on-dark">Searching...</span>
+		</div>
+	</div>
 	<div class="overflow-x-auto">
 		<table class="min-w-full bg-primary-light dark:bg-primary-dark">
 			<thead class="hidden md:table-header-group">
@@ -101,4 +119,21 @@ templ UserRow(user models.UserView) {
 			}
 		</td>
 	</tr>
+}
+
+templ UserRows(users []models.UserView) {
+	if len(users) == 0 {
+		<tr>
+			<td
+				colspan="4"
+				class="text-center p-6 text-text-on-light dark:text-text-on-dark border-b border-border-light dark:border-border-dark"
+			>
+				No users found.
+			</td>
+		</tr>
+	} else {
+		for _, user := range users {
+			@UserRow(user)
+		}
+	}
 }

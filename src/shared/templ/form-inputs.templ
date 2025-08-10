@@ -92,7 +92,9 @@ templ FormDatePicker(title, name, id string, date *time.Time) {
 			<input
 				type="text"
 				name={ name }
-				value={ date.Format(constants.DateFormat) }
+				if date != nil && !date.IsZero() {
+					value={ date.Format(constants.DateFormat) }
+				}
 				placeholder={ title }
 				id={ id }
 				data-super-datepicker

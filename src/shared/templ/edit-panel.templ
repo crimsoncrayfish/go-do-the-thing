@@ -29,8 +29,8 @@ templ EditPanel(title string, content templ.Component) {
 			<div id="edit-panel-content" class="space-y-4 overflow-y-auto">
 				@content
 			</div>
-			<div id="edit-panel-loader" class="absolute inset-0 justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
-				<div class="loader-bounce flex space-x-2">
+			<div id="edit-panel-loader" class="absolute inset-0 flex justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator">
+				<div class="loader-bounce flex space-x-2 pointer-events-none">
 					<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
 					<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
 					<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-bounce-balls" style="animation-delay:0.4s"></div>

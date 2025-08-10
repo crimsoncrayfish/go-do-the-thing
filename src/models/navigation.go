@@ -8,4 +8,5 @@ const (
 	ScreenProjects Screen = "projects"
 	ScreenAdmin    Screen = "admin"
 	ScreenError    Screen = "error"
+	ScreenHabbits  Screen = "habbits"
 )

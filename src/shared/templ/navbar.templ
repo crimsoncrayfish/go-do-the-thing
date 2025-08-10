@@ -38,19 +38,25 @@ templ NavBar(activeScreen models.Screen) {
 				</p>
 			</a>
 		</div>
-		<div
-			onclick="toggleClassForId('hidden', 'profile-menu')"
-			class="cursor-pointer flex items-center text-text-on-light dark:text-text-on-dark pr-5 py-4"
-		>
-			<p class="hidden md:flex text-text-on-light dark:text-text-on-dark pr-5 py-4">
-				{ helpers.GetNameFromContext(ctx) }
-			</p>
-			<div>
-				<button class="relative inline-block">
-					@SvgProfileIcon()
-				</button>
-				<div id="profile-menu" class="hidden absolute z-50 mt-7 right-1.5">
-					@ProfileMenu()
+		<div class="flex items-center space-x-2 pr-5">
+			<!-- Notifications -->
+			@NotificationBell()
+			
+			<!-- Profile -->
+			<div
+				onclick="toggleClassForId('hidden', 'profile-menu')"
+				class="cursor-pointer flex items-center text-text-on-light dark:text-text-on-dark py-4"
+			>
+				<p class="hidden md:flex text-text-on-light dark:text-text-on-dark pr-5 py-4">
+					{ helpers.GetNameFromContext(ctx) }
+				</p>
+				<div>
+					<button class="relative inline-block">
+						@SvgProfileIcon()
+					</button>
+					<div id="profile-menu" class="hidden absolute z-50 mt-7 right-1.5">
+						@ProfileMenu()
+					</div>
 				</div>
 			</div>
 		</div>

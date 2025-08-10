@@ -1,0 +1,214 @@
+package templ_admin
+
+import "go-do-the-thing/src/models"
+import "fmt"
+import "strconv"
+import templ_shared "go-do-the-thing/src/shared/templ"
+
+templ AnalyticsDashboard(dashboard models.AnalyticsDashboard) {
+	<div class="space-y-6">
+		<!-- Header -->
+		<div class="flex items-center justify-between">
+			<h2 class="text-2xl font-bold text-primary-dark dark:text-text-on-dark">Analytics Dashboard</h2>
+			<div class="flex items-center space-x-4">
+				<div class="text-sm text-gray-500 dark:text-gray-400">
+					Last updated: <span id="last-updated">Now</span>
+				</div>
+				<button
+					hx-get="/admin/analytics"
+					hx-target="#admin-content"
+					hx-swap="innerHTML"
+					hx-indicator="#admin-content-loader"
+					class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors duration-200 flex items-center space-x-1"
+					title="Refresh Analytics"
+				>
+					<div class="w-4 h-4 flex items-center justify-center">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+						</svg>
+					</div>
+					<span class="hidden sm:inline">Refresh</span>
+				</button>
+			</div>
+		</div>
+		
+		<!-- Stats Cards -->
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			@StatsCardWithIcon("Users", strconv.FormatInt(dashboard.UserStats.TotalUsers, 10), strconv.FormatInt(dashboard.UserStats.ActiveUsers, 10) + " active", "bg-blue-500", templ_shared.SvgUsers())
+			@StatsCardWithIcon("Projects", strconv.FormatInt(dashboard.ProjectStats.TotalProjects, 10), strconv.FormatInt(dashboard.ProjectStats.ActiveProjects, 10) + " active", "bg-green-500", templ_shared.SvgFolder())
+			@StatsCardWithIcon("Tasks", strconv.FormatInt(dashboard.TaskStats.TotalTasks, 10), strconv.FormatInt(dashboard.TaskStats.CompletedTasks, 10) + " completed", "bg-purple-500", templ_shared.SvgCheckCircle())
+			@StatsCardWithIcon("New This Month", strconv.FormatInt(dashboard.RecentActivity.NewUsersLast30Days, 10), "users joined", "bg-orange-500", templ_shared.SvgSparkles())
+		</div>
+
+		<!-- Charts Row -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<!-- User Distribution Chart -->
+			@UserDistributionChart(dashboard.UserStats)
+			
+			<!-- Project Status Chart -->
+			@ProjectStatusChart(dashboard.ProjectStats)
+		</div>
+
+		<!-- Task Status and Activity Charts -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<!-- Task Status Chart -->
+			@TaskStatusChart(dashboard.TaskStats)
+			
+			<!-- Daily Activity Chart -->
+			@DailyActivityChart(dashboard.DailyActivity)
+		</div>
+
+		<!-- Recent Activity Summary -->
+		@RecentActivitySummary(dashboard.RecentActivity)
+	</div>
+}
+
+templ StatsCard(title, value, subtitle, colorClass, icon string) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<div class="flex items-center justify-between">
+			<div>
+				<p class="text-sm font-medium text-gray-600 dark:text-gray-400">{ title }</p>
+				<p class="text-2xl font-bold text-primary-dark dark:text-text-on-dark">{ value }</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400">{ subtitle }</p>
+			</div>
+			<div class={ "w-12 h-12 rounded-full flex items-center justify-center text-white text-xl " + colorClass }>
+				{ icon }
+			</div>
+		</div>
+	</div>
+}
+
+templ StatsCardWithIcon(title, value, subtitle, colorClass string, icon templ.Component) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<div class="flex items-center justify-between">
+			<div>
+				<p class="text-sm font-medium text-gray-600 dark:text-gray-400">{ title }</p>
+				<p class="text-2xl font-bold text-primary-dark dark:text-text-on-dark">{ value }</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400">{ subtitle }</p>
+			</div>
+			<div class={ "w-12 h-12 rounded-full flex items-center justify-center text-white " + colorClass }>
+				@icon
+			</div>
+		</div>
+	</div>
+}
+
+templ UserDistributionChart(stats models.UserStats) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<h3 class="text-lg font-semibold text-primary-dark dark:text-text-on-dark mb-4">User Distribution</h3>
+		<div class="space-y-4">
+			@ProgressBar("Active Users", stats.ActiveUsers, stats.TotalUsers, "bg-green-500")
+			@ProgressBar("Inactive Users", stats.InactiveUsers, stats.TotalUsers, "bg-red-500")
+			@ProgressBar("Admin Users", stats.AdminUsers, stats.TotalUsers, "bg-blue-500")
+		</div>
+	</div>
+}
+
+templ ProjectStatusChart(stats models.ProjectStats) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<h3 class="text-lg font-semibold text-primary-dark dark:text-text-on-dark mb-4">Project Status</h3>
+		<div class="space-y-4">
+			@ProgressBar("Active Projects", stats.ActiveProjects, stats.TotalProjects, "bg-blue-500")
+			@ProgressBar("Completed Projects", stats.CompletedProjects, stats.TotalProjects, "bg-green-500")
+			@ProgressBar("Overdue Projects", stats.OverdueProjects, stats.TotalProjects, "bg-red-500")
+		</div>
+	</div>
+}
+
+templ TaskStatusChart(stats models.TaskStats) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<h3 class="text-lg font-semibold text-primary-dark dark:text-text-on-dark mb-4">Task Status</h3>
+		<div class="space-y-4">
+			@ProgressBar("Pending Tasks", stats.PendingTasks, stats.TotalTasks, "bg-yellow-500")
+			@ProgressBar("In Progress Tasks", stats.InProgressTasks, stats.TotalTasks, "bg-blue-500")
+			@ProgressBar("Completed Tasks", stats.CompletedTasks, stats.TotalTasks, "bg-green-500")
+			@ProgressBar("Overdue Tasks", stats.OverdueTasks, stats.TotalTasks, "bg-red-500")
+		</div>
+	</div>
+}
+
+templ DailyActivityChart(activities []models.DailyActivity) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<h3 class="text-lg font-semibold text-primary-dark dark:text-text-on-dark mb-4">Daily Activity (Last 7 Days)</h3>
+		<div class="space-y-3">
+			for _, activity := range activities {
+				@DailyActivityRow(activity)
+			}
+		</div>
+	</div>
+}
+
+templ DailyActivityRow(activity models.DailyActivity) {
+	<div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+		<div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+			{ activity.ActivityDate.Format("Jan 02") }
+		</div>
+		<div class="flex space-x-4 text-xs">
+			<span class="text-blue-600 dark:text-blue-400">
+				{ strconv.FormatInt(activity.NewUsers, 10) } users
+			</span>
+			<span class="text-green-600 dark:text-green-400">
+				{ strconv.FormatInt(activity.NewProjects, 10) } projects
+			</span>
+			<span class="text-purple-600 dark:text-purple-400">
+				{ strconv.FormatInt(activity.NewTasks, 10) } tasks
+			</span>
+			<span class="text-orange-600 dark:text-orange-400">
+				{ strconv.FormatInt(activity.CompletedTasks, 10) } completed
+			</span>
+		</div>
+	</div>
+}
+
+templ RecentActivitySummary(activity models.RecentActivity) {
+	<div class="bg-white dark:bg-secondary-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+		<h3 class="text-lg font-semibold text-primary-dark dark:text-text-on-dark mb-4">Last 30 Days Summary</h3>
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+			<div class="text-center">
+				<div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+					{ strconv.FormatInt(activity.NewUsersLast30Days, 10) }
+				</div>
+				<div class="text-sm text-gray-600 dark:text-gray-400">New Users</div>
+			</div>
+			<div class="text-center">
+				<div class="text-2xl font-bold text-green-600 dark:text-green-400">
+					{ strconv.FormatInt(activity.NewProjectsLast30Days, 10) }
+				</div>
+				<div class="text-sm text-gray-600 dark:text-gray-400">New Projects</div>
+			</div>
+			<div class="text-center">
+				<div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+					{ strconv.FormatInt(activity.NewTasksLast30Days, 10) }
+				</div>
+				<div class="text-sm text-gray-600 dark:text-gray-400">New Tasks</div>
+			</div>
+			<div class="text-center">
+				<div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+					{ strconv.FormatInt(activity.CompletedTasksLast30Days, 10) }
+				</div>
+				<div class="text-sm text-gray-600 dark:text-gray-400">Tasks Completed</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ ProgressBar(label string, value, total int64, colorClass string) {
+	<div>
+		<div class="flex justify-between text-sm mb-1">
+			<span class="text-gray-600 dark:text-gray-400">{ label }</span>
+			<span class="text-gray-600 dark:text-gray-400">
+				{ strconv.FormatInt(value, 10) } / { strconv.FormatInt(total, 10) }
+			</span>
+		</div>
+		<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+			if total > 0 {
+				<div 
+					class={ "h-2 rounded-full transition-all duration-300 " + colorClass }
+					style={ fmt.Sprintf("width: %.1f%%", float64(value)/float64(total)*100) }
+				></div>
+			} else {
+				<div class={ "h-2 rounded-full " + colorClass } style="width: 0%"></div>
+			}
+		</div>
+	</div>
+}
