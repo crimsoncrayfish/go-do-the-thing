@@ -1,0 +1,43 @@
+package templ_construction
+
+import "go-do-the-thing/src/models"
+import templ_shared "go-do-the-thing/src/shared/templ"
+
+templ UnderConstructionWithBody(activeScreen models.Screen) {
+	@templ_shared.Main(UnderConstructionPage(activeScreen))
+}
+
+templ UnderConstructionPage(activeScreen models.Screen) {
+	@templ_shared.NavBar(activeScreen)
+	<div class="min-h-screen bg-primary-light dark:bg-primary-dark flex items-center justify-center p-4">
+		<div class="max-w-2xl mx-auto text-center">
+			<!-- Crayfish Engineer with Tinkertoys -->
+			<div class="mb-8 flex justify-center">
+				<div class="w-full max-w-md h-auto">
+					@templ_shared.SvgCrayfish()
+				</div>
+			</div>
+			
+			<!-- Cheeky Message -->
+			<div class="space-y-4">
+				<h1 class="text-4xl font-bold text-primary-dark dark:text-text-on-dark">
+					Under Construction
+				</h1>
+				<p class="text-xl text-gray-600 dark:text-gray-400">
+					Our little crayfish engineer is hard at work building something amazing!
+				</p>
+				<p class="text-lg text-gray-500 dark:text-gray-500">
+					🦐 "Just give me a few more tinkertoys and this habit tracker will be perfect!" 🔧
+				</p>
+				<div class="mt-8">
+					<a 
+						href="/home" 
+						class="inline-flex items-center px-6 py-3 bg-accent-light dark:bg-accent-dark text-white rounded-lg hover:bg-accent-light/80 dark:hover:bg-accent-dark/80 transition-colors duration-200"
+					>
+						← Back to Home
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+}

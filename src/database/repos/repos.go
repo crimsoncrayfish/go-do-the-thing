@@ -2,6 +2,8 @@ package repos
 
 import (
 	"go-do-the-thing/src/database"
+	analytics_repo "go-do-the-thing/src/database/repos/analytics"
+	announcements_repo "go-do-the-thing/src/database/repos/announcements"
 	project_tags_repo "go-do-the-thing/src/database/repos/project-tags"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
@@ -24,6 +26,12 @@ type RepoContainer struct {
 	// NOTE: Tasks
 	tasksRepo *tasks_repo.TasksRepo
 	// TODO: taskTagsRepo *task_tags_repo.TaskTagsRepo
+
+	// NOTE: Analytics
+	analyticsRepo *analytics_repo.AnalyticsRepo
+
+	// NOTE: Announcements
+	announcementsRepo *announcements_repo.AnnouncementsRepo
 }
 
 func NewContainer(connection database.DatabaseConnection) *RepoContainer {
@@ -38,6 +46,10 @@ func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 	tasksRepo := tasks_repo.InitRepo(connection)
 	// taskTagsRepo := task_tags_repo.InitRepo(connection)
 
+	analyticsRepo := analytics_repo.InitRepo(connection)
+
+	announcementsRepo := announcements_repo.InitRepo(connection)
+
 	return &RepoContainer{
 		rolesRepo: rolesRepo,
 
@@ -49,6 +61,10 @@ func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 
 		tasksRepo: tasksRepo,
 		// taskTagsRepo: taskTagsRepo,
+
+		analyticsRepo: analyticsRepo,
+
+		announcementsRepo: announcementsRepo,
 	}
 }
 
@@ -82,3 +98,13 @@ func (r *RepoContainer) GetTasksRepo() *tasks_repo.TasksRepo {
 //func (r *RepoContainer) GetTaskTagsRepo() *task_tags_repo.TaskTagsRepo {
 //	return r.taskTagsRepo
 //}
+
+// NOTE: Analytics
+func (r *RepoContainer) GetAnalyticsRepo() *analytics_repo.AnalyticsRepo {
+	return r.analyticsRepo
+}
+
+// NOTE: Announcements
+func (r *RepoContainer) GetAnnouncementsRepo() *announcements_repo.AnnouncementsRepo {
+	return r.announcementsRepo
+}

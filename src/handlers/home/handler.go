@@ -8,20 +8,23 @@ import (
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
+	announcement_service "go-do-the-thing/src/services/announcement"
 	"net/http"
 )
 
 type HomeHandler struct {
-	logger slog.Logger
+	logger              slog.Logger
+	announcementService announcement_service.AnnouncementService
 }
 
 var source = "HomeHandler"
 
-func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
+func SetupHomeHandler(announcementService announcement_service.AnnouncementService, router *http.ServeMux, mw_stack middleware.Middleware) {
 	logger := slog.NewLogger(source)
 	logger.Info("Setting up the Home Handler")
 	handler := &HomeHandler{
-		logger: logger,
+		logger:              logger,
+		announcementService: announcementService,
 	}
 	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
 	router.Handle("GET /error", mw_stack(http.HandlerFunc(handler.error)))

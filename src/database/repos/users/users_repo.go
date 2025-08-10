@@ -238,3 +238,33 @@ func (r *UsersRepo) UpdateUserEnabled(id int64, enabled bool) (string, error) {
 	r.logger.Debug("UpdateUserEnabled succeeded - id: %d, enabled: %t", id, enabled)
 	return email, nil
 }
+
+const searchUsers = `SELECT * FROM sp_search_users($1)`
+
+func (r *UsersRepo) SearchUsers(searchTerm string) ([]models.User, error) {
+	r.logger.Debug("SearchUsers called - sql: %s, params: %s", searchUsers, searchTerm)
+	rows, err := r.db.Query(searchUsers, searchTerm)
+	if err != nil {
+		r.logger.Error(err, "query failed to search users - sql: %s, params: %s", searchUsers, searchTerm)
+		return nil, fmt.Errorf("query failed to search users: %w", err)
+	}
+	defer rows.Close()
+
+	users := make([]models.User, 0)
+	for rows.Next() {
+		user := models.User{}
+		err := scanUsersFromRows(rows, &user)
+		if err != nil {
+			r.logger.Error(err, "scan failed to search users")
+			return nil, fmt.Errorf("scan failed to search users: %w", err)
+		}
+		users = append(users, user)
+	}
+	err = rows.Err()
+	if err != nil {
+		r.logger.Error(err, "rows.Err() in SearchUsers")
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+	r.logger.Debug("SearchUsers succeeded - count: %d, searchTerm: %s", len(users), searchTerm)
+	return users, nil
+}

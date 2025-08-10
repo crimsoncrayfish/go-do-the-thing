@@ -122,3 +122,36 @@ function replaceClassWithPrefix(element, prefix, newClass) {
   }
   element.classList.add(newClass);
 }
+
+// Click outside to close dropdown functionality
+function setupClickOutsideClose(dropdownId, buttonId) {
+  document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById(dropdownId);
+    const button = document.getElementById(buttonId);
+    
+    if (!dropdown || !button) return;
+    
+    // If dropdown is hidden, no need to do anything
+    if (dropdown.classList.contains('hidden')) return;
+    
+    // Check if click is outside both dropdown and button
+    if (!dropdown.contains(event.target) && !button.contains(event.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+}
+
+// Note: showConfirmationDialog is now provided by confirmdialog.js
+
+// Clear announcement form after successful submission
+function clearAnnouncementForm() {
+  const titleInput = document.getElementById('title');
+  const dateInput = document.querySelector('#announcement-expires-date-picker');
+  
+  if (titleInput) titleInput.value = '';
+  if (dateInput) {
+    dateInput.value = '';
+    // Trigger change event to update any date picker state
+    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}

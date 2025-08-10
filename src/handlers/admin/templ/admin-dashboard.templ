@@ -1,7 +1,7 @@
 package templ_admin
 
 import "go-do-the-thing/src/models"
-import "go-do-the-thing/src/shared/templ"
+import templ_shared "go-do-the-thing/src/shared/templ"
 
 templ AdminDashboardWithBody(activeScreen models.Screen, users []models.UserView) {
 	@templ_shared.Main(AdminDashboard(activeScreen, users))
@@ -19,28 +19,117 @@ templ AdminDashboard(activeScreen models.Screen, users []models.UserView) {
 				class="p-2 text-xs self-end text-primary-dark dark:text-text-on-dark hidden md:block"
 				onclick="document.getElementById('admin-sidebar').classList.toggle('md:w-16')"
 			>
-				☰
+				@templ_shared.SvgMenu()
 			</button>
-			<ul class="flex flex-row md:flex-col flex-1">
+			<ul class="flex flex-row md:flex-col flex-1" id="admin-nav">
 				<li class="flex-1 md:flex-none">
 					<a
 						href="#"
-						hx-get="/admin/inactive-users"
+						hx-get="/admin/users"
 						hx-target="#admin-content"
 						hx-swap="innerHTML"
-						class="block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark"
+						hx-indicator="#admin-content-loader"
+						id="users-tab"
+						class="block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark bg-accent-light dark:bg-accent-dark"
 					>
 						<span class="md:hidden">Users</span>
 						<span class="hidden md:inline">Activate/Deactivate Users</span>
 					</a>
 				</li>
+				<li class="flex-1 md:flex-none">
+					<a
+						href="#"
+						hx-get="/admin/analytics"
+						hx-target="#admin-content"
+						hx-swap="innerHTML"
+						hx-indicator="#admin-content-loader"
+						id="analytics-tab"
+						class="block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark"
+					>
+						<span class="md:hidden">Analytics</span>
+						<span class="hidden md:inline">Analytics Dashboard</span>
+					</a>
+				</li>
+				<li class="flex-1 md:flex-none">
+					<a
+						href="#"
+						hx-get="/admin/announcements"
+						hx-target="#admin-content"
+						hx-swap="innerHTML"
+						hx-indicator="#admin-content-loader"
+						id="announcements-tab"
+						class="block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark"
+					>
+						<span class="md:hidden">Announcements</span>
+						<span class="hidden md:inline">Manage Announcements</span>
+					</a>
+				</li>
 			</ul>
 		</div>
-		<div
-			id="admin-content"
-			class="flex-1 overflow-y-auto p-4 md:p-6 bg-primary-light dark:bg-primary-dark"
-		>
-			@UserTable(users)
+		<div class="flex-1 overflow-y-auto bg-primary-light dark:bg-primary-dark relative">
+			<div id="admin-content-loader" class="absolute inset-0 flex justify-center items-center bg-primary-light bg-opacity-80 dark:bg-primary-dark dark:bg-opacity-80 z-50 htmx-indicator">
+				<div class="loader-bounce flex space-x-2">
+					<div class="w-4 h-4 bg-secondary-light dark:bg-secondary-dark rounded-full animate-bounce-balls" style="animation-delay:0s"></div>
+					<div class="w-4 h-4 bg-secondary-light dark:bg-secondary-dark rounded-full animate-bounce-balls" style="animation-delay:0.2s"></div>
+					<div class="w-4 h-4 bg-secondary-light dark:bg-secondary-dark rounded-full animate-bounce-balls" style="animation-delay:0.4s"></div>
+				</div>
+			</div>
+			<div
+				id="admin-content"
+				class="p-4 md:p-6"
+			>
+				@UserTable(users)
+			</div>
 		</div>
 	</div>
+}
+
+templ AdminNavTabs(activeTab string) {
+	<ul class="flex flex-row md:flex-col flex-1" id="admin-nav" hx-swap-oob="true">
+		<li class="flex-1 md:flex-none">
+			<a
+				href="#"
+				hx-get="/admin/users"
+				hx-target="#admin-content"
+				hx-swap="innerHTML"
+				hx-indicator="#admin-content-loader"
+				id="users-tab"
+				class={ "block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark", 
+					templ.KV("bg-accent-light dark:bg-accent-dark", activeTab == "users") }
+			>
+				<span class="md:hidden">Users</span>
+				<span class="hidden md:inline">Activate/Deactivate Users</span>
+			</a>
+		</li>
+		<li class="flex-1 md:flex-none">
+			<a
+				href="#"
+				hx-get="/admin/analytics"
+				hx-target="#admin-content"
+				hx-swap="innerHTML"
+				hx-indicator="#admin-content-loader"
+				id="analytics-tab"
+				class={ "block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark",
+					templ.KV("bg-accent-light dark:bg-accent-dark", activeTab == "analytics") }
+			>
+				<span class="md:hidden">Analytics</span>
+				<span class="hidden md:inline">Analytics Dashboard</span>
+			</a>
+		</li>
+		<li class="flex-1 md:flex-none">
+			<a
+				href="#"
+				hx-get="/admin/announcements"
+				hx-target="#admin-content"
+				hx-swap="innerHTML"
+				hx-indicator="#admin-content-loader"
+				id="announcements-tab"
+				class={ "block p-4 text-center md:text-left hover:bg-accent-light dark:hover:bg-accent-dark text-primary-dark dark:text-text-on-dark",
+					templ.KV("bg-accent-light dark:bg-accent-dark", activeTab == "announcements") }
+			>
+				<span class="md:hidden">Announcements</span>
+				<span class="hidden md:inline">Manage Announcements</span>
+			</a>
+		</li>
+	</ul>
 }

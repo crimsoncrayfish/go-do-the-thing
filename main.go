@@ -7,7 +7,9 @@ import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
 	"go-do-the-thing/src/handlers/admin"
+	"go-do-the-thing/src/handlers/construction"
 	"go-do-the-thing/src/handlers/home"
+	"go-do-the-thing/src/handlers/notifications"
 	"go-do-the-thing/src/handlers/project"
 	"go-do-the-thing/src/handlers/task"
 	"go-do-the-thing/src/handlers/users"
@@ -16,6 +18,7 @@ import (
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	adminService "go-do-the-thing/src/services/admin"
+	announcementService "go-do-the-thing/src/services/announcement"
 	projectService "go-do-the-thing/src/services/project"
 	taskService "go-do-the-thing/src/services/task"
 	user_service "go-do-the-thing/src/services/user"
@@ -100,12 +103,15 @@ func main() {
 	task_service := taskService.SetupTaskService(reposContainer)
 	admin_service := adminService.SetupAdminService(reposContainer)
 	project_service := projectService.SetupProjectService(reposContainer)
+	announcement_service := announcementService.SetupAnnouncementService(reposContainer)
 
 	users.SetupUserHandler(router, middleware_full, middleware_no_auth, jwtHandler, project_service, task_service, &user_service)
 	project.SetupProjectHandler(project_service, task_service, router, middleware_full)
 	task.SetupTodoHandler(task_service, project_service, router, middleware_full)
-	home.SetupHomeHandler(router, middleware_full)
-	admin.SetupAdminHandler(admin_service, router, middleware_admin)
+	home.SetupHomeHandler(announcement_service, router, middleware_full)
+	admin.SetupAdminHandler(admin_service, announcement_service, router, middleware_admin)
+	notifications.SetupNotificationsHandler(announcement_service, router, middleware_full)
+	construction.SetupConstructionHandler(router, middleware_no_auth)
 	setupStaticContent(router)
 
 	server := http.Server{

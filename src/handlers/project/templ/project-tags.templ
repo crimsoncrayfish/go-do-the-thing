@@ -172,21 +172,7 @@ templ TagItemEditorOOB(project_id int64, tag models.TagView) {
 			hx-indicator={ fmt.Sprintf("#tag-loader-%d", tag.Id) }
 			id="delete-tag-button"
 			hx-trigger="confirmed"
-			onClick="Swal.fire({
-				title: 'Confirm', 
-				confirmButtonText: 'Save',
-				showCancelButton: true,
-				text:'Are you sure you want to delete the tag?',
-				customClass: {
-					popup: 'bg-secondary-light dark:bg-secondary-dark rounded-lg shadow-xl p-6 text-text-on-light dark:text-text-on-dark',
-					title: 'text-2xl font-bold text-text-on-light dark:text-text-on-dark mb-4',
-					confirmButton: 'bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark font-bold py-2 px-4 rounded',
-					cancelButton: 'bg-danger-light dark:bg-danger-dark text-text-on-light dark:text-text-on-dark font-bold py-2 px-4 rounded ml-2'
-				}}).then((result)=>{
-            if(result.isConfirmed){
-              htmx.trigger(this, 'confirmed');
-            }
-        })"
+			onclick="showConfirmationDialog('Confirm Deletion', 'Are you sure you want to delete this tag?', 'Delete', this)"
 			class="flex p-1 h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-red-600 text-xs text-white transition-opacity hover:opacity-80"
 			title="Delete Tag"
 		>

@@ -2,6 +2,7 @@ package task
 
 import (
 	"go-do-the-thing/src/helpers"
+	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
@@ -80,7 +81,7 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}
-	due_date, err := time.Parse("2006-01-02", dateRaw)
+	due_date, err := time.Parse(constants.DateFormat, dateRaw)
 	if err != nil {
 		form.Errors["Due Date"] = err.Error()
 	}
@@ -172,7 +173,7 @@ func (h *Handler) updateItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Errors["due_on"] = err.Error()
 	}
-	date, err := time.Parse("2006-01-02", dateRaw)
+	date, err := time.Parse(constants.DateFormat, dateRaw)
 	if err != nil {
 		form.Errors["due_on"] = err.Error()
 	}
