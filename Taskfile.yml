@@ -16,16 +16,16 @@ tasks:
         #!/bin/sh
         printf "⚠️  WARNING: You are about to run a migration on the PRODUCTION database.\n"
         printf "Are you absolutely sure you want to continue? (y/N): "
-        read -r confirm
+        IFS= read -r confirm
         case "$confirm" in
-          [yY] | [yY][eE][sS])
-            printf "Confirmation received. Proceeding...\n"
-            ;;
-          *)
-            printf "Migration cancelled by user.\n"
-            exit 1
-            ;;
+          *$'\r') confirm=${confirm%$'\r'} ;;
         esac
+        if [ "$confirm" = "y" ]; then
+          printf "Confirmation received. Proceeding...\n"
+        else
+          printf "Migration cancelled by user.\n"
+          exit 1
+        fi
     silent: true
 
   local:migrate:
@@ -61,4 +61,4 @@ tasks:
     cmds:
       - task: _confirm:prod
       - echo "Running PRODUCTION migration to version {{.V}}..."
-      - migrate -path {{.MIGRATIONS_PATH}} -database $DATABASE_URL goto {{.V}}
+      #- migrate -path {{.MIGRATIONS_PATH}} -database $DATABASE_URL goto {{.V}}
