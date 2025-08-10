@@ -13,11 +13,14 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
   document.body.addEventListener("htmx:afterSwap", () => {
     autoInitSuperDatePickers();
+    autoInitSuperColorPickers();
   });
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", autoInitSuperDatePickers);
+    document.addEventListener("DOMContentLoaded", autoInitSuperColorPickers);
   } else {
     autoInitSuperDatePickers();
+    autoInitSuperColorPickers();
   }
 });
 
@@ -108,4 +111,14 @@ if (!window.showAndHideToast) {
       }, 5000);
     }
   }
+}
+
+function replaceClassWithPrefix(element, prefix, newClass) {
+  const classToRemove = [...element.classList].find((cls) =>
+    cls.startsWith(prefix),
+  );
+  if (classToRemove) {
+    element.classList.remove(classToRemove);
+  }
+  element.classList.add(newClass);
 }

@@ -3,6 +3,7 @@ package projects_service
 import (
 	"fmt"
 	"go-do-the-thing/src/database/repos"
+	project_tags_repo "go-do-the-thing/src/database/repos/project-tags"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	roles_repo "go-do-the-thing/src/database/repos/roles"
@@ -16,29 +17,31 @@ import (
 )
 
 type ProjectService struct {
-	logger           slog.Logger
-	projectRepo      projects_repo.ProjectsRepo
-	usersRepo        users_repo.UsersRepo
-	projectUsersRepo project_users_repo.ProjectUsersRepo
-	rolesRepo        roles_repo.RolesRepo
-	taskRepo         tasks_repo.TasksRepo
+	logger             slog.Logger
+	project_repo       projects_repo.ProjectsRepo
+	users_repo         users_repo.UsersRepo
+	project_users_repo project_users_repo.ProjectUsersRepo
+	project_tags_repo  project_tags_repo.ProjectTagsRepo
+	roles_repo         roles_repo.RolesRepo
+	task_repo          tasks_repo.TasksRepo
 }
 
 const serviceSource = "ProjectService"
 
 func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
 	return ProjectService{
-		logger:           slog.NewLogger(serviceSource),
-		projectRepo:      *repo_container.GetProjectsRepo(),
-		usersRepo:        *repo_container.GetUsersRepo(),
-		rolesRepo:        *repo_container.GetRolesRepo(),
-		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
-		taskRepo:         *repo_container.GetTasksRepo(),
+		logger:             slog.NewLogger(serviceSource),
+		project_repo:       *repo_container.GetProjectsRepo(),
+		users_repo:         *repo_container.GetUsersRepo(),
+		roles_repo:         *repo_container.GetRolesRepo(),
+		project_users_repo: *repo_container.GetProjectUsersRepo(),
+		project_tags_repo:  *repo_container.GetProjectTagsRepo(),
+		task_repo:          *repo_container.GetTasksRepo(),
 	}
 }
 
-func (s ProjectService) GetProjectView(id int64, currentUserId int64) (*models.ProjectView, error) {
-	project, err := s.getProjectForUser(id, currentUserId)
+func (s ProjectService) GetProjectView(id int64, current_user_id int64) (*models.ProjectView, error) {
+	project, err := s.getProjectForUser(id, current_user_id)
 	if err != nil {
 		// NOTE: this should already be nicely formatted
 		return nil, err
@@ -53,8 +56,8 @@ func (s ProjectService) GetProjectView(id int64, currentUserId int64) (*models.P
 	return projectView, nil
 }
 
-func (s ProjectService) GetAllProjectsForUser(currentUserId int64) (projects []models.ProjectView, err error) {
-	project_list, err := s.projectRepo.GetProjects(currentUserId)
+func (s ProjectService) GetAllProjectsForUser(current_user_id int64) (projects []models.ProjectView, err error) {
+	project_list, err := s.project_repo.GetProjects(current_user_id)
 	if err != nil {
 		// NOTE: Should already be nicely formatted
 		return nil, err
@@ -66,14 +69,14 @@ func (s ProjectService) GetAllProjectsForUser(currentUserId int64) (projects []m
 	return pl_v, nil
 }
 
-func (s ProjectService) DeleteProject(id, currentUserId int64) (hasProjects bool, err error) {
-	err = s.projectRepo.DeleteProject(id, currentUserId)
+func (s ProjectService) DeleteProject(id, current_user_id int64) (hasProjects bool, err error) {
+	err = s.project_repo.DeleteProject(id, current_user_id)
 	if err != nil {
 		return false, err
 	}
 
 	// NOTE: Success zone
-	projectCount, err := s.projectRepo.GetProjectCount(currentUserId)
+	projectCount, err := s.project_repo.GetProjectCount(current_user_id)
 	if err != nil {
 		return false, err
 	}
@@ -81,7 +84,7 @@ func (s ProjectService) DeleteProject(id, currentUserId int64) (hasProjects bool
 }
 
 func (s ProjectService) CreateProject(
-	currentUserId, owner int64,
+	current_user_id, owner int64,
 	name, description string,
 	startDate, dueDate *time.Time,
 ) (int64, error) {
@@ -92,20 +95,20 @@ func (s ProjectService) CreateProject(
 		Owner:        owner,
 		StartDate:    startDate,
 		DueDate:      dueDate,
-		CreatedBy:    currentUserId,
+		CreatedBy:    current_user_id,
 		CreatedDate:  &now,
-		ModifiedBy:   currentUserId,
+		ModifiedBy:   current_user_id,
 		ModifiedDate: &now,
 		IsComplete:   false,
 		IsDeleted:    false,
 	}
 
-	id, err := s.projectRepo.Insert(project)
+	id, err := s.project_repo.Insert(project)
 	if err != nil {
 		return 0, err
 	}
 
-	err = s.projectUsersRepo.Insert(id, currentUserId, 1)
+	err = s.project_users_repo.Insert(id, current_user_id, 1)
 	if err != nil {
 		return 0, err
 	}
@@ -134,16 +137,16 @@ func (s ProjectService) UpdateProject(
 		IsComplete:   false,
 	}
 
-	return s.projectRepo.UpdateProject(project)
+	return s.project_repo.UpdateProject(project)
 }
 
-func (s ProjectService) getProjectForUser(id int64, currentUserId int64) (*models.Project, error) {
-	err := s.UserBelongsToProject(currentUserId, id)
+func (s ProjectService) getProjectForUser(id int64, current_user_id int64) (*models.Project, error) {
+	err := s.UserBelongsToProject(current_user_id, id)
 	if err != nil {
 		// NOTE: this should already be nicely formatted
 		return nil, err
 	}
-	project, err := s.projectRepo.GetProject(id)
+	project, err := s.project_repo.GetProject(id)
 	if err != nil {
 		// NOTE: this should already be nicely formatted
 		return nil, err
@@ -160,7 +163,7 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 
 		owner, ok := users[project.Owner]
 		if !ok {
-			owner, err = s.usersRepo.GetUserById(project.Owner)
+			owner, err = s.users_repo.GetUserById(project.Owner)
 			if err != nil {
 				// NOTE: this should already be nicely formatted
 				return nil, err
@@ -172,7 +175,7 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 		var createdBy *models.User
 		createdBy, ok = users[project.CreatedBy]
 		if !ok {
-			createdBy, err = s.usersRepo.GetUserById(project.CreatedBy)
+			createdBy, err = s.users_repo.GetUserById(project.CreatedBy)
 			if err != nil {
 				// NOTE: this should already be nicely formatted
 				return nil, err
@@ -184,7 +187,7 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 		var modifiedBy *models.User
 		modifiedBy, ok = users[project.ModifiedBy]
 		if !ok {
-			modifiedBy, err = s.usersRepo.GetUserById(project.ModifiedBy)
+			modifiedBy, err = s.users_repo.GetUserById(project.ModifiedBy)
 			if err != nil {
 				// NOTE: this should already be nicely formatted
 				return nil, err
@@ -195,7 +198,7 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 
 		// Convert to ViewModel
 		view := project.ToViewModel(owner, createdBy, modifiedBy)
-		completed, total, err := s.taskRepo.GetProjectTaskCompletion(project.Id)
+		completed, total, err := s.task_repo.GetProjectTaskCompletion(project.Id)
 		if err != nil {
 			view.CompletedTasks = 0
 			view.TotalTasks = 0
@@ -214,7 +217,7 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 	var owner *models.User
 	owner, ok := users[project.Owner]
 	if !ok {
-		owner, err = s.usersRepo.GetUserById(project.Owner)
+		owner, err = s.users_repo.GetUserById(project.Owner)
 		if err != nil {
 			// NOTE: this should already be nicely formatted
 			return nil, err
@@ -224,7 +227,7 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 	var created_by *models.User
 	created_by, ok = users[project.CreatedBy]
 	if !ok {
-		created_by, err = s.usersRepo.GetUserById(project.CreatedBy)
+		created_by, err = s.users_repo.GetUserById(project.CreatedBy)
 		if err != nil {
 			// NOTE: this should already be nicely formatted
 			return nil, err
@@ -234,7 +237,7 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 	var modified_by *models.User
 	modified_by, ok = users[project.ModifiedBy]
 	if !ok {
-		modified_by, err = s.usersRepo.GetUserById(project.ModifiedBy)
+		modified_by, err = s.users_repo.GetUserById(project.ModifiedBy)
 		if err != nil {
 			// NOTE: this should already be nicely formatted
 			return nil, err
@@ -242,7 +245,7 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 		users[project.ModifiedBy] = modified_by
 	}
 	view := project.ToViewModel(owner, created_by, modified_by)
-	completed, total, err := s.taskRepo.GetProjectTaskCompletion(project.Id)
+	completed, total, err := s.task_repo.GetProjectTaskCompletion(project.Id)
 	if err != nil {
 		view.CompletedTasks = 0
 		view.TotalTasks = 0
@@ -254,13 +257,105 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 }
 
 func (s *ProjectService) UserBelongsToProject(user_id, project_id int64) (err error) {
-	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
+	roles, err := s.project_users_repo.GetProjectUserRoles(project_id, user_id)
 	if err != nil {
 		// NOTE: Errors from repo are wrapped
 		return err
 	}
 	if len(roles) == 0 {
 		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
+	}
+	return nil
+}
+
+func (s ProjectService) GetProjectTags(current_user_id, id int64) (tags []models.TagView, err error) {
+	err = s.UserBelongsToProject(current_user_id, id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	project_tags, err := s.project_tags_repo.GetTagsByProjectId(id)
+	if err != nil {
+		return nil, err
+	}
+	tag_views := make([]models.TagView, len(project_tags))
+	for i, tag := range project_tags {
+		tag_views[i] = *tag.ToView()
+	}
+
+	return tag_views, nil
+}
+
+func (s ProjectService) CreateProjectTag(current_user_id, project_id int64, name string, color models.TagColor) (int64, error) {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return 0, err
+	}
+	new_id, err := s.project_tags_repo.CreateTag(name, color, current_user_id, project_id)
+	if err != nil {
+		return 0, err
+	}
+	return new_id, nil
+}
+
+func (s ProjectService) GetProjectTagById(current_user_id, project_id, tag_id int64) (*models.TagView, error) {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	tag, err := s.project_tags_repo.GetTagById(tag_id, project_id)
+	if err != nil {
+		return nil, err
+	}
+	return tag.ToView(), nil
+}
+
+func (s ProjectService) DeleteProjectTagById(current_user_id, project_id, tag_id int64) error {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return err
+	}
+	err = s.TagBelongsToProject(tag_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return err
+	}
+	err = s.project_tags_repo.DeleteTag(tag_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s ProjectService) UpdateProjectTagById(current_user_id, project_id, tag_id int64, name string, color models.TagColor) (*models.TagView, error) {
+	err := s.UserBelongsToProject(current_user_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	err = s.TagBelongsToProject(tag_id, project_id)
+	if err != nil {
+		// NOTE: this should already be nicely formatted
+		return nil, err
+	}
+	err = s.project_tags_repo.UpdateTag(tag_id, name, color)
+	if err != nil {
+		return nil, err
+	}
+	return models.NewTag(tag_id, name, color), nil
+}
+
+func (s *ProjectService) TagBelongsToProject(tag_id, project_id int64) (err error) {
+	tag, err := s.project_tags_repo.GetTagById(tag_id, project_id)
+	if err != nil {
+		// NOTE: Errors from repo are wrapped
+		return err
+	}
+	if tag == nil {
+		return errors.New(errors.ErrAccessDenied, "permission denied: tag %d does not belong to project %d", tag_id, project_id)
 	}
 	return nil
 }

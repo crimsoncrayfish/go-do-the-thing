@@ -67,15 +67,14 @@ func (r *ProjectTagsRepo) GetTagsByProjectId(projectId int64) ([]models.Tag, err
 	return tags, nil
 }
 
-const insertTag = `SELECT sp_insert_tag($1, $2, $3)`
+const insertTag = `SELECT sp_insert_tag($1, $2, $3, $4)`
 
-// Create a tag
-func (r *ProjectTagsRepo) CreateTag(name, color string, projectId int64) (int64, error) {
-	r.logger.Debug("CreateTag called - sql: %s, params: %s, %s, %d", insertTag, name, color, projectId)
+func (r *ProjectTagsRepo) CreateTag(name string, color models.TagColor, current_user_id, project_id int64) (int64, error) {
+	r.logger.Debug("CreateTag called - sql: %s, params: %s, %s, %d", insertTag, name, color, project_id)
 	var id int64
-	err := r.database.QueryRow(insertTag, name, color, projectId).Scan(&id)
+	err := r.database.QueryRow(insertTag, name, color, current_user_id, project_id).Scan(&id)
 	if err != nil {
-		r.logger.Error(err, "failed to insert tag - sql: %s, params: %s, %s, %d", insertTag, name, color, projectId)
+		r.logger.Error(err, "failed to insert tag - sql: %s, params: %s, %s, %d", insertTag, name, color, project_id)
 		return 0, errors.New(errors.ErrDBReadFailed, "failed to insert tag: %w", err)
 	}
 	r.logger.Info("Tag created successfully - id: %d, name: %s", id, name)
@@ -84,8 +83,7 @@ func (r *ProjectTagsRepo) CreateTag(name, color string, projectId int64) (int64,
 
 const updateTag = `SELECT sp_update_tag($1, $2, $3)`
 
-// Update a tag by id
-func (r *ProjectTagsRepo) UpdateTag(id int64, name, color string) error {
+func (r *ProjectTagsRepo) UpdateTag(id int64, name string, color models.TagColor) error {
 	r.logger.Debug("UpdateTag called - sql: %s, params: %d, %s, %s", updateTag, id, name, color)
 	_, err := r.database.Exec(updateTag, id, name, color)
 	if err != nil {
@@ -96,12 +94,11 @@ func (r *ProjectTagsRepo) UpdateTag(id int64, name, color string) error {
 	return nil
 }
 
-const getTagById = `Select sp_get_tag($1)`
+const getTagById = `Select * FROM sp_get_tag($1, $2)`
 
-// Get a tag by id
-func (r *ProjectTagsRepo) GetTagById(id int64) (*models.Tag, error) {
+func (r *ProjectTagsRepo) GetTagById(id, project_id int64) (*models.Tag, error) {
 	r.logger.Debug("GetTagById called - sql: %s, params: %d", getTagById, id)
-	row := r.database.QueryRow(getTagById, id)
+	row := r.database.QueryRow(getTagById, id, project_id)
 	tag := &models.Tag{}
 	err := scanTagFromRow(row, tag)
 	if err != nil {
@@ -114,7 +111,6 @@ func (r *ProjectTagsRepo) GetTagById(id int64) (*models.Tag, error) {
 
 const deleteTag = `Select sp_delete_tag($1)`
 
-// Delete a tag
 func (r *ProjectTagsRepo) DeleteTag(id int64) error {
 	r.logger.Debug("DeleteTag called - sql: %s, params: %d", deleteTag, id)
 	_, err := r.database.Exec(deleteTag, id)

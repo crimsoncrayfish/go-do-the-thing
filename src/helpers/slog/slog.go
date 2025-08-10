@@ -27,6 +27,7 @@ func NewLogger(name string) Logger {
 const (
 	colorRed    = "\033[0;31m"
 	colorYellow = "\033[0;33m"
+	colorPurple = "\033[0;35m"
 	colorNone   = "\033[0m"
 )
 
@@ -125,4 +126,14 @@ const infoHttpLogFormat = "%s - %s - %s - %d - %s\n"
 func (l *Logger) HttpInfo(msg string, statusCode int, a ...any) {
 	message := fmt.Sprintf(msg, a...)
 	fmt.Printf(infoHttpLogFormat, time.Now().Format("2006-01-02 15:04:05"), "INFO", l.Name, statusCode, message)
+}
+
+// COLOR Type - date - message RESETCOLOR
+const todoLogFormat = "%s %s - %s - %s%s\n"
+
+func (l Logger) TODO(message string) {
+	if !l.DebugEnabled {
+		return
+	}
+	fmt.Printf(todoLogFormat, colorPurple, time.Now().Format("2006-01-02 15:04:05"), "TODO", message, colorNone)
 }

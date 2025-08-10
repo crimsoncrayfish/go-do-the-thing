@@ -15,6 +15,8 @@ RUN templ generate
 
 RUN npm install htmx.org
 RUN mv node_modules/htmx.org/dist/htmx.min.js static/js/htmx.min.js
+RUN npm install sweetalert2
+RUN mv node_modules/sweetalert2/dist/sweetalert2.all.min.js static/js/sweetalert2.all.min.js
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/main .
 

@@ -19,6 +19,7 @@ const (
 	ErrDBDeleteFailed     AppErrorCode = "db delete failed"
 	ErrDBGenericError     AppErrorCode = "db error"
 	ErrKeysNotLoadedError AppErrorCode = "keys not loaded"
+	ErrEnumMismatch       AppErrorCode = "enum value mismatch"
 )
 
 type AppError struct {

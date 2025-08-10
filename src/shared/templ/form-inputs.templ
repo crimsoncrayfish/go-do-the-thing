@@ -1,6 +1,8 @@
 package templ_shared
 
 import (
+	"encoding/json"
+	"fmt"
 	"go-do-the-thing/src/helpers/constants"
 	"strconv"
 	"time"
@@ -42,7 +44,7 @@ templ FormContainer(postTo string, content templ.Component) {
 
 templ FormTextInput(title, name, placeholder, value string) {
 	<div>
-		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			{ title }
 			<input
 				type="text"
@@ -58,7 +60,7 @@ templ FormTextInput(title, name, placeholder, value string) {
 
 templ FormPasswordInput(title, name, placeholder string) {
 	<div>
-		<label for={ name } class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
+		<label for={ name } class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">{ title }</label>
 		<input
 			type="password"
 			name={ name }
@@ -72,7 +74,7 @@ templ FormPasswordInput(title, name, placeholder string) {
 
 templ FormDatePicker(title, name, id string, date *time.Time) {
 	<div>
-		<label class="block mb-2 text-sm font-medium text-text-on-light dark:text-text-on-dark">{ title }</label>
+		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">{ title }</label>
 		<div class="mt-2 relative">
 			<div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 				<svg
@@ -105,7 +107,7 @@ templ FormDatePicker(title, name, id string, date *time.Time) {
 
 templ FormListInput(title, name string, value int64, opts map[int64]string) {
 	<div>
-		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			{ title }
 			<select
 				name={ name }
@@ -125,7 +127,7 @@ templ FormListInput(title, name string, value int64, opts map[int64]string) {
 
 templ FormListInputWithAllOption(title, name string, value int64, opts map[int64]string) {
 	<div>
-		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light dark:text-text-on-dark">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			{ title }
 			<select
 				name={ name }
@@ -142,4 +144,140 @@ templ FormListInputWithAllOption(title, name string, value int64, opts map[int64
 			</select>
 		</label>
 	</div>
+}
+
+var colorNames = []string{
+	"red", "orange", "amber", "green", "cyan",
+	"blue", "indigo", "purple", "fuchsia", "rose",
+}
+
+func colorsToString(color_options []string) string {
+	colorsJSON, err := json.Marshal(color_options)
+	if err != nil {
+		colorsJSON = []byte("[]")
+	}
+	return string(colorsJSON)
+}
+
+templ FormSuperColorPicker(id, name, selectedColor string) {
+	<div class="input-group">
+		<input
+			type="text"
+			id={ id }
+			name="color"
+			value={ selectedColor }
+			data-super-colorpicker
+			data-colors='["red", "orange", "amber", "green", "cyan", "blue", "indigo", "purple"]'
+			data-row-width="5"
+			data-default-color="red"
+		/>
+	</div>
+}
+
+templ FormColorPickerInput(element_id, selectedColor string) {
+	<div id={ element_id } class="relative">
+		<input
+			type="hidden"
+			class="color-input"
+			name="color"
+			value={ selectedColor }
+		/>
+		<button
+			type="button"
+			id="custom-color-dropdown-button"
+			class="flex h-6 w-6 items-center justify-center rounded-full
+            transition-colors hover:bg-black/10 dark:hover:bg-white/10"
+			onclick="toggleClassForId('hidden', 'color-options-dropdown')"
+		>
+			<span
+				class={ fmt.Sprintf(
+					"selected-color-swatch inline-block h-4 w-4 rounded-full border border-border-light dark:border-border-dark bg-%s-light dark:bg-%s-dark",
+					selectedColor,
+					selectedColor,
+				) }
+			></span>
+		</button>
+		<div
+			id="color-options-dropdown"
+			class="color-options-dropdown absolute bottom-full z-20 mb-2 hidden w-max
+            rounded-md border p-1 shadow-lg
+            left-1/2 -translate-x-1/2
+            bg-secondary-light border-border-light
+            dark:bg-secondary-dark dark:border-border-dark"
+		>
+			<div class="grid grid-cols-5 gap-1 p-1">
+				for _, color := range colorNames {
+					@colorButton(color)
+				}
+			</div>
+		</div>
+	</div>
+	<script>
+	if (window.colorInputContainer == undefined) {
+      const colorInputContainer = document.getElementById({{ element_id }});
+      const colorInput= colorInputContainer.querySelector(".color-input");
+      const colorOptionButtons = colorInputContainer.querySelectorAll(".color-option-btn");
+      const colorOptionsDropdown = colorInputContainer.querySelector(
+        ".color-options-dropdown",
+      );
+      const selectedColorSwatch = colorInputContainer.querySelector(
+        ".selected-color-swatch",
+      );
+
+      colorOptionButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          const selectedColor = event.currentTarget.dataset.color;
+          replaceClassWithPrefix(selectedColorSwatch, "bg-", `bg-${selectedColor}-light`)
+          replaceClassWithPrefix(selectedColorSwatch, "dark:bg-", `dark:bg-${selectedColor}-dark`)
+          colorInput.value = selectedColor;
+          colorOptionsDropdown.classList.add("hidden");
+        });
+      });
+		} else {
+      colorInputContainer = document.getElementById({{ element_id }});
+      colorInput= colorInputContainer.querySelector(".color-input");
+      colorOptionButtons = colorInputContainer.querySelectorAll(".color-option-btn");
+      colorOptionsDropdown = colorInputContainer.querySelector(
+        ".color-options-dropdown",
+      );
+      selectedColorSwatch = colorInputContainer.querySelector(
+        ".selected-color-swatch",
+      );
+      colorOptionButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          const selectedColor = event.currentTarget.dataset.color;
+          replaceClassWithPrefix(selectedColorSwatch, "bg-", `bg-${selectedColor}-light`)
+          replaceClassWithPrefix(selectedColorSwatch, "dark:bg-", `dark:bg-${selectedColor}-dark`)
+          colorInput.value = selectedColor;
+          colorOptionsDropdown.classList.add("hidden");
+        });
+      });
+			}
+    
+	</script>
+}
+
+templ colorButton(color string) {
+	<button
+		type="button"
+		class={
+			"color-option-btn h-6 w-6 rounded-md",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark", color, color),
+		}
+		data-color={ color }
+	></button>
+}
+
+//This function ensures that tailwind loads the colors
+templ loadColors() {
+	<div class="bg-red-light dark:bg-red-dark"></div>
+	<div class="bg-orange-light dark:bg-orange-dark"></div>
+	<div class="bg-green-light dark:bg-green-dark"></div>
+	<div class="bg-cyan-light dark:bg-cyan-dark"></div>
+	<div class="bg-blue-light dark:bg-blue-dark"></div>
+	<div class="bg-indigo-light dark:bg-indigo-dark"></div>
+	<div class="bg-purple-light dark:bg-purple-dark"></div>
+	<div class="bg-fuchsia-light dark:bg-fuchsia-dark"></div>
+	<div class="bg-rose-light dark:bg-rose-dark"></div>
+	<div class="bg-amber-light dark:bg-amber-dark"></div>
 }
