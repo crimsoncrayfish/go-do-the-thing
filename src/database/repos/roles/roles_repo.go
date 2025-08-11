@@ -20,11 +20,6 @@ var repoName = "RolesRepo"
 // READONLY REPO
 func InitRepo(database database.DatabaseConnection) *RolesRepo {
 	logger := slog.NewLogger(repoName)
-	//TODO: Cleanup
-	//_, err := database.Exec(createRolesTable)
-	//assert.NoError(err, repoName, "Failed to create Roles table")
-	//_, err = database.Exec(seedRolesTable)
-	//assert.NoError(err, repoName, "Failed to seed Roles table")
 	return &RolesRepo{
 		database: database,
 		logger:   logger,

@@ -379,7 +379,7 @@ func (h *Handler) listItemsLazy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(tasks) == 0 {
-		h.logger.Warn("TODO: Implement a no-data-row for tasks")
+		h.logger.TODO("Implement a no-data-row for tasks")
 	}
 
 	err = templ_todo.TaskListContent(tasks).Render(r.Context(), w)

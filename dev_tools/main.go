@@ -41,6 +41,8 @@ func main() {
 			fmt.Println("Error:", err)
 			os.Exit(1)
 		}
+	case "test-ratelimit":
+		runRateLimitTest()
 	default:
 		fmt.Printf("❌ Unknown tool: %s\n", tool)
 		printUsage()
@@ -64,6 +66,7 @@ func printUsage() {
 	fmt.Println("  backup               - Create database backup")
 	fmt.Println("  health-check         - Check data health")
 	fmt.Println("  run-migrations       - Apply all SQL migrations in src/database/migrations")
+	fmt.Println("  test-ratelimit       - Test rate limiting with login and concurrent requests")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  go run main.go list-procs")

@@ -15,6 +15,7 @@ This application is designed with the following principles:
 - **User Management**: Registration, login, JWT authentication, admin controls
 - **Task Management**: Create, edit, delete, and organize tasks
 - **Project Organization**: Group tasks into projects with tagging support
+- **Rate Limiting**: Configurable request rate limiting per IP address
 - **Responsive Design**: Mobile-first design with Tailwind CSS
 - **Real-time Updates**: HTMX-powered dynamic UI updates without page refreshes
 - **Database Migrations**: Structured PostgreSQL schema with migration support
@@ -139,6 +140,9 @@ DATABASE_URL=postgres://username:password@host:port/database_name?sslmode=requir
 JWT_PRIVATE_KEY=<base64-encoded-private-key>
 JWT_PUBLIC_KEY=<base64-encoded-public-key>
 
+# Rate Limiting Configuration (optional - defaults to 500 requests per minute)
+RATE_LIMIT_REQUESTS_PER_MINUTE=500
+
 # Optional: Azure Integration
 AZURE_CLIENT_ID=<your-azure-client-id>
 ```
@@ -159,6 +163,9 @@ DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
 # JWT Authentication Keys (Base64 encoded) - Required
 JWT_PRIVATE_KEY=<base64-encoded-private-key>
 JWT_PUBLIC_KEY=<base64-encoded-public-key>
+
+# Rate Limiting Configuration (optional - defaults to 500 requests per minute)
+RATE_LIMIT_REQUESTS_PER_MINUTE=500
 
 # Optional: Azure Integration
 AZURE_CLIENT_ID=<your-azure-client-id>

@@ -191,7 +191,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !hasProjects {
-		h.logger.TODO("TODO: Implement a no-data-row for projects")
+		h.logger.TODO("Implement a no-data-row for projects")
 	}
 
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)

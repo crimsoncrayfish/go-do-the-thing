@@ -84,7 +84,7 @@ func (a *AuthenticationMiddleware) tryAuthenticateUser(r *http.Request) (*http.R
 		return r, errors.New(errors.AuthFailed, "Token expiry malformed: %s, error: %w", exp, err)
 	}
 	if expDate.Before(time.Now()) {
-		// TODO: reset session for user
+		a.Logger.TODO("Reset session for user when token expires")
 		return r, errors.New(errors.AuthFailed, "Token expired for user_id %s. Exp date: %s", userId, exp)
 	}
 
@@ -99,7 +99,7 @@ func (a *AuthenticationMiddleware) tryAuthenticateUser(r *http.Request) (*http.R
 
 	shouldRefresh := expDate.After(time.Now().Add(time.Duration(time.Hour)))
 	if shouldRefresh {
-		// TODO: refresh token
+		a.Logger.TODO("Implement automatic token refresh when close to expiring")
 		a.Logger.Info("Token for user %s is close to expiring", userId)
 	}
 
@@ -130,7 +130,7 @@ func clearTokenCookie(w http.ResponseWriter) {
 }
 
 func redirectOnErr(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, location, message string, params ...any) {
-	// TODO: Add ability to let user know why redirect happened (message on screen?)
+	logger.TODO("Add ability to let user know why redirect happened (flash message on screen)")
 	logger.Error(err, message, params...)
 	w.Header().Set("HX-Location", location)
 	http.Redirect(w, r, location, http.StatusSeeOther)

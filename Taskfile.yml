@@ -228,6 +228,9 @@ tasks:
         JWT_PRIVATE_KEY=$JWT_PRIVATE_KEY
         JWT_PUBLIC_KEY=$JWT_PUBLIC_KEY
 
+        # Rate Limiting Configuration (optional - defaults to 500 requests per minute)
+        RATE_LIMIT_REQUESTS_PER_MINUTE=500
+
         # Optional: Azure Integration
         # AZURE_CLIENT_ID=<your-azure-client-id>
         EOF
@@ -333,6 +336,9 @@ tasks:
         # JWT Authentication Keys (Generated automatically)
         JWT_PRIVATE_KEY=$JWT_PRIVATE_KEY
         JWT_PUBLIC_KEY=$JWT_PUBLIC_KEY
+
+        # Rate Limiting Configuration (optional - defaults to 500 requests per minute)
+        RATE_LIMIT_REQUESTS_PER_MINUTE=500
 
         # Optional: Azure Integration
         # AZURE_CLIENT_ID=<your-azure-client-id>

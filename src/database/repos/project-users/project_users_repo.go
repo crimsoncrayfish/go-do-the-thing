@@ -20,10 +20,6 @@ var repoName = "Project Users Repo"
 // NOTE: Depends on: [./users_repo.go, ./projects_repo.go, ../roles/roles_repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {
 	logger := slog.NewLogger(repoName)
-	//TODO: Cleanup
-	//_, err := database.Exec(createProjectUsersTable)
-	//assert.NoError(err, repoName, "Failed to create ProjectUsers table")
-
 	return &ProjectUsersRepo{
 		database: database,
 		logger:   logger,
