@@ -9,6 +9,17 @@ tasks:
       - task --list-all
     silent: true
 
+  install:deps:
+    desc: "Install all required dependencies for development"
+    cmds:
+      - echo "Installing Go dependencies..."
+      - go install github.com/a-h/templ/cmd/templ@latest
+      - go install github.com/air-verse/air@latest
+      - go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - echo "Installing Node.js dependencies..."
+      - npm install
+      - echo "✅ All dependencies installed successfully!"
+
   _confirm:prod:
     internal: true
     cmds:
