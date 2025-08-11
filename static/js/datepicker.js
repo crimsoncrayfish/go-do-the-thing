@@ -5,6 +5,8 @@ if (window.SuperDatePickerInitialized) {
     );
   }
 } else {
+  const datePickerInstances = new Set();
+
   /**
    * SuperDatePicker Class
    * A customizable and accessible date picker component.
@@ -71,6 +73,8 @@ if (window.SuperDatePickerInitialized) {
 
       this._initDOM();
       this._attachCoreEvents();
+
+      datePickerInstances.add(this);
 
       const initialDate = this.options.defaultDate || this.input.value;
       if (initialDate) {
@@ -150,21 +154,19 @@ if (window.SuperDatePickerInitialized) {
      * @private
      */
     _attachCoreEvents() {
+      this._boundInputClick = this._handleInputClick.bind(this);
+      this._boundDocumentClick = this._handleDocumentClick.bind(this);
+      this._boundKeyDown = this._handleKeyDown.bind(this);
+      this._boundCalendarClick = this._handleCalendarClick.bind(this);
+      this._boundRepositionPopup = this._repositionPopup.bind(this);
+
       this.popup.addEventListener("click", (e) => e.stopPropagation());
-
-      this.input.addEventListener("click", this._handleInputClick.bind(this));
-
-      document.addEventListener("click", this._handleDocumentClick.bind(this));
-
-      document.addEventListener("keydown", this._handleKeyDown.bind(this));
-
-      this.popup.addEventListener(
-        "click",
-        this._handleCalendarClick.bind(this),
-      );
-
-      window.addEventListener("resize", this._repositionPopup.bind(this));
-      window.addEventListener("scroll", this._repositionPopup.bind(this), true);
+      this.input.addEventListener("click", this._boundInputClick);
+      document.addEventListener("click", this._boundDocumentClick);
+      document.addEventListener("keydown", this._boundKeyDown);
+      this.popup.addEventListener("click", this._boundCalendarClick);
+      window.addEventListener("resize", this._boundRepositionPopup);
+      window.addEventListener("scroll", this._boundRepositionPopup, true);
     }
 
     /**
@@ -676,6 +678,42 @@ if (window.SuperDatePickerInitialized) {
         today.getDate() === day
       );
     }
+
+    /**
+     * Cleans up the date picker and removes all event listeners.
+     */
+    cleanup() {
+      if (this._boundInputClick) {
+        this.input.removeEventListener("click", this._boundInputClick);
+      }
+      if (this._boundDocumentClick) {
+        document.removeEventListener("click", this._boundDocumentClick);
+      }
+      if (this._boundKeyDown) {
+        document.removeEventListener("keydown", this._boundKeyDown);
+      }
+      if (this._boundCalendarClick) {
+        this.popup.removeEventListener("click", this._boundCalendarClick);
+      }
+      if (this._boundRepositionPopup) {
+        window.removeEventListener("resize", this._boundRepositionPopup);
+        window.removeEventListener("scroll", this._boundRepositionPopup, true);
+      }
+
+      if (this.popup && this.popup.parentNode) {
+        this.popup.parentNode.removeChild(this.popup);
+      }
+
+      datePickerInstances.delete(this);
+      this.input = null;
+      this.container = null;
+      this.popup = null;
+      this._boundInputClick = null;
+      this._boundDocumentClick = null;
+      this._boundKeyDown = null;
+      this._boundCalendarClick = null;
+      this._boundRepositionPopup = null;
+    }
   }
 
   function autoInitSuperDatePickers() {
@@ -687,4 +725,22 @@ if (window.SuperDatePickerInitialized) {
         }
       });
   }
+
+  function cleanupAllInstances() {
+    const instancesToCleanup = Array.from(datePickerInstances);
+    instancesToCleanup.forEach((instance) => {
+      instance.cleanup();
+    });
+  }
+
+  document.addEventListener('htmx:beforeSwap', cleanupAllInstances);
+  document.addEventListener('htmx:afterSwap', autoInitSuperDatePickers);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoInitSuperDatePickers);
+  } else {
+    autoInitSuperDatePickers();
+  }
+
+  window.SuperDatePickerInitialized = true;
 }

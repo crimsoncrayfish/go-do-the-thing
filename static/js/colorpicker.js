@@ -6,6 +6,8 @@ if (window.SuperColorPickerInitialized) {
   }
 } else {
   const SPECIFIC_COLOR_CLASS_REGEX = /\b(dark:)?bg-\S+-(light|dark)\b/g;
+  const colorPickerInstances = new Set();
+
   /**
    * SuperColorPicker Class
    * A customizable and accessible color picker component.
@@ -63,6 +65,8 @@ if (window.SuperColorPickerInitialized) {
 
       this._initDOM();
       this._attachCoreEvents();
+
+      colorPickerInstances.add(this);
 
       const initialColor =
         this.input.value || this.options.defaultColor || this.options.colors[0];
@@ -167,21 +171,19 @@ if (window.SuperColorPickerInitialized) {
      * @private
      */
     _attachCoreEvents() {
+      this._boundButtonClick = this._handleButtonClick.bind(this);
+      this._boundDocumentClick = this._handleDocumentClick.bind(this);
+      this._boundKeyDown = this._handleKeyDown.bind(this);
+      this._boundColorPickerClick = this._handleColorPickerClick.bind(this);
+      this._boundRepositionPopup = this._repositionPopup.bind(this);
+
       this.popup.addEventListener("click", (e) => e.stopPropagation());
-
-      this.button.addEventListener("click", this._handleButtonClick.bind(this));
-
-      document.addEventListener("click", this._handleDocumentClick.bind(this));
-
-      document.addEventListener("keydown", this._handleKeyDown.bind(this));
-
-      this.popup.addEventListener(
-        "click",
-        this._handleColorPickerClick.bind(this),
-      );
-
-      window.addEventListener("resize", this._repositionPopup.bind(this));
-      window.addEventListener("scroll", this._repositionPopup.bind(this), {
+      this.button.addEventListener("click", this._boundButtonClick);
+      document.addEventListener("click", this._boundDocumentClick);
+      document.addEventListener("keydown", this._boundKeyDown);
+      this.popup.addEventListener("click", this._boundColorPickerClick);
+      window.addEventListener("resize", this._boundRepositionPopup);
+      window.addEventListener("scroll", this._boundRepositionPopup, {
         capture: true,
         passive: true,
       });
@@ -520,6 +522,51 @@ if (window.SuperColorPickerInitialized) {
     getColor() {
       return this.selectedColor;
     }
+
+    /**
+     * Cleans up the color picker and removes all event listeners.
+     */
+    cleanup() {
+      if (this._boundButtonClick) {
+        this.button.removeEventListener("click", this._boundButtonClick);
+      }
+      if (this._boundDocumentClick) {
+        document.removeEventListener("click", this._boundDocumentClick);
+      }
+      if (this._boundKeyDown) {
+        document.removeEventListener("keydown", this._boundKeyDown);
+      }
+      if (this._boundColorPickerClick) {
+        this.popup.removeEventListener("click", this._boundColorPickerClick);
+      }
+      if (this._boundRepositionPopup) {
+        window.removeEventListener("resize", this._boundRepositionPopup);
+        window.removeEventListener("scroll", this._boundRepositionPopup, {
+          capture: true,
+          passive: true,
+        });
+      }
+
+      if (this.popup && this.popup.parentNode) {
+        this.popup.parentNode.removeChild(this.popup);
+      }
+
+      if (this.button && this.button.parentNode) {
+        this.button.parentNode.removeChild(this.button);
+      }
+
+      colorPickerInstances.delete(this);
+      this.input = null;
+      this.container = null;
+      this.popup = null;
+      this.button = null;
+      this.swatchSpan = null;
+      this._boundButtonClick = null;
+      this._boundDocumentClick = null;
+      this._boundKeyDown = null;
+      this._boundColorPickerClick = null;
+      this._boundRepositionPopup = null;
+    }
   }
 
   function autoInitSuperColorPickers() {
@@ -551,4 +598,22 @@ if (window.SuperColorPickerInitialized) {
         });
       });
   }
+
+  function cleanupAllInstances() {
+    const instancesToCleanup = Array.from(colorPickerInstances);
+    instancesToCleanup.forEach((instance) => {
+      instance.cleanup();
+    });
+  }
+
+  document.addEventListener('htmx:beforeSwap', cleanupAllInstances);
+  document.addEventListener('htmx:afterSwap', autoInitSuperColorPickers);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoInitSuperColorPickers);
+  } else {
+    autoInitSuperColorPickers();
+  }
+
+  window.SuperColorPickerInitialized = true;
 }
