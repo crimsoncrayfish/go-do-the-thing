@@ -8,7 +8,7 @@ import (
 
 templ projectTagListEdit(project_id int64, tags []models.TagView) {
 	<div class="text-text-on-light dark:text-text-on-dark">
-		<div id="tag-list" class="flex flex-wrap ">
+		<div id="tag-list" class="flex flex-wrap gap-2">
 			@NewTagForm(project_id)
 			for _, tag := range tags {
 				@TagItemEditable(project_id, tag, false)
@@ -120,7 +120,7 @@ templ TagItemEditable(project_id int64, tag models.TagView, is_oob bool) {
 		id={ fmt.Sprintf("tag-%d", tag.Id) }
 		type="button"
 		class={
-			"ml-2 relative inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+			"relative inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
 			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
 		}
 	>
@@ -142,7 +142,7 @@ templ TagItemEditable(project_id int64, tag models.TagView, is_oob bool) {
 templ TagItemEditorOOB(project_id int64, tag models.TagView) {
 	<form
 		id={ fmt.Sprintf("tag-%d", tag.Id) }
-		class="ml-2 inline-flex items-center gap-2 rounded-full border px-3 py-1
+		class="inline-flex items-center gap-2 rounded-full border px-3 py-1
         text-sm font-medium shadow-sm relative
         border-border-light bg-primary-light text-text-on-light
         dark:border-border-dark dark:bg-primary-dark dark:text-text-on-dark"
@@ -172,17 +172,13 @@ templ TagItemEditorOOB(project_id int64, tag models.TagView) {
 			hx-indicator={ fmt.Sprintf("#tag-loader-%d", tag.Id) }
 			id="delete-tag-button"
 			hx-trigger="confirmed"
-			onClick="Swal.fire({
+			onClick="SuperDialog.fire({
 				title: 'Confirm', 
-				confirmButtonText: 'Save',
+				confirmButtonText: 'Delete',
+				cancelButtonText: 'Cancel',
 				showCancelButton: true,
-				text:'Are you sure you want to delete the tag?',
-				customClass: {
-					popup: 'bg-secondary-light dark:bg-secondary-dark rounded-lg shadow-xl p-6 text-text-on-light dark:text-text-on-dark',
-					title: 'text-2xl font-bold text-text-on-light dark:text-text-on-dark mb-4',
-					confirmButton: 'bg-success-light dark:bg-success-dark text-text-on-light dark:text-text-on-dark font-bold py-2 px-4 rounded',
-					cancelButton: 'bg-danger-light dark:bg-danger-dark text-text-on-light dark:text-text-on-dark font-bold py-2 px-4 rounded ml-2'
-				}}).then((result)=>{
+				text:'Are you sure you want to delete the tag?'
+			}).then((result)=>{
             if(result.isConfirmed){
               htmx.trigger(this, 'confirmed');
             }

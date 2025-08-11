@@ -55,7 +55,15 @@ func SetupUserHandler(
 	router.Handle("POST /logout", mw(http.HandlerFunc(handler.LogOut)))
 }
 
-var emptyAuthCookie = http.Cookie{Name: "token", Value: "", SameSite: http.SameSiteDefaultMode}
+var emptyAuthCookie = http.Cookie{
+	Name:     "token",
+	Value:    "",
+	Path:     "/",
+	MaxAge:   -1,
+	HttpOnly: true,
+	Secure:   true,
+	SameSite: http.SameSiteLaxMode,
+}
 
 func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	form := form_models.NewLoginForm()
@@ -107,7 +115,14 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to display login page")
 		return
 	}
-	cookie := http.Cookie{Name: "token", Value: tokenString, SameSite: http.SameSiteDefaultMode}
+	cookie := http.Cookie{
+		Name:     "token",
+		Value:    tokenString,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
 	http.SetCookie(w, &cookie)
 	handlers.Redirect("/", w)
 }
