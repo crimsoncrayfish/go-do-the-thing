@@ -11,5 +11,6 @@
 go.work.sum
 *_templ.go
 *.env*
+!.env.example
 *htmx.min.js
 *sweetalert2.all.min.js

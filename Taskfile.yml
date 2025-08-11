@@ -20,6 +20,65 @@ tasks:
       - npm install
       - echo "✅ All dependencies installed successfully!"
 
+  setup:env:
+    desc: "Create .env file with generated JWT keys"
+    # NOTE: This task is untested - please verify functionality before relying on it
+    cmds:
+      - |
+        if [ -f .env ]; then
+          echo "⚠️  .env file already exists. Backing up to .env.backup..."
+          cp .env .env.backup
+        fi
+      - echo "🔑 Generating JWT keys..."
+      - mkdir -p keys
+      - openssl genpkey -algorithm RSA -out keys/private.key -outform PEM -pkeyopt rsa_keygen_bits:2048
+      - openssl rsa -pubout -in keys/private.key -out keys/public.key
+      - |
+        echo "📝 Creating environment files..."
+        JWT_PRIVATE_KEY=$(base64 -i keys/private.key | tr -d '\n')
+        JWT_PUBLIC_KEY=$(base64 -i keys/public.key | tr -d '\n')
+        
+        # Create main .env file for application
+        cat > .env << EOF
+        # Go Do The Thing - Environment Configuration
+        # Generated on $(date)
+
+        # Application Environment
+        # Options: development, production
+        ENV=development
+
+        # Server Configuration
+        PORT=8080
+
+        # Database Configuration
+        DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
+
+        # JWT Authentication Keys (Generated automatically)
+        JWT_PRIVATE_KEY=$JWT_PRIVATE_KEY
+        JWT_PUBLIC_KEY=$JWT_PUBLIC_KEY
+
+        # Optional: Azure Integration
+        # AZURE_CLIENT_ID=<your-azure-client-id>
+        EOF
+        
+        # Create .dev.env file for local migrations (Taskfile expects this)
+        cat > .dev.env << EOF
+        # Development Environment for Migrations
+        # Generated on $(date)
+        DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
+        EOF
+      - echo "✅ Environment setup complete!"
+      - echo "   - .env file created with generated JWT keys and local database URL"
+      - echo "   - .dev.env file created for migration tasks"
+      - echo "   - JWT keys saved in keys/ directory"
+      - echo "   - Ready for development!"
+
+  setup:init:
+    desc: "Complete project initialization (dependencies + environment)"
+    cmds:
+      - task: install:deps
+      - task: setup:env
+
   _confirm:prod:
     internal: true
     cmds:

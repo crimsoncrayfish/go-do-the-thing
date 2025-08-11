@@ -116,6 +116,85 @@ docker rm todo-app-container
 - **Authentication**: Custom JWT implementation
 - **Deployment**: Docker containerization
 
+## Environment Configuration
+
+### Required Environment Variables
+
+The application requires the following environment variables to be configured:
+
+#### Production Environment Variables
+For production deployments, create a `.env` file in the root directory with:
+
+```bash
+# Application Environment
+ENV=production
+
+# Server Configuration
+PORT=8080
+
+# Database Configuration
+DATABASE_URL=postgres://username:password@host:port/database_name?sslmode=require
+
+# JWT Authentication Keys (Base64 encoded)
+JWT_PRIVATE_KEY=<base64-encoded-private-key>
+JWT_PUBLIC_KEY=<base64-encoded-public-key>
+
+# Optional: Azure Integration
+AZURE_CLIENT_ID=<your-azure-client-id>
+```
+
+#### Development Environment Variables
+For local development, create a `.env` file with:
+
+```bash
+# Application Environment (optional - defaults to development)
+ENV=development
+
+# Server Configuration (optional - defaults to 8080)
+PORT=8080
+
+# Database Configuration (required for local development)
+DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
+
+# JWT Authentication Keys (Base64 encoded) - Required
+JWT_PRIVATE_KEY=<base64-encoded-private-key>
+JWT_PUBLIC_KEY=<base64-encoded-public-key>
+
+# Optional: Azure Integration
+AZURE_CLIENT_ID=<your-azure-client-id>
+```
+
+You'll also need a `.dev.env` file for migration tasks:
+```bash
+# Development Environment for Migrations
+DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
+```
+
+### Generating JWT Keys
+
+To generate the required JWT keys for authentication:
+
+```bash
+# Generate private key
+openssl genpkey -algorithm RSA -out private.key -outform PEM -pkeyopt rsa_keygen_bits:2048
+
+# Generate public key from private key
+openssl rsa -pubout -in private.key -out public.key
+
+# Convert to base64 for environment variables
+JWT_PRIVATE_KEY=$(base64 -i private.key)
+JWT_PUBLIC_KEY=$(base64 -i public.key)
+```
+
+### Environment Files to Create
+
+1. **`.env`** (root directory) - Main environment configuration file for the application
+2. **`.dev.env`** (root directory) - Environment file specifically for local migration tasks
+3. **`keys/private.key`** (optional) - JWT private key file (also stored as base64 in .env)
+4. **`keys/public.key`** (optional) - JWT public key file (also stored as base64 in .env)
+
+**Note**: The `task setup:env` command creates both `.env` and `.dev.env` files automatically. Alternatively, you can copy the provided `.env.example` file and customize it manually.
+
 ## Getting Started
 
 ### Quick Start
@@ -126,19 +205,42 @@ docker rm todo-app-container
    cd go-do-the-thing
    ```
 
-2. **Install dependencies**
+2. **Complete project initialization**
    
    **Option A: Using Taskfile (Recommended)**
    ```bash
    # Install Taskfile first if not already installed
    go install github.com/go-task/task/v3/cmd/task@latest
    
-   # Install all dependencies with one command
-   task install:deps
+   # Complete setup: dependencies + environment with JWT keys
+   task setup:init
    ```
    
-   **Option B: Manual installation**
+   **Option B: Step-by-step setup**
    ```bash
+   # Install Taskfile first if not already installed
+   go install github.com/go-task/task/v3/cmd/task@latest
+   
+   # Install dependencies only
+   task install:deps
+   
+   # Create .env file with generated JWT keys
+   task setup:env
+   ```
+
+3. **Manual installation (if not using Taskfile)**
+   ```bash
+   # Configure environment variables manually (using provided example)
+   cp .env.example .env
+   
+   # Generate JWT keys and update .env file
+   openssl genpkey -algorithm RSA -out keys/private.key -outform PEM -pkeyopt rsa_keygen_bits:2048
+   openssl rsa -pubout -in keys/private.key -out keys/public.key
+   
+   # Convert to base64 and add to .env file
+   JWT_PRIVATE_KEY=$(base64 -i keys/private.key | tr -d '\n')
+   JWT_PUBLIC_KEY=$(base64 -i keys/public.key | tr -d '\n')
+   
    # Install Go dependencies
    go mod download
    
@@ -206,8 +308,12 @@ The application uses only 3 minimal JavaScript components:
 # Install Taskfile
 go install github.com/go-task/task/v3/cmd/task@latest
 
-# Install all other dependencies automatically
-task install:deps
+# Complete project initialization (dependencies + environment)
+task setup:init
+
+# Or run individual tasks:
+# task install:deps    # Install dependencies only
+# task setup:env       # Create .env with JWT keys only
 ```
 
 **Manual Setup (if you prefer not to use Taskfile):**
