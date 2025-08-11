@@ -253,9 +253,13 @@ JWT_PUBLIC_KEY=$(base64 -i public.key)
    npm install
    ```
 
-3. **Start the database**
+3. **Start the PostgreSQL database**
    ```bash
+   # Start local PostgreSQL database using Docker
    docker compose -f docker-compose-db-local.yml up -d
+   
+   # Verify database is running
+   docker compose -f docker-compose-db-local.yml ps
    ```
 
 4. **Run database migrations**
@@ -303,6 +307,12 @@ The application uses only 3 minimal JavaScript components:
 
 ### Prerequisites
 
+Before starting development, ensure you have the following installed:
+
+- **Go** (1.23.0 or later)
+- **Node.js** and **npm** (for Tailwind CSS)
+- **Docker** and **Docker Compose** (for PostgreSQL database)
+
 **Quick Setup with Taskfile:**
 ```bash
 # Install Taskfile
@@ -330,7 +340,7 @@ npm install
 ### Running the Application
 
 ```bash
-# Start the database
+# Start the PostgreSQL database (required)
 docker compose -f docker-compose-db-local.yml up -d
 
 # Run migrations
