@@ -361,19 +361,13 @@ if (window.SuperDialogInitialized) {
   style.textContent = `
     @keyframes bounce-in {
       0% {
-        transform: scale(0.8);
+        transform: scale(0.85);
       }
-      20% {
-        transform: scale(1.1);
+      30% {
+        transform: scale(1.05);
       }
-      40% {
-        transform: scale(0.92);
-      }
-      60% {
-        transform: scale(1.03);
-      }
-      80% {
-        transform: scale(0.99);
+      70% {
+        transform: scale(0.98);
       }
       100% {
         transform: scale(1);
@@ -381,7 +375,7 @@ if (window.SuperDialogInitialized) {
     }
     
     .animate-bounce-in {
-      animation: bounce-in 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      animation: bounce-in 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
   `;
   document.head.appendChild(style);
