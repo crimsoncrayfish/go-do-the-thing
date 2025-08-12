@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"strings"
 )
 
@@ -22,17 +21,14 @@ type ColoredHandler struct {
 	groups       []string
 }
 
-func newColoredHandler(opts *slog.HandlerOptions) *ColoredHandler {
+func newColoredHandler(is_prod bool, opts *slog.HandlerOptions) *ColoredHandler {
 	if opts == nil {
 		opts = &slog.HandlerOptions{}
 	}
 
-	env := os.Getenv("ENV")
-	debugEnabled := env == DEV || env == ""
-
 	return &ColoredHandler{
 		opts:         *opts,
-		debugEnabled: debugEnabled,
+		debugEnabled: !is_prod,
 	}
 }
 

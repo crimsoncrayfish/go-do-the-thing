@@ -6,21 +6,14 @@ import (
 	"os"
 )
 
-const (
-	DEV  = "development"
-	PROD = "production"
-)
-
-func SetupLogger() {
-	env := os.Getenv("ENV")
-
-	if env == PROD {
+func SetupLogger(is_prod bool) {
+	if is_prod {
 		handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: slog.LevelInfo,
 		})
 		slog.SetDefault(slog.New(handler))
 	} else {
-		handler := newColoredHandler(&slog.HandlerOptions{
+		handler := newColoredHandler(is_prod, &slog.HandlerOptions{
 			Level: slog.LevelDebug,
 		})
 		slog.SetDefault(slog.New(handler))

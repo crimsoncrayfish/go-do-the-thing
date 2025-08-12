@@ -43,13 +43,12 @@ const (
 )
 
 func main() {
-	logger.SetupLogger()
-	log := logger.NewLogger("Main")
-
 	env := os.Getenv("ENV")
 	if env == "" {
 		env = DEV
 	}
+	logger.SetupLogger(env == PROD)
+	log := logger.NewLogger("Main")
 	log.Debug("This is the env", "env", env)
 
 	port := os.Getenv("PORT")
