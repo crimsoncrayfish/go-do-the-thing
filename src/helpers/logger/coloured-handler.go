@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"runtime"
 	"strings"
 )
 
@@ -64,19 +63,6 @@ func (h *ColoredHandler) Handle(ctx context.Context, record slog.Record) error {
 		levelStr = record.Level.String()
 	}
 
-	var callerInfo string
-	if record.Level >= slog.LevelError {
-		if pc := record.PC; pc != 0 {
-			fs := runtime.CallersFrames([]uintptr{pc})
-			f, _ := fs.Next()
-			if f.File != "" {
-				parts := strings.Split(f.File, "/")
-				shortFile := parts[len(parts)-1]
-				callerInfo = fmt.Sprintf(" %s:%d", shortFile, f.Line)
-			}
-		}
-	}
-
 	var source string
 	var otherAttrs []slog.Attr
 	for _, attr := range h.attrs {
@@ -104,9 +90,6 @@ func (h *ColoredHandler) Handle(ctx context.Context, record slog.Record) error {
 
 	timestamp := record.Time.Format("2006-01-02 15:04:05")
 	message := record.Message
-	if callerInfo != "" {
-		message += callerInfo
-	}
 
 	// TIMESTAMP - LEVEL - SOURCE - MESSAGE - ATTRIBUTES
 	var logLine string
