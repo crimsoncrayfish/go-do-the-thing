@@ -2,7 +2,6 @@ package logger
 
 import (
 	"context"
-	"go-do-the-thing/src/helpers/errors"
 	"log/slog"
 	"os"
 )
@@ -42,34 +41,37 @@ const (
 	LevelFATAL = slog.Level(12) // Higher than Error (8)
 )
 
-type MyLogger struct {
+type Logger struct {
 	logger *slog.Logger
 }
 
-func (l *MyLogger) Info(msg string, args ...any) {
+func NewLogger(source string) *Logger {
+	return &Logger{
+		logger: slog.Default().With("source", source),
+	}
+}
+
+func (l *Logger) Info(msg string, args ...any) {
 	l.logger.Info(msg, args...)
 }
 
-func (l *MyLogger) Warn(msg string, args ...any) {
+func (l *Logger) Warn(msg string, args ...any) {
 	l.logger.Warn(msg, args...)
 }
 
-func (l *MyLogger) Debug(msg string, args ...any) {
+func (l *Logger) Debug(msg string, args ...any) {
 	l.logger.Debug(msg, args...)
 }
 
-func (l *MyLogger) Error(err errors.AppError, msg string, args ...any) {
-	l.logger.Error(msg, append(
-		[]any{"err_code", err.Code(), "err", err.Error()},
-		args...,
-	)...)
+func (l *Logger) Error(msg string, args ...any) {
+	l.logger.Error(msg, args...)
 }
 
-func (l *MyLogger) Todo(msg string, args ...any) {
+func (l *Logger) Todo(msg string, args ...any) {
 	l.logger.Log(context.Background(), LevelTODO, msg, args...)
 }
 
-func (l *MyLogger) Fatal(msg string, args ...any) {
+func (l *Logger) Fatal(msg string, args ...any) {
 	l.logger.Log(context.Background(), LevelFATAL, msg, args...)
 	panic(1)
 }

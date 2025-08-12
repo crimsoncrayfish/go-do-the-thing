@@ -5,23 +5,23 @@ import (
 	home_templ "go-do-the-thing/src/handlers/home/templ"
 	"go-do-the-thing/src/helpers"
 	app_errors "go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
-	"log/slog"
 	"net/http"
 )
 
 type HomeHandler struct {
-	logger *slog.Logger
+	logger *logger.Logger
 }
 
 var source = "HomeHandler"
 
 func SetupHomeHandler(router *http.ServeMux, mw_stack middleware.Middleware) {
-	logger := slog.With("source", source)
-	logger.Info("Setting up the Home Handler")
+	log := logger.NewLogger(source)
+	log.Info("Setting up the Home Handler")
 	handler := &HomeHandler{
-		logger: logger,
+		logger: log,
 	}
 	router.Handle("/", mw_stack(http.HandlerFunc(handler.Index)))
 	router.Handle("GET /error", mw_stack(http.HandlerFunc(handler.error)))

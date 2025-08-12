@@ -5,28 +5,28 @@ import (
 	templ_admin "go-do-the-thing/src/handlers/admin/templ"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
 	admin_service "go-do-the-thing/src/services/admin"
 	templ_shared "go-do-the-thing/src/shared/templ"
-	"log/slog"
 	"net/http"
 	"strconv"
 )
 
 type AdminHandler struct {
 	service admin_service.AdminService
-	logger  *slog.Logger
+	logger  *logger.Logger
 }
 
 var source = "AdminHandler"
 
 func SetupAdminHandler(admin_service admin_service.AdminService, router *http.ServeMux, mw_stack middleware.Middleware) {
-	logger := slog.With("source", source)
-	logger.Info("Setting up the Admin Handler")
+	log := logger.NewLogger(source)
+	log.Info("Setting up the Admin Handler")
 	handler := &AdminHandler{
 		service: admin_service,
-		logger:  logger,
+		logger:  log,
 	}
 	router.Handle("/admin", mw_stack(http.HandlerFunc(handler.Dashboard)))
 	router.Handle("GET /admin/users", mw_stack(http.HandlerFunc(handler.ListUsers)))

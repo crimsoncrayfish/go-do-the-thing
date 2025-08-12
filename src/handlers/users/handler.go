@@ -5,6 +5,7 @@ import (
 	templ_users "go-do-the-thing/src/handlers/users/templ"
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
@@ -13,7 +14,6 @@ import (
 	task_service "go-do-the-thing/src/services/task"
 	user_service "go-do-the-thing/src/services/user"
 	templ_shared "go-do-the-thing/src/shared/templ"
-	"log/slog"
 	"net/http"
 	"time"
 )
@@ -23,7 +23,7 @@ type Handler struct {
 	userService    *user_service.UserService
 	projectService projects_service.ProjectService
 	taskService    task_service.TaskService
-	logger         *slog.Logger
+	logger         *logger.Logger
 }
 
 var source = "UsersHandler"
@@ -37,15 +37,15 @@ func SetupUserHandler(
 	taskService task_service.TaskService,
 	userService *user_service.UserService,
 ) {
-	logger := slog.With("source", source)
-	logger.Info("Setting up users")
+	log := logger.NewLogger(source)
+	log.Info("Setting up users")
 
 	handler := &Handler{
 		security:       security,
 		userService:    userService,
 		projectService: projectService,
 		taskService:    taskService,
-		logger:         logger,
+		logger:         log,
 	}
 
 	router.Handle("GET /login", mw_no_auth(http.HandlerFunc(handler.GetLoginUI)))

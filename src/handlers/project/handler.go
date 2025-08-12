@@ -6,7 +6,6 @@ import (
 	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,7 +21,7 @@ import (
 type Handler struct {
 	project_service project_service.ProjectService
 	task_service    task_service.TaskService
-	logger          *slog.Logger
+	logger          *logger.Logger
 }
 
 var (
@@ -31,7 +30,7 @@ var (
 )
 
 func SetupProjectHandler(service project_service.ProjectService, task_service task_service.TaskService, router *http.ServeMux, mw_stack middleware.Middleware) {
-	log := slog.With("source", handlerSource)
+	log := logger.NewLogger(handlerSource)
 	projectsHandler := &Handler{
 		project_service: service,
 		task_service:    task_service,
@@ -191,7 +190,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !hasProjects {
-		logger.TODO("Implement a no-data-row for projects")
+		h.logger.Todo("Implement a no-data-row for projects")
 	}
 
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)

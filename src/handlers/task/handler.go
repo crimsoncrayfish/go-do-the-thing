@@ -6,7 +6,6 @@ import (
 	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/middleware"
 	"go-do-the-thing/src/models"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +23,7 @@ import (
 type Handler struct {
 	task_service    task_service.TaskService
 	project_service projects_service.ProjectService
-	logger          *slog.Logger
+	logger          *logger.Logger
 }
 
 const source = "TasksHandler"
@@ -35,7 +34,7 @@ func SetupTodoHandler(
 	router *http.ServeMux,
 	mw_stack middleware.Middleware,
 ) {
-	log := slog.With("source", source)
+	log := logger.NewLogger(source)
 	todoHandler := &Handler{
 		task_service:    taskService,
 		project_service: projectService,

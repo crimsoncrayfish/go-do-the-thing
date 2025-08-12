@@ -1,11 +1,11 @@
 package errors
 
 import (
-	"log/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"net/http"
 )
 
-func BadRequest(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func BadRequest(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusBadRequest)
 	logger.Error(msg, "error", err)
@@ -14,7 +14,7 @@ func BadRequest(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err
 	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func NotFound(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func NotFound(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusNotFound)
 	logger.Error(msg, "error", err)
@@ -23,7 +23,7 @@ func NotFound(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err e
 	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func Unauthorized(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func Unauthorized(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusUnauthorized)
 	logger.Error(msg, "error", err)
@@ -32,7 +32,7 @@ func Unauthorized(logger *slog.Logger, w http.ResponseWriter, r *http.Request, e
 	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func InternalServerError(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func InternalServerError(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)
 	logger.Error(msg, "error", err)
