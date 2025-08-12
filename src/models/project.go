@@ -22,34 +22,34 @@ type Project struct {
 }
 
 func (p *Project) AssertHealthyNew() error {
-	if p != nil {
+	if p == nil {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project is nil")
 	}
-	if p.Owner != 0 {
+	if p.Owner == 0 {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project owner not set")
 	}
-	if p.Name != "" {
+	if p.Name == "" {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project name not set")
 	}
-	if p.Description != "" {
+	if p.Description == "" {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project description not set")
 	}
-	if p.CreatedBy != 0 {
+	if p.CreatedBy == 0 {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project createdBy not set")
 	}
-	if p.ModifiedBy != 0 {
+	if p.ModifiedBy == 0 {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project modifiedBy not set")
 	}
-	if p.StartDate != nil {
+	if p.StartDate == nil {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil StartDate")
 	}
-	if p.DueDate != nil {
+	if p.DueDate == nil {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil DueDate")
 	}
-	if p.CreatedDate != nil {
+	if p.CreatedDate == nil {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil CreatedDate")
 	}
-	if p.ModifiedDate != nil {
+	if p.ModifiedDate == nil {
 		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil ModifiedDate")
 	}
 	return nil
@@ -74,13 +74,13 @@ type ProjectView struct {
 }
 
 func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) (*ProjectView, error) {
-	if p.Owner != 0 {
+	if p.Owner == 0 {
 		return nil, errors.New(errors.ErrValidationFailed, "project model struct not healthy - project owner not set")
 	}
-	if p.CreatedBy != 0 {
+	if p.CreatedBy == 0 {
 		return nil, errors.New(errors.ErrValidationFailed, "project model struct not healthy - project createdBy not set")
 	}
-	if p.ModifiedBy != 0 {
+	if p.ModifiedBy == 0 {
 		return nil, errors.New(errors.ErrValidationFailed, "project model struct not healthy - project modifiedBy not set")
 	}
 
