@@ -6,8 +6,9 @@ import (
 	"go-do-the-thing/src/helpers"
 	"go-do-the-thing/src/helpers/constants"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
-	"go-do-the-thing/src/helpers/slog"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,24 +17,26 @@ import (
 type AuthenticationMiddleware struct {
 	JwtHandler security.JwtHandler
 	UsersRepo  users_repo.UsersRepo
-	Logger     slog.Logger
+	logger     *slog.Logger
 }
 
 func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo users_repo.UsersRepo) AuthenticationMiddleware {
+	logger := slog.With("source", "AuthMiddleware")
 	return AuthenticationMiddleware{
-		Logger:     slog.NewLogger("Auth"),
 		UsersRepo:  usersRepo,
 		JwtHandler: jwt,
+		logger:     logger,
 	}
 }
 
-// API code to intercept all requests
 func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		request, err := a.tryAuthenticateUser(r)
 		if err != nil {
 			clearTokenCookie(w)
-			redirectOnErr(w, r, a.Logger, err, "/login", "Missing token")
+			a.logger.Warn("Authentication failed", "error", err, "message", "Missing token")
+			w.Header().Set("HX-Location", "/login")
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
@@ -43,7 +46,6 @@ func (a *AuthenticationMiddleware) Authentication(next http.Handler) http.Handle
 
 func (a *AuthenticationMiddleware) OptionalAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.Logger.Debug("This is the optional auth path")
 		request, _ := a.tryAuthenticateUser(r)
 		next.ServeHTTP(w, request)
 	})
@@ -84,7 +86,7 @@ func (a *AuthenticationMiddleware) tryAuthenticateUser(r *http.Request) (*http.R
 		return r, errors.New(errors.AuthFailed, "Token expiry malformed: %s, error: %w", exp, err)
 	}
 	if expDate.Before(time.Now()) {
-		a.Logger.TODO("Reset session for user when token expires")
+		logger.TODO("Reset session for user when token expires")
 		return r, errors.New(errors.AuthFailed, "Token expired for user_id %s. Exp date: %s", userId, exp)
 	}
 
@@ -99,8 +101,8 @@ func (a *AuthenticationMiddleware) tryAuthenticateUser(r *http.Request) (*http.R
 
 	shouldRefresh := expDate.After(time.Now().Add(time.Duration(time.Hour)))
 	if shouldRefresh {
-		a.Logger.TODO("Implement automatic token refresh when close to expiring")
-		a.Logger.Info("Token for user %s is close to expiring", userId)
+		logger.TODO("Implement automatic token refresh when close to expiring")
+		a.logger.Info("Token for user is close to expiring", "userId", userId)
 	}
 
 	values := helpers.HttpContext{Values: map[constants.ContextKey]string{
@@ -127,11 +129,4 @@ func clearTokenCookie(w http.ResponseWriter) {
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, &clearCookie)
-}
-
-func redirectOnErr(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, location, message string, params ...any) {
-	logger.TODO("Add ability to let user know why redirect happened (flash message on screen)")
-	logger.Error(err, message, params...)
-	w.Header().Set("HX-Location", location)
-	http.Redirect(w, r, location, http.StatusSeeOther)
 }

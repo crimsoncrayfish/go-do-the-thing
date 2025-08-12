@@ -4,38 +4,38 @@ import (
 	"errors"
 	"go-do-the-thing/src/database/repos"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"log/slog"
 )
 
 type AdminService struct {
 	usersRepo users_repo.UsersRepo
-	logger    slog.Logger
+	logger    *slog.Logger
 }
 
 const serviceSource = "AdminService"
 
 func SetupAdminService(repo_container *repos.RepoContainer) AdminService {
+	logger := slog.With("source", serviceSource)
 	return AdminService{
 		usersRepo: *repo_container.GetUsersRepo(),
-		logger:    slog.NewLogger(serviceSource),
+		logger:    logger,
 	}
 }
 
 func (s *AdminService) ListUsers(currentUserId int64) ([]models.UserView, error) {
-	s.logger.Debug("ListUsers called by userId: %d", currentUserId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
 	if err != nil {
-		s.logger.Error(err, "failed to get current user for ListUsers")
+		s.logger.Error("failed to get current user for ListUsers", "error", err)
 		return nil, err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User %d attempted to list users without admin rights", currentUserId)
+		s.logger.Warn("User attempted to list users without admin rights", "currentUserId", currentUserId)
 		return nil, errors.New("only admins can view inactive users")
 	}
 	users, err := s.usersRepo.GetUsers()
 	if err != nil {
-		s.logger.Error(err, "failed to get inactive users")
+		s.logger.Error("failed to get inactive users", "error", err)
 		return nil, err
 	}
 	user_views := make([]models.UserView, len(users))
@@ -46,48 +46,45 @@ func (s *AdminService) ListUsers(currentUserId int64) ([]models.UserView, error)
 }
 
 func (s *AdminService) GetUserById(currentUserId int64, user_id int64) (models.UserView, error) {
-	s.logger.Debug("ListUsers called by userId: %d", currentUserId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
 	if err != nil {
-		s.logger.Error(err, "failed to get current user for ListUsers")
+		s.logger.Error("failed to get current user for GetUserById", "error", err)
 		return models.UserView{}, err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User %d attempted to list users without admin rights", currentUserId)
+		s.logger.Warn("User attempted to get user without admin rights", "currentUserId", currentUserId)
 		return models.UserView{}, errors.New("only admins can view inactive users")
 	}
 
 	user, err := s.usersRepo.GetUserById(user_id)
 	if err != nil {
-		s.logger.Error(err, "AuthenticateUser: failed to get user by id - id: %d", user_id)
+		s.logger.Error("failed to get user by id", "error", err, "user_id", user_id)
 		return models.UserView{}, err
 	}
 	return user.ToViewModel(), nil
 }
 
 func (s *AdminService) ActivateUser(currentUserId, userId int64) (string, error) {
-	s.logger.Debug("ActivateUser called by userId: %d for userId: %d", currentUserId, userId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
 	if err != nil {
-		s.logger.Error(err, "failed to get current user for ActivateUser")
+		s.logger.Error("failed to get current user for ActivateUser", "error", err)
 		return "", err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User %d attempted to activate user %d without admin rights", currentUserId, userId)
+		s.logger.Warn("User attempted to activate user without admin rights", "currentUserId", currentUserId, "userId", userId)
 		return "", errors.New("only admins can activate users")
 	}
 	return s.usersRepo.UpdateUserEnabled(userId, true)
 }
 
 func (s *AdminService) DeactivateUser(currentUserId, userId int64) (string, error) {
-	s.logger.Debug("DeactivateUser called by userId: %d for userId: %d", currentUserId, userId)
 	currentUser, err := s.usersRepo.GetUserById(currentUserId)
 	if err != nil {
-		s.logger.Error(err, "failed to get current user for DeactivateUser")
+		s.logger.Error("failed to get current user for DeactivateUser", "error", err)
 		return "", err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User %d attempted to deactivate user %d without admin rights", currentUserId, userId)
+		s.logger.Warn("User attempted to deactivate user without admin rights", "currentUserId", currentUserId, "userId", userId)
 		return "", errors.New("only admins can deactivate users")
 	}
 	return s.usersRepo.UpdateUserEnabled(userId, false)

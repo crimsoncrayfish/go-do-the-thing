@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,15 +13,16 @@ import (
 
 type UsersRepo struct {
 	db     database.DatabaseConnection
-	logger slog.Logger
+	logger *slog.Logger
 }
-
-var repoName = "UsersRepo"
 
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
-	logger := slog.NewLogger(repoName)
-	return &UsersRepo{db: connection, logger: logger}
+	logger := slog.With("source", "UsersRepo")
+	return &UsersRepo{
+		db:     connection,
+		logger: logger,
+	}
 }
 
 func scanUserFromRow(row pgx.Row, user *models.User) error {
@@ -57,137 +58,128 @@ func scanUsersFromRows(rows pgx.Rows, user *models.User) error {
 const insertUser = `SELECT sp_insert_user($1, $2, $3, $4)`
 
 func (r *UsersRepo) Create(user *models.User) (int64, error) {
-	r.logger.Debug("Create called - sql: %s, params: %+v", insertUser, user)
+	r.logger.Debug("Create called", "sql", insertUser, "params", user)
 	var id int64
 	err := r.db.QueryRow(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now()).Scan(&id)
 	if err != nil {
-		r.logger.Error(err, "failed to insert user - sql: %s, params: %s", insertUser, user.Email)
+		r.logger.Error("failed to insert user", "error", err, "sql", insertUser, "email", user.Email)
 		return 0, errors.New(errors.ErrDBInsertFailed, "failed to insert user: %w", err)
 	}
-	r.logger.Info("User created successfully - id: %d, email: %s", id, user.Email)
 	return id, nil
 }
 
 const updateUserDetails = `SELECT sp_update_user_details($1, $2)`
 
 func (r *UsersRepo) UpdateDetails(user models.User) error {
-	r.logger.Debug("UpdateDetails called - sql: %s, params: %+v", updateUserDetails, user)
+	r.logger.Debug("UpdateDetails called", "sql", updateUserDetails, "params", user)
 	_, err := r.db.Exec(updateUserDetails, user.FullName, user.Id)
 	if err != nil {
-		r.logger.Error(err, "failed to update user - sql: %s, params: %+v", updateUserDetails, user)
+		r.logger.Error("failed to update user", "error", err, "sql", updateUserDetails, "user_id", user.Id, "full_name", user.FullName)
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update user: %w", err)
 	}
-	r.logger.Info("User details updated successfully - id: %d, fullName: %s", user.Id, user.FullName)
 	return nil
 }
 
 const updateUserPassword = `SELECT sp_update_user_password($1, $2)`
 
 func (r *UsersRepo) UpdatePassword(user models.User) error {
-	r.logger.Debug("UpdatePassword called - sql: %s, params: %+v", updateUserPassword, user)
+	r.logger.Debug("UpdatePassword called", "sql", updateUserPassword, "user_id", user.Id)
 	_, err := r.db.Exec(updateUserPassword, user.PasswordHash, user.Id)
 	if err != nil {
-		r.logger.Error(err, "failed to set user password - sql: %s, params: %+v", updateUserPassword, user)
+		r.logger.Error("failed to set user password", "error", err, "sql", updateUserPassword, "user_id", user.Id)
 		return fmt.Errorf("failed to set user password: %w", err)
 	}
-	r.logger.Info("User password updated successfully - id: %d", user.Id)
 	return nil
 }
 
 const updateUserSession = `SELECT sp_update_user_session($1, $2, $3)`
 
 func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTime *time.Time) error {
-	r.logger.Debug("UpdateSession called - sql: %s, params: %v", updateUserSession, []any{userId, sessionId, sessionStartTime})
+	r.logger.Debug("UpdateSession called", "sql", updateUserSession, "userId", userId, "sessionId", sessionId, "sessionStartTime", sessionStartTime)
 	_, err := r.db.Exec(updateUserSession, userId, sessionId, sessionStartTime)
 	if err != nil {
-		r.logger.Error(err, "failed to set user session - sql: %s, params: %v", updateUserSession, []any{userId, sessionId, sessionStartTime})
+		r.logger.Error("failed to set user session", "error", err, "sql", updateUserSession, "userId", userId, "sessionId", sessionId, "sessionStartTime", sessionStartTime)
 		return fmt.Errorf("failed to set user session: %w", err)
 	}
-	r.logger.Debug("UpdateSession succeeded - id: %d", userId)
 	return nil
 }
 
 const updateUserIsAdmin = `SELECT sp_update_user_is_admin($1, $2)`
 
 func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
-	r.logger.Debug("UpdateIsAdmin called - sql: %s, params: %+v", updateUserIsAdmin, user)
+	r.logger.Debug("UpdateIsAdmin called", "sql", updateUserIsAdmin, "user_id", user.Id)
 	_, err := r.db.Exec(updateUserIsAdmin, user.IsAdmin, user.Id)
 	if err != nil {
-		r.logger.Error(err, "failed to set user as admin - sql: %s, params: %+v", updateUserIsAdmin, user)
+		r.logger.Error("failed to set user as admin", "error", err, "sql", updateUserIsAdmin, "user_id", user.Id)
 		return fmt.Errorf("failed to set user as admin: %w", err)
 	}
-	r.logger.Info("User admin status updated successfully - id: %d, isAdmin: %t", user.Id, user.IsAdmin)
 	return nil
 }
 
 const deleteUser = `SELECT sp_delete_user($1)`
 
 func (r *UsersRepo) Delete(user models.User) error {
-	r.logger.Debug("Delete called - sql: %s, params: %+v", deleteUser, user)
+	r.logger.Debug("Delete called", "sql", deleteUser, "user_id", user.Id)
 	_, err := r.db.Exec(deleteUser, user.Id)
 	if err != nil {
-		r.logger.Error(err, "failed to delete user - sql: %s, params: %+v", deleteUser, user)
+		r.logger.Error("failed to delete user", "error", err, "sql", deleteUser, "user_id", user.Id)
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	r.logger.Info("User deleted successfully - id: %d", user.Id)
 	return nil
 }
 
 const getUserByEmail = `SELECT * FROM sp_get_user_by_email($1)`
 
 func (r *UsersRepo) GetUserByEmail(email string) (*models.User, error) {
-	r.logger.Debug("GetUserByEmail called - sql: %s, params: %s", getUserByEmail, email)
+	r.logger.Debug("GetUserByEmail called", "sql", getUserByEmail, "email", email)
 
 	row := r.db.QueryRow(getUserByEmail, email)
 
 	temp := &models.User{}
 	err := scanUserFromRow(row, temp)
 	if err != nil {
-		r.logger.Error(err, "failed to get user by email - sql: %s, params: %s", getUserByEmail, email)
+		r.logger.Error("failed to get user by email", "error", err, "sql", getUserByEmail, "email", email)
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
-	r.logger.Debug("GetUserByEmail succeeded - id: %d, params: %s", temp.Id, email)
 	return temp, nil
 }
 
 const getUserPassword = `SELECT sp_get_user_password($1)`
 
 func (r *UsersRepo) GetUserPassword(id int64) (string, error) {
-	r.logger.Debug("GetUserPassword called - sql: %s, params: %d", getUserPassword, id)
+	r.logger.Debug("GetUserPassword called", "sql", getUserPassword, "id", id)
 	row := r.db.QueryRow(getUserPassword, id)
 	var password string
 	err := row.Scan(&password)
 	if err != nil {
-		r.logger.Error(err, "failed to get user password - sql: %s, params: %d", getUserPassword, id)
+		r.logger.Error("failed to get user password", "error", err, "sql", getUserPassword, "id", id)
 		return "", fmt.Errorf("failed to get user password: %w", err)
 	}
-	r.logger.Debug("GetUserPassword succeeded - id: %d", id)
 	return password, nil
 }
 
 const getUser = `SELECT * FROM sp_get_user_by_id($1)`
 
 func (r *UsersRepo) GetUserById(id int64) (*models.User, error) {
-	r.logger.Debug("GetUserById called - sql: %s, params: %d", getUser, id)
+	r.logger.Debug("GetUserById called", "sql", getUser, "id", id)
 	row := r.db.QueryRow(getUser, id)
 
 	temp := &models.User{}
 	err := scanUserFromRow(row, temp)
 	if err != nil {
-		r.logger.Error(err, "failed to get user - sql: %s, params: %d", getUser, id)
+		r.logger.Error("failed to get user", "error", err, "sql", getUser, "id", id)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
-	r.logger.Debug("GetUserById succeeded - id: %d", id)
 	return temp, nil
 }
 
 const getAllUsersNotDeleted = `SELECT * FROM sp_get_users_not_deleted()`
 
 func (r *UsersRepo) GetUsers() ([]models.User, error) {
-	r.logger.Debug("GetUsers called - sql: %s", getAllUsersNotDeleted)
+	r.logger.Debug("GetUsers called", "sql", getAllUsersNotDeleted)
 	rows, err := r.db.Query(getAllUsersNotDeleted)
 	if err != nil {
-		r.logger.Error(err, "query failed to get users - sql: %s", getAllUsersNotDeleted)
+		r.logger.Error("query failed to get users", "error", err, "sql", getAllUsersNotDeleted)
 		return nil, fmt.Errorf("query failed to get users: %w", err)
 	}
 
@@ -197,44 +189,41 @@ func (r *UsersRepo) GetUsers() ([]models.User, error) {
 
 		err := scanUsersFromRows(rows, &user)
 		if err != nil {
-			r.logger.Error(err, "scan failed to get users")
+			r.logger.Error("scan failed to get users", "error", err)
 			return nil, fmt.Errorf("scan failed to get users: %w", err)
 		}
 		users = append(users, user)
 	}
 	err = rows.Err()
 	if err != nil {
-		r.logger.Error(err, "rows.Err() in GetUsers")
+		r.logger.Error("rows.Err() in GetUsers", "error", err)
 		return nil, fmt.Errorf("failed to get users: %w", err)
 	}
-	r.logger.Debug("GetUsers succeeded - count: %d", len(users))
 	return users, nil
 }
 
 const logoutUser = `SELECT sp_logout_user($1)`
 
 func (r *UsersRepo) Logout(userId int64) error {
-	r.logger.Debug("Logout called - sql: %s, params: %d", logoutUser, userId)
+	r.logger.Debug("Logout called", "sql", logoutUser, "userId", userId)
 	_, err := r.db.Exec(logoutUser, userId)
 	if err != nil {
-		r.logger.Error(err, "failed to end user session - sql: %s, params: %d", logoutUser, userId)
+		r.logger.Error("failed to end user session", "error", err, "sql", logoutUser, "userId", userId)
 		return fmt.Errorf("failed to end user session: %w", err)
 	}
-	r.logger.Info("User logged out successfully - id: %d", userId)
 	return nil
 }
 
 const updateUserEnabled = `SELECT * FROM sp_update_user_is_enabled($1, $2)`
 
 func (r *UsersRepo) UpdateUserEnabled(id int64, enabled bool) (string, error) {
-	r.logger.Debug("UpdateUserEnabled called - sql: %s, params: %d, enabled: %t", updateUserEnabled, id, enabled)
+	r.logger.Debug("UpdateUserEnabled called", "sql", updateUserEnabled, "id", id, "enabled", enabled)
 	row := r.db.QueryRow(updateUserEnabled, id, enabled)
 	var email string
 	err := row.Scan(&email)
 	if err != nil {
-		r.logger.Error(err, "failed to update user enabled status - sql: %s, params: %d, enabled: %t", updateUserEnabled, id, enabled)
+		r.logger.Error("failed to update user enabled status", "error", err, "sql", updateUserEnabled, "id", id, "enabled", enabled)
 		return "", fmt.Errorf("failed to update user enabled status: %w", err)
 	}
-	r.logger.Debug("UpdateUserEnabled succeeded - id: %d, enabled: %t", id, enabled)
 	return email, nil
 }

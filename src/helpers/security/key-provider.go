@@ -6,33 +6,26 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"go-do-the-thing/src/helpers/errors"
-	"go-do-the-thing/src/helpers/slog"
+	"log/slog"
 	"os"
-	"path/filepath"
 
 	"github.com/google/uuid"
 )
 
+var keyProviderLogger = slog.With("source", "KeyProvider")
+
 type SecretKeyProvider struct {
 	keyList map[string]*rsa.PrivateKey
 	kidList []string
-	logger  slog.Logger
 }
 
 var source = "KeyProvider"
 
-func newKeyProvider(env, working_dir string) *SecretKeyProvider {
-	logger := slog.NewLogger(source)
-	var keylist []*rsa.PrivateKey
-	var err error
-	if env == "development" {
-		keylist, err = loadKeysFromFile(filepath.Join(working_dir, "keys"), logger)
-	} else {
-		keylist, err = loadKeysFromEnv(logger)
-	}
-
+func newKeyProvider(env string) *SecretKeyProvider {
+	keylist, err := loadKeysFromEnv()
 	if err != nil {
-		logger.Fatal("FATAL: Could not load security keys: %v", err)
+		keyProviderLogger.Error("FATAL: Could not load security keys", "error", err)
+		panic(err)
 	}
 	keys := make(map[string]*rsa.PrivateKey)
 	kids := make([]string, len(keylist))
@@ -42,11 +35,10 @@ func newKeyProvider(env, working_dir string) *SecretKeyProvider {
 		keys[kid] = key
 		kids[i] = kid
 	}
-	logger.Info("KeyProvider created", "keys_loaded", len(keylist))
+	keyProviderLogger.Info("KeyProvider created", "keys_loaded", len(keylist))
 	return &SecretKeyProvider{
 		keyList: keys,
 		kidList: kids,
-		logger:  logger,
 	}
 }
 
@@ -88,29 +80,8 @@ func parseRSAKeys(privateKeyPEM, publicKeyPEM []byte) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func loadKeysFromFile(keysLocation string, logger slog.Logger) ([]*rsa.PrivateKey, error) {
-	logger.Info("Reading keys from filesystem: %s", keysLocation)
-
-	privateKeyFile, err := os.ReadFile(filepath.Join(keysLocation, "private.key"))
-	if err != nil {
-		return nil, errors.New(errors.ErrKeysNotLoadedError, "could not read private.key: %w", err)
-	}
-
-	publicKeyFile, err := os.ReadFile(filepath.Join(keysLocation, "public.key"))
-	if err != nil {
-		return nil, errors.New(errors.ErrKeysNotLoadedError, "could not read public.key: %w", err)
-	}
-
-	key, err := parseRSAKeys(privateKeyFile, publicKeyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return []*rsa.PrivateKey{key}, nil
-}
-
-func loadKeysFromEnv(logger slog.Logger) ([]*rsa.PrivateKey, error) {
-	logger.Info("Reading keys from environment variables")
+func loadKeysFromEnv() ([]*rsa.PrivateKey, error) {
+	keyProviderLogger.Info("Reading keys from environment variables")
 
 	privateKeyB64 := os.Getenv("JWT_PRIVATE_KEY")
 	publicKeyB64 := os.Getenv("JWT_PUBLIC_KEY")

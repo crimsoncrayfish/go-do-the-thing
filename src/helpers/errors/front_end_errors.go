@@ -1,42 +1,44 @@
 package errors
 
 import (
-	"go-do-the-thing/src/helpers/slog"
 	templ_shared "go-do-the-thing/src/shared/templ"
+	"log/slog"
 	"net/http"
 )
 
-func BadRequest(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+var errorLogger = slog.With("source", "ErrorHelper")
+
+func BadRequest(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusBadRequest)
-	logger.Error(err, msg, a...)
+	errorLogger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func NotFound(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func NotFound(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusNotFound)
-	logger.Error(err, msg, a...)
+	errorLogger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func Unauthorized(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func Unauthorized(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusUnauthorized)
-	logger.Error(err, msg, a...)
+	errorLogger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func InternalServerError(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func InternalServerError(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)
-	logger.Error(err, msg, a...)
+	errorLogger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)

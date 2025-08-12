@@ -169,6 +169,8 @@ templ TagItemEditorOOB(project_id int64, tag models.TagView) {
 		<button
 			type="button"
 			hx-delete={ fmt.Sprintf("/project/%d/tag/%d", project_id, tag.Id) }
+			hx-target={ fmt.Sprintf("#tag-%d", tag.Id) }
+			hx-swap="outerHTML"
 			hx-indicator={ fmt.Sprintf("#tag-loader-%d", tag.Id) }
 			id="delete-tag-button"
 			hx-trigger="confirmed"
@@ -208,11 +210,4 @@ templ TagItemEditorOOB(project_id int64, tag models.TagView) {
 			</div>
 		</div>
 	</form>
-}
-
-templ DeletedTag(tag_id int64) {
-	<div
-		hx-swap-oob="outerHTML"
-		id={ fmt.Sprintf("tag-%d", tag_id) }
-	></div>
 }

@@ -3,15 +3,14 @@ package assert
 import (
 	"errors"
 	"fmt"
-	"go-do-the-thing/src/helpers/slog"
+	"log/slog"
 	"reflect"
 )
 
 func NotEqual(actual any, notExpected any, source string, propName string) {
 	if reflect.DeepEqual(actual, notExpected) {
 		err := fmt.Errorf("%s should not be equal to %v", propName, notExpected)
-		logger := slog.NewLogger(source)
-		logger.Error(err, "")
+		slog.Error("assertion failed", "error", err, "source", source)
 		panic(err)
 	}
 }
@@ -20,8 +19,7 @@ func NoError(err error, source string, msg string, params ...any) {
 	if err == nil {
 		return
 	}
-	logger := slog.NewLogger(source)
-	logger.Error(err, msg, params...)
+	slog.Error(msg, "error", err, "source", source)
 	panic(err)
 }
 
@@ -30,8 +28,7 @@ func IsTrue(isTrue bool, source string, msg string, params ...any) {
 		return
 	}
 	err := errors.New("unexpected situation")
-	logger := slog.NewLogger(source)
-	logger.Error(err, msg, params...)
+	slog.Error(msg, "error", err, "source", source)
 	panic(err)
 }
 
@@ -40,8 +37,7 @@ func NotNil(val any, source string, msg string) {
 		return
 	}
 	err := errors.New("should not be nil")
-	logger := slog.NewLogger(source)
-	logger.Error(err, msg)
+	slog.Error(msg, "error", err, "source", source)
 	panic(err)
 }
 

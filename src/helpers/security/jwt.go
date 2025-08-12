@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go-do-the-thing/src/helpers/constants"
-	"go-do-the-thing/src/helpers/slog"
+	"log/slog"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,13 +12,12 @@ import (
 
 type JwtHandler struct {
 	*SecretKeyProvider
-	logger slog.Logger
+	logger *slog.Logger
 }
 
-func NewJwtHandler(env, working_dir string) JwtHandler {
-	logger := slog.NewLogger("JWT Handler")
-
-	provider := newKeyProvider(env, working_dir)
+func NewJwtHandler(env string) JwtHandler {
+	provider := newKeyProvider(env)
+	logger := slog.With("source", "JwtHandler")
 	return JwtHandler{
 		SecretKeyProvider: provider,
 		logger:            logger,
@@ -38,7 +37,7 @@ func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(signedToken, &claims, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			s.logger.Error(errors.New("unexpected signing method"), "Unexpected signing method: %v", t.Header["alg"])
+			s.logger.Error("unexpected signing method", "error", errors.New("unexpected signing method"), "method", t.Header["alg"])
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 
@@ -48,19 +47,15 @@ func (s *JwtHandler) ValidateToken(signedToken string) (jwt.MapClaims, error) {
 		switch {
 
 		case errors.Is(err, jwt.ErrTokenMalformed):
-			// todo figure out wtf this even is
-			s.logger.Error(err, "Not a token")
+			s.logger.Error("Not a token", "error", err)
 		case errors.Is(err, jwt.ErrTokenSignatureInvalid):
-			// todo figure out wtf this even is
-			s.logger.Error(err, "Invalid Signature")
+			s.logger.Error("Invalid Signature", "error", err)
 		case errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrTokenNotValidYet):
-			// todo figure out wtf this even is
-			s.logger.Error(err, "Timing issues")
+			s.logger.Error("Timing issues", "error", err)
 		case token == nil:
-			s.logger.Error(err, "what even happened. Nil token")
+			s.logger.Error("what even happened. Nil token", "error", err)
 		default:
-			// todo figure out wtf this even is
-			s.logger.Error(err, "What even happened")
+			s.logger.Error("What even happened", "error", err)
 		}
 		return nil, err
 	}

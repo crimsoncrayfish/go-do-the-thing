@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"go-do-the-thing/src/helpers/slog"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -17,12 +17,13 @@ func (w *wrappedWriter) WriteHeader(statusCode int) {
 }
 
 type LoggingMiddleWare struct {
-	logger slog.Logger
+	logger *slog.Logger
 }
 
 func NewLoggingMiddleWare() *LoggingMiddleWare {
+	logger := slog.With("source", "LoggingMiddleware")
 	return &LoggingMiddleWare{
-		logger: slog.NewLogger("HTTP"),
+		logger: logger,
 	}
 }
 
@@ -34,6 +35,6 @@ func (mw *LoggingMiddleWare) Logging(next http.Handler) http.Handler {
 			statusCode:     http.StatusOK,
 		}
 		next.ServeHTTP(wr, r)
-		mw.logger.HttpInfo("'METHOD: %s, PATH: %s, EXECUTION_TIME: %s'", wr.statusCode, r.Method, r.URL.Path, time.Since(start))
+		mw.logger.Info("HTTP request", "method", r.Method, "path", r.URL.Path, "status", wr.statusCode, "execution_time", time.Since(start))
 	})
 }

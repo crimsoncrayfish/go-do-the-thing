@@ -2,7 +2,8 @@ package middleware
 
 import (
 	"fmt"
-	"go-do-the-thing/src/helpers/slog"
+	"go-do-the-thing/src/helpers/logger"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -12,24 +13,22 @@ import (
 )
 
 type RateLimitMiddleWare struct {
-	logger           slog.Logger
 	current_counts   map[string]int
 	current_window   time.Time
 	mu               sync.Mutex
 	maxRequestsLimit int
+	logger           *slog.Logger
 }
 
 func NewRateLimiter() *RateLimitMiddleWare {
-	maxRequests := 500 // Default value
+	log := slog.With("source", "RateLimitMiddleware")
+	maxRequests := 500
 	if envLimit := os.Getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"); envLimit != "" {
 		if parsed, err := strconv.Atoi(envLimit); err == nil && parsed > 0 {
 			maxRequests = parsed
 		}
 	}
 
-	logger := slog.NewLogger("Ratelimiter")
-
-	// TODO suggestions for production improvements
 	logger.TODO("Consider implementing sliding window algorithm instead of fixed windows")
 	logger.TODO("Add circuit breaker logic for graceful degradation under high load")
 	logger.TODO("Implement Redis/external store for multi-instance deployments")
@@ -38,9 +37,9 @@ func NewRateLimiter() *RateLimitMiddleWare {
 	logger.TODO("Consider rate limiting by user ID for authenticated requests")
 
 	return &RateLimitMiddleWare{
-		logger:           logger,
 		current_counts:   make(map[string]int),
 		maxRequestsLimit: maxRequests,
+		logger:           log,
 	}
 }
 
@@ -71,7 +70,7 @@ func (mw *RateLimitMiddleWare) RateLimit(next http.Handler) http.Handler {
 		current_count := mw.getRateAndUpdate(ip, currentWindow)
 
 		if current_count > mw.maxRequestsLimit {
-			mw.logger.Warn("Ratelimited IP: %s", ip)
+			mw.logger.Warn("Ratelimited IP", "ip", ip)
 			w.Header().Set("Retry-After", fmt.Sprintf("%d", secondsUntilReset))
 			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", mw.maxRequestsLimit))
 			w.Header().Set("X-RateLimit-Remaining", "0")
@@ -81,7 +80,7 @@ func (mw *RateLimitMiddleWare) RateLimit(next http.Handler) http.Handler {
 		remaining := mw.maxRequestsLimit - current_count
 		w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", mw.maxRequestsLimit))
 		w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
-		mw.logger.Debug("Request from IP '%s'. Current count: %d, Window: %s", ip, current_count, currentWindow.Format("15:04"))
+		mw.logger.Debug("Request from IP", "ip", ip, "current_count", current_count, "window", currentWindow.Format("15:04"))
 		next.ServeHTTP(w, r)
 	})
 }
