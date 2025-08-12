@@ -1,13 +1,11 @@
 package task_service
 
 import (
-	"fmt"
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 	"sort"
@@ -185,10 +183,8 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 			}
 			users[task.AssignedTo] = assigned_to
 		}
-		assert.NotNil(assigned_to, serviceSource, fmt.Sprintf("task assignee cant be nil - assigned to id %d", task.AssignedTo))
 
 		var created_by *models.User
-
 		created_by, ok = users[task.CreatedBy]
 		if !ok {
 			created_by, err = s.usersRepo.GetUserById(task.CreatedBy)
@@ -197,10 +193,8 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 			}
 			users[task.ModifiedBy] = created_by
 		}
-		assert.NotNil(created_by, serviceSource, fmt.Sprintf("task created by user cant be nil - created by id %d", task.CreatedBy))
 
 		var modified_by *models.User
-
 		modified_by, ok = users[task.ModifiedBy]
 		if !ok {
 			modified_by, err = s.usersRepo.GetUserById(task.ModifiedBy)
@@ -209,7 +203,6 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 			}
 			users[task.ModifiedBy] = modified_by
 		}
-		assert.NotNil(modified_by, serviceSource, fmt.Sprintf("task modified by user cant be nil - modified by id %d", task.ModifiedBy))
 
 		var project *models.Project
 		project, ok = projects[task.Project]
@@ -221,7 +214,11 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 			projects[task.Project] = project
 		}
 
-		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by, *project)
+		view, err := task.ToViewModel(assigned_to, created_by, modified_by, *project)
+		if err != nil {
+			return nil, err
+		}
+		taskViews[i] = view
 	}
 
 	sort.Slice(taskViews, func(i, j int) bool {
@@ -269,8 +266,12 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 	if err != nil {
 		return nil, err
 	}
+	view, err = task.ToViewModel(assignedTo, createdBy, modifiedBy, *project)
+	if err != nil {
+		return nil, err
+	}
 
-	return task.ToViewModel(assignedTo, createdBy, modifiedBy, *project), nil
+	return view, nil
 }
 
 func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err error) {

@@ -1,7 +1,6 @@
 package errors
 
 import (
-	templ_shared "go-do-the-thing/src/shared/templ"
 	"log/slog"
 	"net/http"
 )
@@ -12,7 +11,7 @@ func BadRequest(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err
 	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func NotFound(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
@@ -21,7 +20,7 @@ func NotFound(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err e
 	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func Unauthorized(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
@@ -30,7 +29,7 @@ func Unauthorized(logger *slog.Logger, w http.ResponseWriter, r *http.Request, e
 	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func InternalServerError(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
@@ -39,7 +38,7 @@ func InternalServerError(logger *slog.Logger, w http.ResponseWriter, r *http.Req
 	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func getUserFriendlyMessage(err error, defaultMsg string) string {

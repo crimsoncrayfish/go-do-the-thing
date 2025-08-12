@@ -150,7 +150,10 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 const insertProject = `SELECT sp_insert_project($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 func (r *ProjectsRepo) Insert(project models.Project) (id int64, err error) {
-	project.AssertHealthyNew()
+	err = project.AssertHealthyNew()
+	if err != nil {
+		return 0, err
+	}
 
 	err = r.database.QueryRow(
 		insertProject,

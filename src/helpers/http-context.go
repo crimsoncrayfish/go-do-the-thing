@@ -3,7 +3,6 @@ package helpers
 import (
 	"context"
 	"errors"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/constants"
 	"net/http"
 	"strconv"
@@ -52,13 +51,17 @@ const source = "HttpContext"
 
 func GetNameFromContext(ctx context.Context) string {
 	context, ok := ctx.Value(constants.AuthContext).(HttpContext)
-	assert.IsTrue(ok, source, "Failed to get the user name from the context. Context not set")
+	if !ok {
+		// TODO: Log this or handle this somehow?
+	}
 	return context.Get(constants.AuthUserName)
 }
 
 func GetEmailFromContext(ctx context.Context) string {
 	context, ok := ctx.Value(constants.AuthContext).(HttpContext)
-	assert.IsTrue(ok, source, "Failed to get the user name from the context. Context not set")
+	if !ok {
+		// TODO: Log this or handle this somehow?
+	}
 	return context.Get(constants.AuthUserEmail)
 }
 

@@ -1,0 +1,53 @@
+package errors
+
+templ ToastMessage(message string, toastType string) {
+	<div
+		id="toast-message"
+		hx-swap-oob="outerHTML"
+		hx-on--load="showAndHideToast('toast-message')"
+		class={
+			"fixed top-0 left-0 w-full",
+			"opacity-0 p-6 md:w-auto md:top-auto md:left-auto md:border md:relative md:min-h-[80px]",
+			"md:rounded-xl md:w-72 md:relative ",
+			"overflow-hidden shadow-lg z-50 duration-500 ease-in-out theme-transition transition-opacity",
+			"bg-secondary-light dark:bg-secondary-dark",
+			templ.KV(
+				"border-success-light dark:border-success-dark text-white",
+				toastType == "success",
+			),
+			templ.KV(
+				"border-danger-light dark:border-danger-dark text-white",
+				toastType == "error",
+			),
+			templ.KV(
+				"border-warning-light dark:border-warning-dark text-white",
+				toastType == "warning",
+			),
+			templ.KV(
+				"border-info-light dark:border-info-dark text-white",
+				toastType == "info",
+			),
+		}
+	>
+		<div class="pr-4 my-auto text-base leading-snug">{ message }</div>
+		<button
+			class="absolute top-1 right-1 text-text-on-light dark:text-text-on-dark hover:text-accent-light dark:hover:text-accent-dark focus:outline-none pt-1 pl-1"
+			aria-label="Close notification"
+			onclick="hideToast('toast-message')"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+			</svg>
+		</button>
+		<div
+			class={
+				"absolute bottom-0 left-0 h-1 w-full",
+				templ.KV("bg-success-light dark:bg-success-dark", toastType == "success"),
+				templ.KV("bg-danger-light dark:bg-danger-dark", toastType == "error"),
+				templ.KV("bg-warning-light dark:bg-warning-dark", toastType == "warning"),
+				templ.KV("bg-info-light dark:bg-info-dark", toastType == "info"),
+			}
+			style="transform-origin: left; animation: shrinkX 5s linear forwards;"
+		></div>
+	</div>
+}
