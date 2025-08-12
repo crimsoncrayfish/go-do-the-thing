@@ -9,34 +9,34 @@ import (
 	roles_repo "go-do-the-thing/src/database/repos/roles"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
-	"go-do-the-thing/src/helpers/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
 	"time"
 )
 
 type ProjectService struct {
-	logger             slog.Logger
 	project_repo       projects_repo.ProjectsRepo
 	users_repo         users_repo.UsersRepo
 	project_users_repo project_users_repo.ProjectUsersRepo
 	project_tags_repo  project_tags_repo.ProjectTagsRepo
 	roles_repo         roles_repo.RolesRepo
 	task_repo          tasks_repo.TasksRepo
+	logger             *logger.Logger
 }
 
 const serviceSource = "ProjectService"
 
 func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
+	log := logger.NewLogger(serviceSource)
 	return ProjectService{
-		logger:             slog.NewLogger(serviceSource),
 		project_repo:       *repo_container.GetProjectsRepo(),
 		users_repo:         *repo_container.GetUsersRepo(),
 		roles_repo:         *repo_container.GetRolesRepo(),
 		project_users_repo: *repo_container.GetProjectUsersRepo(),
 		project_tags_repo:  *repo_container.GetProjectTagsRepo(),
 		task_repo:          *repo_container.GetTasksRepo(),
+		logger:             log,
 	}
 }
 
@@ -47,7 +47,6 @@ func (s ProjectService) GetProjectView(id int64, current_user_id int64) (*models
 		return nil, err
 	}
 
-	// NOTE: Success zone
 	projectView, err := s.projectToViewModel(*project)
 	if err != nil {
 		// NOTE: this should already be nicely formatted
@@ -75,7 +74,6 @@ func (s ProjectService) DeleteProject(id, current_user_id int64) (hasProjects bo
 		return false, err
 	}
 
-	// NOTE: Success zone
 	projectCount, err := s.project_repo.GetProjectCount(current_user_id)
 	if err != nil {
 		return false, err
@@ -170,7 +168,6 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 			}
 			users[project.Owner] = owner
 		}
-		assert.NotNil(owner, serviceSource, fmt.Sprintf("project owner cant be nil - owner id %d", project.Owner))
 
 		var createdBy *models.User
 		createdBy, ok = users[project.CreatedBy]
@@ -182,7 +179,6 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 			}
 			users[project.CreatedBy] = createdBy
 		}
-		assert.NotNil(createdBy, serviceSource, fmt.Sprintf("project creator cant be nil - creator id %d", project.CreatedBy))
 
 		var modifiedBy *models.User
 		modifiedBy, ok = users[project.ModifiedBy]
@@ -194,10 +190,10 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 			}
 			users[project.ModifiedBy] = modifiedBy
 		}
-		assert.NotNil(createdBy, serviceSource, fmt.Sprintf("project creator cant be nil - modifier id %d", project.ModifiedBy))
-
-		// Convert to ViewModel
-		view := project.ToViewModel(owner, createdBy, modifiedBy)
+		view, err := project.ToViewModel(owner, createdBy, modifiedBy)
+		if err != nil {
+			return nil, err
+		}
 		completed, total, err := s.task_repo.GetProjectTaskCompletion(project.Id)
 		if err != nil {
 			view.CompletedTasks = 0
@@ -206,7 +202,7 @@ func (s *ProjectService) projectListToViewModels(projects []models.Project) (pro
 			view.CompletedTasks = completed
 			view.TotalTasks = total
 		}
-		projectViews[i] = view
+		projectViews[i] = *view
 	}
 
 	return projectViews, nil
@@ -244,7 +240,10 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 		}
 		users[project.ModifiedBy] = modified_by
 	}
-	view := project.ToViewModel(owner, created_by, modified_by)
+	view, err := project.ToViewModel(owner, created_by, modified_by)
+	if err != nil {
+		return nil, err
+	}
 	completed, total, err := s.task_repo.GetProjectTaskCompletion(project.Id)
 	if err != nil {
 		view.CompletedTasks = 0
@@ -253,7 +252,7 @@ func (s *ProjectService) projectToViewModel(project models.Project) (viewModel *
 		view.CompletedTasks = completed
 		view.TotalTasks = total
 	}
-	return &view, nil
+	return view, nil
 }
 
 func (s *ProjectService) UserBelongsToProject(user_id, project_id int64) (err error) {

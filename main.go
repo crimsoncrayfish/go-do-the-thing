@@ -11,9 +11,8 @@ import (
 	"go-do-the-thing/src/handlers/project"
 	"go-do-the-thing/src/handlers/task"
 	"go-do-the-thing/src/handlers/users"
-	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/middleware"
 	adminService "go-do-the-thing/src/services/admin"
 	projectService "go-do-the-thing/src/services/project"
@@ -44,18 +43,19 @@ const (
 )
 
 func main() {
-	logger := slog.NewLogger("Main")
 	env := os.Getenv("ENV")
 	if env == "" {
 		env = DEV
 	}
-	logger.Debug("This is the env: %s", env)
+	logger.SetupLogger(env == PROD)
+	log := logger.NewLogger("Main")
+	log.Debug("This is the env", "env", env)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	logger.Debug("This is the port: %s", port)
+	log.Debug("This is the port", "port", port)
 
 	var db_connection_string string
 	if env == DEV {
@@ -65,23 +65,23 @@ func main() {
 	}
 
 	if db_connection_string == "" {
-		logger.Fatal("FATAL: DATABASE_URL environment variable not set.")
+		log.Fatal("FATAL: DATABASE_URL environment variable not set.")
 	}
 
 	working_dir, err := os.Getwd()
-	assert.NoError(err, "Main", "could not get working dir")
-	jwtHandler := security.NewJwtHandler(env, working_dir)
+	if err != nil {
+		log.Fatal("Could not get working directory", "error", err)
+	}
+	jwtHandler := security.NewJwtHandler(env)
 	router := http.NewServeMux()
-
-	// GET Static content
 	faviconLocation = working_dir + "/static/img/todo.ico"
 	manifestLocation = working_dir + "/static/json/manifest.json"
 	swjsLocation = working_dir + "/static/json/manifest.json"
 
-	logger.Info("Setting Up Database")
+	log.Info("Setting Up Database")
 	clientId := os.Getenv("AZURE_CLIENT_ID")
 
-	logger.Debug("connecting to postgres db with connection string '%s' and client id '%s'", db_connection_string, clientId)
+	log.Debug("connecting to postgres db", "connection_string", db_connection_string, "client_id", clientId)
 	dbConnection := database.Init(db_connection_string, clientId)
 	defer dbConnection.Close()
 
@@ -113,15 +113,15 @@ func main() {
 		Handler: router,
 	}
 	if env == DEV {
-		logger.Info("Start TLS server")
+		log.Info("Start TLS server")
 		err = server.ListenAndServeTLS("server.crt", "server.key")
 	} else {
-		logger.Info("Start server")
+		log.Info("Start server")
 		err = server.ListenAndServe()
 	}
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Info("Something went wrong")
-		assert.NoError(err, "Main", "Failed to start HTTPS server")
+		log.Error("Failed to start server", "error", err)
+		panic(fmt.Sprintf("Server startup failed: %v", err))
 	}
 }
 

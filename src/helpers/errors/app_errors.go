@@ -20,6 +20,7 @@ const (
 	ErrDBGenericError     AppErrorCode = "db error"
 	ErrKeysNotLoadedError AppErrorCode = "keys not loaded"
 	ErrEnumMismatch       AppErrorCode = "enum value mismatch"
+	ErrValidationFailed   AppErrorCode = "validation failed"
 )
 
 type AppError struct {

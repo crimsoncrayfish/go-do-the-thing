@@ -5,8 +5,8 @@ import (
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	users_repo "go-do-the-thing/src/database/repos/users"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
-	"go-do-the-thing/src/helpers/slog"
 	"go-do-the-thing/src/models"
 	"time"
 
@@ -16,54 +16,50 @@ import (
 type UserService struct {
 	usersRepo        users_repo.UsersRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
-	logger           slog.Logger
+	logger           *logger.Logger
 }
 
 const serviceSource = "UserService"
 
 func SetupUserService(repo_container *repos.RepoContainer) UserService {
+	log := logger.NewLogger(serviceSource)
 	return UserService{
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
-		logger:           slog.NewLogger(serviceSource),
+		logger:           log,
 	}
 }
 
 func (s *UserService) AuthenticateUser(email, password string) (*models.User, error) {
-	s.logger.Debug("AuthenticateUser called - email: %s", email)
 	user, err := s.usersRepo.GetUserByEmail(email)
 	if err != nil {
-		s.logger.Error(err, "AuthenticateUser: failed to get user by email - email: %s", email)
+		s.logger.Error("AuthenticateUser: failed to get user by email", "error", err, "email", email)
 		return nil, err
 	}
 	if user.IsDeleted {
-		s.logger.Info("AuthenticateUser: user is deleted - email: %s", email)
+		s.logger.Info("AuthenticateUser: user is deleted", "email", email)
 		return nil, errors.New("login failed")
 	}
 
-	// Get password hash separately for security
 	passwordHash, err := s.usersRepo.GetUserPassword(user.Id)
 	if err != nil {
-		s.logger.Error(err, "AuthenticateUser: failed to get user password - email: %s, user_id: %d", email, user.Id)
+		s.logger.Error("AuthenticateUser: failed to get user password", "error", err, "email", email, "user_id", user.Id)
 		return nil, err
 	}
 
 	if !security.CheckPassword(password, passwordHash) {
-		s.logger.Info("AuthenticateUser: invalid password - email: %s", email)
+		s.logger.Info("AuthenticateUser: invalid password", "email", email)
 		return nil, errors.New("login failed")
 	}
 	if !user.IsEnabled {
-		s.logger.Warn("AuthenticateUser: user is not activated - email: %s", email)
+		s.logger.Warn("AuthenticateUser: user is not activated", "email", email)
 		return nil, errors.New("user not enabled")
 	}
-	// Generate new session ID
 	sessionId := uuid.New().String()
-	s.logger.Debug("AuthenticateUser: authentication succeeded - email: %s, user_id: %d", email, user.Id)
-	// Update session in DB
 	now := time.Now().UTC()
 	err = s.usersRepo.UpdateSession(user.Id, sessionId, &now)
 	if err != nil {
-		s.logger.Error(err, "AuthenticateUser: failed to update session - email: %s, user_id: %d", email, user.Id)
+		s.logger.Error("AuthenticateUser: failed to update session", "error", err, "email", email, "user_id", user.Id)
 		return nil, err
 	}
 	user.SessionId = sessionId
@@ -105,7 +101,7 @@ func (s *UserService) LogoutUser(userId int64) error {
 func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {
-		s.logger.Error(err, "Failed to get user with id %d", userId)
+		s.logger.Error("Failed to get user", "error", err, "user_id", userId)
 		return models.UserView{}, err
 	}
 	return user.ToViewModel(), nil
@@ -114,7 +110,7 @@ func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 func (s *UserService) IsUserAdmin(userId int64) (bool, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {
-		s.logger.Error(err, "Failed to get user with id %d", userId)
+		s.logger.Error("Failed to get user", "error", err, "user_id", userId)
 		return false, err
 	}
 	return user.IsAdmin, nil
