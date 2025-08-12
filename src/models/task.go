@@ -20,6 +20,7 @@ type Task struct {
 	ModifiedDate *time.Time `json:"modified_date"`
 	IsDeleted    bool       `json:"is_deleted"`
 	Project      int64      `json:"project_id"`
+	Tags         []Tag
 }
 
 type ItemStatus int
@@ -70,6 +71,7 @@ type TaskView struct {
 	InProgress    bool
 	TimeSpent     time.Duration
 	IsDeleted     bool
+	Tags          []TagView
 }
 
 func (t *TaskView) IsOverDue() bool {

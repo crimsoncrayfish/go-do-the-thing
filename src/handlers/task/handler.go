@@ -53,6 +53,8 @@ func SetupTodoHandler(
 	router.Handle("POST /todo/item/restore/{id}", mw_stack(http.HandlerFunc(todoHandler.restoreItem)))
 	router.Handle("GET /todo/item/create/panel", mw_stack(http.HandlerFunc(todoHandler.getCreatePanel)))
 	router.Handle("GET /todo/item/{id}/edit/panel", mw_stack(http.HandlerFunc(todoHandler.getEditPanel)))
+
+	router.Handle("GET /task/{id}/tag-select", mw_stack(http.HandlerFunc(todoHandler.getTagSelector)))
 }
 
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
@@ -99,9 +101,14 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 		DueDate:     &due_date,
 		ProjectId:   project_id,
 	}
+	tags_for_project, err := h.project_service.GetProjectTags(current_user_id, project_id)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to get project tags for project %d", project_id)
+		return
+	}
 
 	if len(form.Errors) > 0 {
-		if err := templ_shared.EditPanel("Create New Task", templ_todo.TaskFormContent(form, models.ProjectListToMap(projects))).Render(r.Context(), w); err != nil {
+		if err := templ_shared.EditPanel("Create New Task", templ_todo.TaskFormContent(form, models.ProjectListToMap(projects), tags_for_project)).Render(r.Context(), w); err != nil {
 			errors.InternalServerError(w, r, h.logger, err, "Failed to update task form")
 		}
 		return
@@ -121,9 +128,10 @@ func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
 
 	new_form := fm.NewDefaultTaskForm()
 	new_form.Task.ProjectId = taskView.ProjectId
+
 	err = templ_shared.RenderTempls(
 		templ_todo.TaskItemCardOOB(taskView),
-		templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(new_form, models.ProjectListToMap(projects))),
+		templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(new_form, models.ProjectListToMap(projects), tags_for_project)),
 		templ_shared.ToastMessage("Task created successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
@@ -474,14 +482,24 @@ func (h *Handler) getCreatePanel(w http.ResponseWriter, r *http.Request) {
 
 	form := fm.NewDefaultTaskForm()
 
-	projectId := r.URL.Query().Get("project_id")
-	if projectId != "" {
-		if id, err := strconv.ParseInt(projectId, 10, 64); err == nil {
+	project_id := r.URL.Query().Get("project_id")
+	if project_id != "" {
+		if id, err := strconv.ParseInt(project_id, 10, 64); err == nil {
 			form.SetProject(id)
+		}
+	} else {
+		form.Task.ProjectId = projects[0].Id
+	}
+	tags_for_project := []models.TagView{}
+	if form.Task.ProjectId != 0 {
+		tags_for_project, err = h.project_service.GetProjectTags(current_user_id, form.Task.ProjectId)
+		if err != nil {
+			errors.InternalServerError(w, r, h.logger, err, "Failed to get project tags for project %d", form.Task.ProjectId)
+			return
 		}
 	}
 
-	if err := templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(form, models.ProjectListToMap(projects))).Render(r.Context(), w); err != nil {
+	if err := templ_shared.EditPanel("Create New Task", templ_todo.TaskFormCard(form, models.ProjectListToMap(projects), tags_for_project)).Render(r.Context(), w); err != nil {
 		errors.InternalServerError(w, r, h.logger, err, "Failed to render task create panel")
 		return
 	}
@@ -528,4 +546,33 @@ func formDataFromTask(task *models.TaskView) fm.TaskForm {
 	formData.Task.ProjectName = task.ProjectName
 
 	return formData
+}
+
+func (h *Handler) getTagSelector(w http.ResponseWriter, r *http.Request) {
+	current_user_id, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(w, r, h.logger, err, "user auth failed")
+		return
+	}
+
+	project, err := models.GetRequiredPropertyFromRequest(r, "project", "Project")
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Failed to read selected project")
+		return
+	}
+	project_id, err := strconv.ParseInt(project, 10, 64)
+	if err != nil {
+		errors.BadRequest(w, r, h.logger, err, "Failed to read selected project")
+		return
+	}
+
+	tags, err := h.project_service.GetProjectTags(current_user_id, project_id)
+	if err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "Failed to retrieve project tags")
+		return
+	}
+	if err = templ_todo.TagSelect([]models.TagView{}, tags).Render(r.Context(), w); err != nil {
+		errors.InternalServerError(w, r, h.logger, err, "failed to render project content for id %d", project_id)
+		return
+	}
 }

@@ -268,16 +268,36 @@ templ colorButton(color string) {
 	></button>
 }
 
-//This function ensures that tailwind loads the colors
-templ loadColors() {
-	<div class="bg-red-light dark:bg-red-dark"></div>
-	<div class="bg-orange-light dark:bg-orange-dark"></div>
-	<div class="bg-green-light dark:bg-green-dark"></div>
-	<div class="bg-cyan-light dark:bg-cyan-dark"></div>
-	<div class="bg-blue-light dark:bg-blue-dark"></div>
-	<div class="bg-indigo-light dark:bg-indigo-dark"></div>
-	<div class="bg-purple-light dark:bg-purple-dark"></div>
-	<div class="bg-fuchsia-light dark:bg-fuchsia-dark"></div>
-	<div class="bg-rose-light dark:bg-rose-dark"></div>
-	<div class="bg-amber-light dark:bg-amber-dark"></div>
+//This method forces tailwind to load dynamically generated styles
+templ loadStyles() {
+	<div class="bg-red-light ring-red-light dark:bg-red-dark dark:ring-red-dark"></div>
+	<div class="bg-orange-light ring-orange-light dark:bg-orange-dark dark:ring-orange-dark"></div>
+	<div class="bg-green-light ring-green-light dark:bg-green-dark dark:ring-green-dark"></div>
+	<div class="bg-cyan-light ring-cyan-light dark:bg-cyan-dark dark:ring-cyan-dark"></div>
+	<div class="bg-blue-light ring-blue-light dark:bg-blue-dark dark:ring-blue-dark"></div>
+	<div class="bg-indigo-light ring-indigo-light dark:bg-indigo-dark dark:ring-indigo-dark"></div>
+	<div class="bg-purple-light ring-purple-light dark:bg-purple-dark dark:ring-purple-dark"></div>
+	<div class="bg-fuchsia-light ring-fuchsia-light dark:bg-fuchsia-dark dark:ring-fuchsia-dark"></div>
+	<div class="bg-rose-light ring-rose-light dark:bg-rose-dark dark:ring-rose-dark"></div>
+	<div class="bg-amber-light ring-amber-light dark:bg-amber-dark dark:ring-amber-dark"></div>
+	<div class="[.selected&]:bg-red-light [.selected&]:ring-red-light [.selected&]:dark:bg-red-dark [.selected&]:dark:ring-red-dark"></div>
+	<div class="[.selected&]:bg-orange-light [.selected&]:ring-orange-light [.selected&]:dark:bg-orange-dark [.selected&]:dark:ring-orange-dark"></div>
+	<div class="[.selected&]:bg-green-light [.selected&]:ring-green-light [.selected&]:dark:bg-green-dark [.selected&]:dark:ring-green-dark"></div>
+	<div class="[.selected&]:bg-cyan-light [.selected&]:ring-cyan-light [.selected&]:dark:bg-cyan-dark [.selected&]:dark:ring-cyan-dark"></div>
+	<div class="[.selected&]:bg-blue-light [.selected&]:ring-blue-light [.selected&]:dark:bg-blue-dark [.selected&]:dark:ring-blue-dark"></div>
+	<div class="[.selected&]:bg-indigo-light [.selected&]:ring-indigo-light [.selected&]:dark:bg-indigo-dark [.selected&]:dark:ring-indigo-dark"></div>
+	<div class="[.selected&]:bg-purple-light [.selected&]:ring-purple-light [.selected&]:dark:bg-purple-dark [.selected&]:dark:ring-purple-dark"></div>
+	<div class="[.selected&]:bg-fuchsia-light [.selected&]:ring-fuchsia-light [.selected&]:dark:bg-fuchsia-dark [.selected&]:dark:ring-fuchsia-dark"></div>
+	<div class="[.selected&]:bg-rose-light [.selected&]:ring-rose-light [.selected&]:dark:bg-rose-dark [.selected&]:dark:ring-rose-dark"></div>
+	<div class="[.selected&]:bg-amber-light [.selected&]:ring-amber-light [.selected&]:dark:bg-amber-dark [.selected&]:dark:ring-amber-dark"></div>
+	<div class="[:not(.selected)&]:bg-red-light [:not(.selected)&]:ring-red-light [:not(.selected)&]:dark:bg-red-dark [:not(.selected)&]:dark:ring-red-dark [:not(.selected)&]:hover:bg-red-light/30 [:not(.selected)&]:dark:hover:bg-red-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-orange-light [:not(.selected)&]:ring-orange-light [:not(.selected)&]:dark:bg-orange-dark [:not(.selected)&]:dark:ring-orange-dark [:not(.selected)&]:hover:bg-orange-light/30 [:not(.selected)&]:dark:hover:bg-orange-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-green-light [:not(.selected)&]:ring-green-light [:not(.selected)&]:dark:bg-green-dark [:not(.selected)&]:dark:ring-green-dark [:not(.selected)&]:hover:bg-green-light/30 [:not(.selected)&]:dark:hover:bg-green-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-cyan-light [:not(.selected)&]:ring-cyan-light [:not(.selected)&]:dark:bg-cyan-dark [:not(.selected)&]:dark:ring-cyan-dark [:not(.selected)&]:hover:bg-cyan-light/30 [:not(.selected)&]:dark:hover:bg-cyan-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-blue-light [:not(.selected)&]:ring-blue-light [:not(.selected)&]:dark:bg-blue-dark [:not(.selected)&]:dark:ring-blue-dark [:not(.selected)&]:hover:bg-blue-light/30 [:not(.selected)&]:dark:hover:bg-blue-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-indigo-light [:not(.selected)&]:ring-indigo-light [:not(.selected)&]:dark:bg-indigo-dark [:not(.selected)&]:dark:ring-indigo-dark [:not(.selected)&]:hover:bg-indigo-light/30 [:not(.selected)&]:dark:hover:bg-indigo-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-purple-light [:not(.selected)&]:ring-purple-light [:not(.selected)&]:dark:bg-purple-dark [:not(.selected)&]:dark:ring-purple-dark [:not(.selected)&]:hover:bg-purple-light/30 [:not(.selected)&]:dark:hover:bg-purple-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-fuchsia-light [:not(.selected)&]:ring-fuchsia-light [:not(.selected)&]:dark:bg-fuchsia-dark [:not(.selected)&]:dark:ring-fuchsia-dark [:not(.selected)&]:hover:bg-fuchsia-light/30 [:not(.selected)&]:dark:hover:bg-fuchsia-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-rose-light [:not(.selected)&]:ring-rose-light [:not(.selected)&]:dark:bg-rose-dark [:not(.selected)&]:dark:ring-rose-dark [:not(.selected)&]:hover:bg-rose-light/30 [:not(.selected)&]:dark:hover:bg-rose-dark/30"></div>
+	<div class="[:not(.selected)&]:bg-amber-light [:not(.selected)&]:ring-amber-light [:not(.selected)&]:dark:bg-amber-dark [:not(.selected)&]:dark:ring-amber-dark [:not(.selected)&]:hover:bg-amber-light/30 [:not(.selected)&]:dark:hover:bg-amber-dark/30"></div>
 }
