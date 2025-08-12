@@ -49,9 +49,6 @@ tasks:
         if [ -f .env ]; then
           existing_files="$existing_files.env "
         fi
-        if [ -f .dev.env ]; then
-          existing_files="$existing_files.dev.env "
-        fi
         
         if [ -n "$existing_files" ]; then
           echo -e "${YELLOW}WARNING:${NC} The following files already exist: ${WHITE}$existing_files${NC}"
@@ -79,14 +76,6 @@ tasks:
           fi
           echo -e "${BLUE}BACKUP:${NC} Backing up .env to ${WHITE}$backup_name${NC}..."
           cp .env "$backup_name"
-        fi
-        if [ -f .dev.env ]; then
-          backup_name=".dev.env.backup"
-          if [ -f "$backup_name" ]; then
-            backup_name=".dev.env.backup.$(date +%Y%m%d_%H%M%S)"
-          fi
-          echo -e "${BLUE}BACKUP:${NC} Backing up .dev.env to ${WHITE}$backup_name${NC}..."
-          cp .dev.env "$backup_name"
         fi
       - |
         echo -e "${CYAN}JWT Key Generation${NC}"
@@ -204,8 +193,8 @@ tasks:
         echo -e "${GREEN}SUCCESS:${NC} Keys encoded successfully!"
         
         # Validate we have all required components
-        if [ ! -f keys/private.key ] || [ ! -f keys/public.key ] || [ -z "$JWT_PRIVATE_KEY" ] || [ -z "$JWT_PUBLIC_KEY" ]; then
-          echo -e "${RED}ERROR:${NC} Missing required components for environment setup"
+        if [ -z "$JWT_PRIVATE_KEY" ] || [ -z "$JWT_PUBLIC_KEY" ]; then
+          echo -e "${RED}ERROR:${NC} Failed to encode JWT keys"
           exit 1
         fi
         
@@ -235,22 +224,14 @@ tasks:
         # AZURE_CLIENT_ID=<your-azure-client-id>
         EOF
         
-        # Create .dev.env file for local migrations (Taskfile expects this)
-        cat > .dev.env << EOF
-        # Development Environment for Migrations
-        # Generated on $(date)
-        DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
-        EOF
+
       - |
         echo ""
         echo -e "${GREEN}Environment Setup Complete!${NC}"
         echo -e "${GREEN}==============================${NC}"
         echo ""
         echo -e "${GREEN}SUCCESS:${NC} Files created:"
-        echo -e "   ${WHITE}•${NC} .env - Main application environment"
-        echo -e "   ${WHITE}•${NC} .dev.env - Migration environment"
-        echo -e "   ${WHITE}•${NC} keys/private.key - JWT private key"
-        echo -e "   ${WHITE}•${NC} keys/public.key - JWT public key"
+        echo -e "   ${WHITE}•${NC} .env - Application environment with JWT keys"
         echo ""
         echo -e "${CYAN}Next steps:${NC}"
         echo -e "   ${WHITE}1.${NC} Start the database: ${YELLOW}docker compose -f docker-compose-db-local.yml up -d${NC}"
@@ -283,11 +264,6 @@ tasks:
           backup_name=".env.backup.$(date +%Y%m%d_%H%M%S)"
           echo -e "${BLUE}BACKUP:${NC} Backing up .env to ${WHITE}$backup_name${NC}..."
           cp .env "$backup_name"
-        fi
-        if [ -f .dev.env ]; then
-          backup_name=".dev.env.backup.$(date +%Y%m%d_%H%M%S)"
-          echo -e "${BLUE}BACKUP:${NC} Backing up .dev.env to ${WHITE}$backup_name${NC}..."
-          cp .dev.env "$backup_name"
         fi
         
         # Create keys directory and generate keys
@@ -344,13 +320,9 @@ tasks:
         # AZURE_CLIENT_ID=<your-azure-client-id>
         EOF
         
-        # Create .dev.env file
-        echo -e "${BLUE}CREATING:${NC} .dev.env file..."
-        cat > .dev.env << EOF
-        # Development Environment for Migrations
-        # Generated automatically on $(date)
-        DATABASE_URL=postgres://admin:admin@localhost:5432/todo_db?sslmode=disable
-        EOF
+        # Clean up temporary key files (no longer needed)
+        echo -e "${BLUE}CLEANUP:${NC} Removing temporary key files..."
+        rm -rf keys/
         
         echo -e "${GREEN}SUCCESS:${NC} Automated setup complete!"
 
@@ -369,10 +341,9 @@ tasks:
         WHITE='\033[1;37m'
         NC='\033[0m' # No Color
         
-        if [ -f .env ] && [ -f .dev.env ]; then
-          echo -e "${GREEN}SUCCESS:${NC} Environment files already exist:"
+        if [ -f .env ]; then
+          echo -e "${GREEN}SUCCESS:${NC} Environment file already exists:"
           echo -e "   ${WHITE}•${NC} .env"
-          echo -e "   ${WHITE}•${NC} .dev.env"
           echo ""
           echo -e "${BLUE}INFO:${NC} Use ${YELLOW}'task setup:env'${NC} to regenerate (interactive)"
           echo -e "${BLUE}INFO:${NC} Use ${YELLOW}'task setup:env:auto'${NC} for non-interactive regeneration"
@@ -414,25 +385,13 @@ tasks:
           errors=$((errors + 1))
         fi
         
-        # Check .dev.env file
-        if [ -f .dev.env ]; then
-          echo -e "${GREEN}SUCCESS:${NC} .dev.env file exists"
-          if grep -q "DATABASE_URL=" .dev.env; then
-            echo -e "${GREEN}SUCCESS:${NC} .dev.env contains DATABASE_URL"
-          else
-            echo -e "${RED}ERROR:${NC} .dev.env missing DATABASE_URL"
-            errors=$((errors + 1))
-          fi
-        else
-          echo -e "${RED}ERROR:${NC} .dev.env file not found"
-          errors=$((errors + 1))
-        fi
+
         
-        # Check JWT keys
-        if [ -f keys/private.key ] && [ -f keys/public.key ]; then
-          echo -e "${GREEN}SUCCESS:${NC} JWT key files exist"
+        # Check JWT keys in environment
+        if grep -q "JWT_PRIVATE_KEY=" .env && grep -q "JWT_PUBLIC_KEY=" .env; then
+          echo -e "${GREEN}SUCCESS:${NC} JWT keys configured in .env"
         else
-          echo -e "${RED}ERROR:${NC} JWT key files missing"
+          echo -e "${RED}ERROR:${NC} JWT keys missing from .env"
           errors=$((errors + 1))
         fi
         
@@ -452,6 +411,149 @@ tasks:
       - task: install:deps
       - task: setup:env
       - task: setup:verify
+
+  setup:clean:
+    desc: "Clean environment files and JWT keys"
+    silent: true
+    cmds:
+      - |
+        # ANSI color codes
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        BLUE='\033[0;34m'
+        CYAN='\033[0;36m'
+        WHITE='\033[1;37m'
+        NC='\033[0m' # No Color
+        
+        echo -e "${CYAN}Environment Cleanup${NC}"
+        echo -e "${CYAN}===================${NC}"
+        echo ""
+        
+        # Check what exists
+        files_to_remove=""
+        if [ -f .env ]; then
+          files_to_remove="$files_to_remove.env "
+        fi
+        if [ -f .dev.env ]; then
+          files_to_remove="$files_to_remove.dev.env "
+        fi
+
+        
+        if [ -z "$files_to_remove" ]; then
+          echo -e "${GREEN}SUCCESS:${NC} Environment is already clean!"
+          echo -e "${BLUE}INFO:${NC} No environment files or keys found."
+          exit 0
+        fi
+        
+        echo -e "${YELLOW}WARNING:${NC} This will remove the following:"
+        if [ -f .env ]; then
+          echo -e "   ${WHITE}•${NC} .env file"
+        fi
+        if [ -f .dev.env ]; then
+          echo -e "   ${WHITE}•${NC} .dev.env file"
+        fi
+
+        echo ""
+        printf "${WHITE}Are you sure you want to continue? (y/N):${NC} "
+        read -r confirm
+        case "$confirm" in
+          [yY]|[yY][eE][sS])
+            echo -e "${GREEN}PROCEEDING:${NC} Cleaning environment..."
+            ;;
+          *)
+            echo -e "${RED}CANCELLED:${NC} Cleanup cancelled by user."
+            exit 0
+            ;;
+        esac
+        echo ""
+        
+        # Remove files
+        if [ -f .env ]; then
+          echo -e "${BLUE}REMOVING:${NC} .env file..."
+          rm -f .env
+        fi
+        if [ -f .dev.env ]; then
+          echo -e "${BLUE}REMOVING:${NC} .dev.env file..."
+          rm -f .dev.env
+        fi
+
+        
+        # Remove backup files if they exist
+        backup_files=$(find . -maxdepth 1 -name ".env.backup*" 2>/dev/null || true)
+        if [ -n "$backup_files" ]; then
+          echo -e "${BLUE}REMOVING:${NC} Environment backup files..."
+          rm -f .env.backup*
+        fi
+        
+        echo ""
+        echo -e "${GREEN}CLEANUP COMPLETE:${NC} Environment has been cleaned!"
+        echo ""
+        echo -e "${CYAN}Next steps:${NC}"
+        echo -e "   ${WHITE}1.${NC} Setup environment: ${YELLOW}task setup:env${NC}"
+        echo -e "   ${WHITE}2.${NC} Or auto-setup: ${YELLOW}task setup:env:auto${NC}"
+
+  setup:clean:force:
+    desc: "Clean environment files and JWT keys (non-interactive)"
+    silent: true
+    cmds:
+      - |
+        # ANSI color codes
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        BLUE='\033[0;34m'
+        CYAN='\033[0;36m'
+        WHITE='\033[1;37m'
+        NC='\033[0m' # No Color
+        
+        echo -e "${CYAN}Force Environment Cleanup${NC}"
+        echo -e "${CYAN}=========================${NC}"
+        echo ""
+        
+        # Remove files without confirmation
+        removed_files=""
+        if [ -f .env ]; then
+          echo -e "${BLUE}REMOVING:${NC} .env file..."
+          rm -f .env
+          removed_files="${removed_files}.env "
+        fi
+        if [ -f .dev.env ]; then
+          echo -e "${BLUE}REMOVING:${NC} .dev.env file..."
+          rm -f .dev.env
+          removed_files="${removed_files}.dev.env "
+        fi
+
+        
+        # Remove backup files
+        backup_files=$(find . -maxdepth 1 -name ".env.backup*" 2>/dev/null || true)
+        if [ -n "$backup_files" ]; then
+          echo -e "${BLUE}REMOVING:${NC} Environment backup files..."
+          rm -f .env.backup*
+          removed_files="${removed_files}backups "
+        fi
+        
+        if [ -z "$removed_files" ]; then
+          echo -e "${GREEN}SUCCESS:${NC} Environment was already clean!"
+        else
+          echo ""
+          echo -e "${GREEN}CLEANUP COMPLETE:${NC} Removed: ${WHITE}$removed_files${NC}"
+        fi
+
+  dev:
+    desc: "Start development server with environment loaded"
+    dotenv: [".env"]
+    cmds:
+      - task: setup:verify
+      - echo "🚀 Starting development server with environment loaded..."
+      - air
+
+  dev:quick:
+    desc: "Start development server quickly (skip verification)"
+    dotenv: [".env"]
+    cmds:
+      - echo "🚀 Starting development server..."
+      - air
 
   _confirm:prod:
     internal: true
@@ -474,14 +576,14 @@ tasks:
 
   local:migrate:
     desc: "Runs migrations on LOCAL db (e.g., `task local:migrate up`)"
-    dotenv: [".dev.env"]
+    dotenv: [".env"]
     cmds:
       - echo "Running LOCAL migration '$DATABASE_URL'..."
       - migrate -path {{.MIGRATIONS_PATH}} -database $DATABASE_URL {{.CLI_ARGS}}
 
   local:migrate:goto:
     desc: "Migrates LOCAL db to a specific version (e.g., `task local:migrate:goto V=...`)"
-    dotenv: [".dev.env"]
+    dotenv: [".env"]
     preconditions:
       - sh: 'test -n "{{.V}}"'
         msg: "You must provide a version number. Usage: task local:migrate:goto V=2025..."

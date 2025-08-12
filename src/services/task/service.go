@@ -1,13 +1,11 @@
 package task_service
 
 import (
-	"fmt"
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/models"
 	"sort"
@@ -33,10 +31,8 @@ func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
 }
 
 func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *time.Time) (int64, error) {
-	// NOTE: Does this user belong to the current project
 	err := s.UserBelongsToProject(user_id, project_id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return 0, err
 	}
 	now := time.Now()
@@ -55,22 +51,18 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 
 	id, err := s.tasksRepo.InsertTask(task)
 	if err != nil {
-		// NOTE: Errors from repo are wrapped
 		return 0, err
 	}
 	return id, nil
 }
 
 func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *time.Time, assigned_to int64) error {
-	// NOTE: Does this user belong to the current project
 	err := s.userBelongsToTaskProject(user_id, task_id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return err
 	}
 	err = s.UserBelongsToProject(user_id, project_id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return err
 	}
 	now := time.Now()
@@ -96,13 +88,11 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
 	err := s.userBelongsToTaskProject(user_id, task_id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return err
 	}
 
 	task, err := s.tasksRepo.GetTask(task_id)
 	if err != nil {
-		// NOTE: Take action
 		return err
 	}
 
@@ -110,17 +100,14 @@ func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
 		return errors.New(errors.ErrAccessDenied, "not user's task")
 	}
 
-	// NOTE: Take action
 	task.ToggleStatus(user_id)
 
 	return s.tasksRepo.UpdateTaskStatus(task_id, task.CompleteDate, int64(task.Status), user_id)
 }
 
 func (s *TaskService) DeleteTask(user_id, task_id int64) error {
-	// NOTE: Does this user belong to the current project
 	err := s.userBelongsToTaskProject(user_id, task_id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return err
 	}
 
@@ -128,10 +115,8 @@ func (s *TaskService) DeleteTask(user_id, task_id int64) error {
 }
 
 func (s *TaskService) RestoreTask(user_id, task_id int64) error {
-	// NOTE: Does this user belong to the current project
 	err := s.userBelongsToTaskProject(user_id, task_id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return err
 	}
 
@@ -141,12 +126,10 @@ func (s *TaskService) RestoreTask(user_id, task_id int64) error {
 func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
 	task, err := s.tasksRepo.GetTask(id)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return nil, err
 	}
 	err = s.UserBelongsToProject(user_id, task.Project)
 	if err != nil {
-		// NOTE: Errors from function already wrapped
 		return nil, err
 	}
 
@@ -196,51 +179,46 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 		if !ok {
 			assigned_to, err = s.usersRepo.GetUserById(task.AssignedTo)
 			if err != nil {
-				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			users[task.AssignedTo] = assigned_to
 		}
-		assert.NotNil(assigned_to, serviceSource, fmt.Sprintf("task assignee cant be nil - assigned to id %d", task.AssignedTo))
 
 		var created_by *models.User
-
 		created_by, ok = users[task.CreatedBy]
 		if !ok {
 			created_by, err = s.usersRepo.GetUserById(task.CreatedBy)
 			if err != nil {
-				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			users[task.ModifiedBy] = created_by
 		}
-		assert.NotNil(created_by, serviceSource, fmt.Sprintf("task created by user cant be nil - created by id %d", task.CreatedBy))
 
 		var modified_by *models.User
-
 		modified_by, ok = users[task.ModifiedBy]
 		if !ok {
 			modified_by, err = s.usersRepo.GetUserById(task.ModifiedBy)
 			if err != nil {
-				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			users[task.ModifiedBy] = modified_by
 		}
-		assert.NotNil(modified_by, serviceSource, fmt.Sprintf("task modified by user cant be nil - modified by id %d", task.ModifiedBy))
 
 		var project *models.Project
 		project, ok = projects[task.Project]
 		if !ok {
 			project, err = s.projectRepo.GetProject(task.Project)
 			if err != nil {
-				// NOTE: this should already be nicely formatted
 				return nil, err
 			}
 			projects[task.Project] = project
 		}
 
-		taskViews[i] = task.ToViewModel(assigned_to, created_by, modified_by, *project)
+		view, err := task.ToViewModel(assigned_to, created_by, modified_by, *project)
+		if err != nil {
+			return nil, err
+		}
+		taskViews[i] = view
 	}
 
 	sort.Slice(taskViews, func(i, j int) bool {
@@ -259,7 +237,6 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 	if !ok {
 		assignedTo, err = s.usersRepo.GetUserById(task.AssignedTo)
 		if err != nil {
-			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.AssignedTo] = assignedTo
@@ -270,7 +247,6 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 	if !ok {
 		createdBy, err = s.usersRepo.GetUserById(task.AssignedTo)
 		if err != nil {
-			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.AssignedTo] = createdBy
@@ -281,7 +257,6 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 	if !ok {
 		modifiedBy, err = s.usersRepo.GetUserById(task.ModifiedBy)
 		if err != nil {
-			// NOTE: this should already be wrapped
 			return nil, err
 		}
 		users[task.ModifiedBy] = modifiedBy
@@ -289,17 +264,19 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 
 	project, err := s.projectRepo.GetProject(task.Project)
 	if err != nil {
-		// NOTE: this should already be wrapped
+		return nil, err
+	}
+	view, err = task.ToViewModel(assignedTo, createdBy, modifiedBy, *project)
+	if err != nil {
 		return nil, err
 	}
 
-	return task.ToViewModel(assignedTo, createdBy, modifiedBy, *project), nil
+	return view, nil
 }
 
 func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err error) {
 	task, err := s.tasksRepo.GetTask(task_id)
 	if err != nil {
-		// NOTE: Take action
 		return err
 	}
 	return s.UserBelongsToProject(user_id, task.Project)
@@ -308,7 +285,6 @@ func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err erro
 func (s *TaskService) UserBelongsToProject(user_id, project_id int64) (err error) {
 	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
 	if err != nil {
-		// NOTE: Errors from repo are wrapped
 		return err
 	}
 	if len(roles) == 0 {

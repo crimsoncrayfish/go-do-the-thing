@@ -1,45 +1,44 @@
 package errors
 
 import (
-	"go-do-the-thing/src/helpers/slog"
-	templ_shared "go-do-the-thing/src/shared/templ"
+	"go-do-the-thing/src/helpers/logger"
 	"net/http"
 )
 
-func BadRequest(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func BadRequest(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusBadRequest)
-	logger.Error(err, msg, a...)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func NotFound(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func NotFound(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusNotFound)
-	logger.Error(err, msg, a...)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func Unauthorized(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func Unauthorized(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusUnauthorized)
-	logger.Error(err, msg, a...)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func InternalServerError(w http.ResponseWriter, r *http.Request, logger slog.Logger, err error, msg string, a ...any) {
+func InternalServerError(logger *logger.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)
-	logger.Error(err, msg, a...)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
-	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
+	_ = ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
 func getUserFriendlyMessage(err error, defaultMsg string) string {

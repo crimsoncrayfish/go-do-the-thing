@@ -1,8 +1,7 @@
 package models
 
 import (
-	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/errors"
 	"time"
 )
 
@@ -22,28 +21,38 @@ type Project struct {
 	Tags         []Tag
 }
 
-func (p *Project) AssertHealthyNew() {
-	source := "Model.Project"
-
-	assert.NotNil(p, source, "project model struct not healthy - project is nil")
-	assert.NotEqual(p.Owner, 0, source, "project model struct not healthy - project owner not set")
-
-	assert.NotEqual(p.Name, "", source, "Name")
-	assert.NotEqual(p.Description, "", source, "Description")
-
-	assert.NotNil(p.StartDate, source, "project model struct not healthy, nil StartDate")
-	assert.NotNil(p.DueDate, source, "project model struct not healthy, nil DueDate")
-
-	assert.NotEqual(p.CreatedBy, 0, source, "CreatedBy")
-	assert.NotNil(p.CreatedDate, source, "project model struct not healthy, nil CreatedDate")
-	assert.NotEqual(p.ModifiedBy, 0, source, "ModifiedBy")
-	assert.NotNil(p.ModifiedDate, source, "project model struct not healthy, nil ModifiedDate")
-}
-
-func (p *Project) AssertHealthy() {
-	source := "Model.Project"
-	assert.NotEqual(p.Id, 0, source, "Id")
-	p.AssertHealthyNew()
+func (p *Project) AssertHealthyNew() error {
+	if p == nil {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project is nil")
+	}
+	if p.Owner == 0 {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project owner not set")
+	}
+	if p.Name == "" {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project name not set")
+	}
+	if p.Description == "" {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project description not set")
+	}
+	if p.CreatedBy == 0 {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project createdBy not set")
+	}
+	if p.ModifiedBy == 0 {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy - project modifiedBy not set")
+	}
+	if p.StartDate == nil {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil StartDate")
+	}
+	if p.DueDate == nil {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil DueDate")
+	}
+	if p.CreatedDate == nil {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil CreatedDate")
+	}
+	if p.ModifiedDate == nil {
+		return errors.New(errors.ErrValidationFailed, "project model struct not healthy, nil ModifiedDate")
+	}
+	return nil
 }
 
 type ProjectView struct {
@@ -64,13 +73,18 @@ type ProjectView struct {
 	Tags           []TagView
 }
 
-func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {
-	assert.NotNil(p, helpers.PrevCallerName(2), "project cant be nil")
-	assert.NotNil(owner, helpers.PrevCallerName(2), "project owner cant be nil")
-	assert.NotNil(createdBy, helpers.PrevCallerName(2), "project creator cant be nil")
-	assert.NotNil(modifiedBy, helpers.PrevCallerName(2), "project modifier cant be nil")
+func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) (*ProjectView, error) {
+	if p.Owner == 0 {
+		return nil, errors.New(errors.ErrValidationFailed, "project model struct not healthy - project owner not set")
+	}
+	if p.CreatedBy == 0 {
+		return nil, errors.New(errors.ErrValidationFailed, "project model struct not healthy - project createdBy not set")
+	}
+	if p.ModifiedBy == 0 {
+		return nil, errors.New(errors.ErrValidationFailed, "project model struct not healthy - project modifiedBy not set")
+	}
 
-	return ProjectView{
+	return &ProjectView{
 		Id:           p.Id,
 		Name:         p.Name,
 		Description:  p.Description,
@@ -81,7 +95,7 @@ func (p *Project) ToViewModel(owner, createdBy, modifiedBy *User) ProjectView {
 		ModifiedBy:   modifiedBy.ToViewModel(),
 		DueDate:      p.DueDate,
 		IsDeleted:    p.IsDeleted,
-	}
+	}, nil
 }
 
 type ProjectTag struct {

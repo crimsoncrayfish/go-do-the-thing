@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
-	"go-do-the-thing/src/helpers/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
 	"time"
 
@@ -13,17 +13,15 @@ import (
 
 type ProjectsRepo struct {
 	database database.DatabaseConnection
-	logger   slog.Logger
+	logger   *logger.Logger
 }
-
-var repoName = "ProjectsRepo"
 
 // NOTE: Depends on: [../project-users/project_users_repo.go, ../users/users_repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectsRepo {
-	logger := slog.NewLogger(repoName)
+	log := logger.NewLogger("ProjectsRepo")
 	return &ProjectsRepo{
 		database: database,
-		logger:   logger,
+		logger:   log,
 	}
 }
 
@@ -64,10 +62,9 @@ func scanFromRows(rows pgx.Rows, item *models.Project) error {
 const getProjectsByUser = `SELECT * FROM sp_get_projects_by_user($1)`
 
 func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
-	r.logger.Debug("GetProjects called - sql: %s, params: %v", getProjectsByUser, user_id)
 	rows, err := r.database.Query(getProjectsByUser, user_id)
 	if err != nil {
-		r.logger.Error(err, "failed to get project list, query failed - sql: %s, params: %v", getProjectsByUser, user_id)
+		r.logger.Error("failed to get project list, query failed", "error", err, "sql", getProjectsByUser, "user_id", user_id)
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to get project list, query failed: %w", err)
 	}
 	defer rows.Close()
@@ -77,45 +74,43 @@ func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 		var item models.Project
 		err = scanFromRows(rows, &item)
 		if err != nil {
-			r.logger.Error(err, "failed to get project list, scan failed - params: %v", user_id)
+			r.logger.Error("failed to get project list, scan failed", "error", err, "user_id", user_id)
 			return nil, errors.New(errors.ErrDBGenericError, "failed to get project list, scan failed: %w", err)
 		}
 		items = append(items, item)
 	}
 	err = rows.Err()
 	if err != nil {
-		r.logger.Error(err, "failed to get project list, row error - params: %v", user_id)
+		r.logger.Error("failed to get project list, row error", "error", err, "user_id", user_id)
 		return nil, errors.New(errors.ErrDBGenericError, "failed to get project list, row error: %w", err)
 	}
-	r.logger.Debug("GetProjects succeeded - count: %d, params: %v", len(items), user_id)
+	r.logger.Debug("GetProjects succeeded", "count", len(items), "user_id", user_id)
 	return items, nil
 }
 
 const getProject = `SELECT * FROM sp_get_project($1)`
 
 func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
-	r.logger.Debug("GetProject called - sql: %s, params: %v", getProject, projectId)
 	row := r.database.QueryRow(getProject, projectId)
 	temp := &models.Project{}
 	err := scanFromRow(row, temp)
 	if err != nil {
-		r.logger.Error(err, "failed to get project - sql: %s, params: %v", getProject, projectId)
+		r.logger.Error("failed to get project", "error", err, "sql", getProject, "project_id", projectId)
 		return nil, errors.New(errors.ErrDBReadFailed, "failed to get project: %w", err)
 	}
-	r.logger.Debug("GetProject succeeded - id: %v", projectId)
+	r.logger.Debug("GetProject succeeded", "project_id", projectId)
 	return temp, nil
 }
 
 const deleteProject = `SELECT sp_delete_project($1, $2, $3)`
 
 func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
-	r.logger.Debug("DeleteProject called - sql: %s, params: %v", deleteProject, []any{currentUser, time.Now(), id})
 	_, err := r.database.Exec(deleteProject, id, currentUser, time.Now())
 	if err != nil {
-		r.logger.Error(err, "failed to update project - sql: %s, params: %v", deleteProject, []any{currentUser, time.Now(), id})
+		r.logger.Error("failed to update project", "error", err, "sql", deleteProject, "id", id, "currentUser", currentUser)
 		return errors.New(errors.ErrDBDeleteFailed, "failed to update project: %w", err)
 	}
-	r.logger.Debug("Project deleted successfully - id: %d", id)
+	r.logger.Debug("Project deleted successfully", "id", id)
 	return nil
 }
 
@@ -134,7 +129,6 @@ func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err erro
 const updateProject = `SELECT sp_update_project($1, $2, $3, $4, $5, $6, $7, $8)`
 
 func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
-	r.logger.Debug("UpdateProject called - sql: %s, params: %+v", updateProject, project)
 	_, err = r.database.Exec(updateProject,
 		project.Id,
 		project.Name,
@@ -146,18 +140,20 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 		time.Now(),
 	)
 	if err != nil {
-		r.logger.Error(err, "failed to update project - sql: %s, params: %+v", updateProject, project)
+		r.logger.Error("failed to update project", "error", err, "sql", updateProject, "project", project)
 		return errors.New(errors.ErrDBUpdateFailed, "failed to update project: %w", err)
 	}
-	r.logger.Debug("Project updated successfully - id: %d, name: %s", project.Id, project.Name)
+	r.logger.Debug("Project updated successfully", "id", project.Id, "name", project.Name)
 	return nil
 }
 
 const insertProject = `SELECT sp_insert_project($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 func (r *ProjectsRepo) Insert(project models.Project) (id int64, err error) {
-	r.logger.Debug("InsertProject called - sql: %s, params: %+v", insertProject, project)
-	project.AssertHealthyNew()
+	err = project.AssertHealthyNew()
+	if err != nil {
+		return 0, err
+	}
 
 	err = r.database.QueryRow(
 		insertProject,
@@ -174,9 +170,9 @@ func (r *ProjectsRepo) Insert(project models.Project) (id int64, err error) {
 		project.IsDeleted,
 	).Scan(&id)
 	if err != nil {
-		r.logger.Error(err, "failed to create new project - sql: %s, params: %+v", insertProject, project)
+		r.logger.Error("failed to create new project", "error", err, "sql", insertProject, "project", project)
 		return 0, errors.New(errors.ErrDBReadFailed, "failed to create new project: %w", err)
 	}
-	r.logger.Debug("Project created successfully - id: %d, name: %s, owner: %d", id, project.Name, project.Owner)
+	r.logger.Debug("Project created successfully", "id", id, "name", project.Name, "owner", project.Owner)
 	return id, nil
 }

@@ -1,8 +1,7 @@
 package models
 
 import (
-	"go-do-the-thing/src/helpers"
-	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/errors"
 	"time"
 )
 
@@ -84,10 +83,16 @@ func (t *TaskView) IsOverDue() bool {
 	return false
 }
 
-func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Project) *TaskView {
-	assert.NotNil(assignedTo, helpers.PrevCallerName(2), "task assigned to cant be nil")
-	assert.NotNil(createdBy, helpers.PrevCallerName(2), "task creator cant be nil")
-	assert.NotNil(modifiedBy, helpers.PrevCallerName(2), "task modifier cant be nil")
+func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Project) (*TaskView, error) {
+	if assignedTo == nil {
+		return nil, errors.New(errors.ErrValidationFailed, "task assigned to cant be nil")
+	}
+	if createdBy == nil {
+		return nil, errors.New(errors.ErrValidationFailed, "task created by cant be nil")
+	}
+	if modifiedBy == nil {
+		return nil, errors.New(errors.ErrValidationFailed, "task modified by cant be nil")
+	}
 	return &TaskView{
 		Id:            t.Id,
 		Name:          t.Name,
@@ -103,5 +108,5 @@ func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Proj
 		ProjectId:     t.Project,
 		ProjectName:   project.Name,
 		IsDeleted:     t.IsDeleted,
-	}
+	}, nil
 }

@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"go-do-the-thing/src/helpers/assert"
+	"go-do-the-thing/src/helpers/logger"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -14,15 +14,20 @@ type DatabaseConnection struct {
 }
 
 var source = "Database"
+var log = logger.NewLogger(source)
 
 func Init(connectionString, clientId string) DatabaseConnection {
 	conf, err := pgxpool.ParseConfig(connectionString)
-	assert.NoError(err, source, "Failed to parse connectionstring")
+	if err != nil {
+		log.Fatal("Failed to parse connection string", "error", err)
+	}
 	if clientId != "" {
 		conf.ConnConfig.User = clientId
 	}
 	pool, err := pgxpool.NewWithConfig(context.Background(), conf)
-	assert.NoError(err, source, "Failed to connect to db")
+	if err != nil {
+		log.Fatal("Failed to connect to database", "error", err)
+	}
 	return DatabaseConnection{pool}
 }
 
@@ -31,16 +36,22 @@ func (db DatabaseConnection) Close() {
 }
 
 func (db DatabaseConnection) QueryRow(query string, args ...any) pgx.Row {
-	assert.NotNil(db.pool, source, "the db connection should not be nil")
+	if db.pool == nil {
+		log.Fatal("Database connection is nil")
+	}
 	return db.pool.QueryRow(context.Background(), query, args...)
 }
 
 func (db DatabaseConnection) Query(query string, args ...any) (pgx.Rows, error) {
-	assert.NotNil(db.pool, source, "the db connection should not be nil")
+	if db.pool == nil {
+		log.Fatal("Database connection is nil")
+	}
 	return db.pool.Query(context.Background(), query, args...)
 }
 
 func (db DatabaseConnection) Exec(query string, args ...any) (pgconn.CommandTag, error) {
-	assert.NotNil(db.pool, source, "the db connection should not be nil")
+	if db.pool == nil {
+		log.Fatal("Database connection is nil")
+	}
 	return db.pool.Exec(context.Background(), query, args...)
 }
