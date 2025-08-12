@@ -6,39 +6,37 @@ import (
 	"net/http"
 )
 
-var errorLogger = slog.With("source", "ErrorHelper")
-
-func BadRequest(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func BadRequest(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusBadRequest)
-	errorLogger.Error(msg, "error", err)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func NotFound(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func NotFound(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusNotFound)
-	errorLogger.Error(msg, "error", err)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func Unauthorized(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func Unauthorized(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusUnauthorized)
-	errorLogger.Error(msg, "error", err)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)
 }
 
-func InternalServerError(w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
+func InternalServerError(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error, msg string, a ...any) {
 	w.Header().Set("HX-Retarget", "#toast-message")
 	w.WriteHeader(http.StatusInternalServerError)
-	errorLogger.Error(msg, "error", err)
+	logger.Error(msg, "error", err)
 
 	userMessage := getUserFriendlyMessage(err, msg)
 	_ = templ_shared.ToastMessage(userMessage, "error").Render(r.Context(), w)

@@ -101,7 +101,7 @@ func (s *UserService) LogoutUser(userId int64) error {
 func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {
-		s.logger.Error("Failed to get user", "error", err, "userId", userId)
+		s.logger.Error("Failed to get user", "error", err, "user_id", userId)
 		return models.UserView{}, err
 	}
 	return user.ToViewModel(), nil
@@ -110,7 +110,7 @@ func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 func (s *UserService) IsUserAdmin(userId int64) (bool, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {
-		s.logger.Error("Failed to get user", "error", err, "userId", userId)
+		s.logger.Error("Failed to get user", "error", err, "user_id", userId)
 		return false, err
 	}
 	return user.IsAdmin, nil

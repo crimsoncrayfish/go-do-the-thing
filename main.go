@@ -11,7 +11,6 @@ import (
 	"go-do-the-thing/src/handlers/project"
 	"go-do-the-thing/src/handlers/task"
 	"go-do-the-thing/src/handlers/users"
-	"go-do-the-thing/src/helpers/assert"
 	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/middleware"
@@ -71,11 +70,12 @@ func main() {
 		logger.Fatal("FATAL: DATABASE_URL environment variable not set.")
 	}
 
+	working_dir, err := os.Getwd()
+	if err != nil {
+		logger.Fatal("Could not get working directory", "error", err)
+	}
 	jwtHandler := security.NewJwtHandler(env)
 	router := http.NewServeMux()
-
-	working_dir, err := os.Getwd()
-	assert.NoError(err, "Main", "could not get working dir")
 	faviconLocation = working_dir + "/static/img/todo.ico"
 	manifestLocation = working_dir + "/static/json/manifest.json"
 	swjsLocation = working_dir + "/static/json/manifest.json"
@@ -122,8 +122,8 @@ func main() {
 		err = server.ListenAndServe()
 	}
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Info("Something went wrong")
-		assert.NoError(err, "Main", "Failed to start HTTPS server")
+		log.Error("Failed to start server", "error", err)
+		panic(fmt.Sprintf("Server startup failed: %v", err))
 	}
 }
 

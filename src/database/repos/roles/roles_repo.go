@@ -39,7 +39,6 @@ func scanRoleFromRows(rows pgx.Rows, item *models.Role) error {
 const getAllRoles = `SELECT * FROM sp_get_all_roles()`
 
 func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
-	r.logger.Debug("GetAll called", "sql", getAllRoles)
 	rows, err := r.database.Query(getAllRoles)
 	if err != nil {
 		r.logger.Error("failed to query roles", "error", err, "sql", getAllRoles)

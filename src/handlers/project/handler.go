@@ -61,30 +61,30 @@ func SetupProjectHandler(service project_service.ProjectService, task_service ta
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 
 	projectView, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
-			errors.NotFound(w, r, err, "Project not found")
+			errors.NotFound(h.logger, w, r, err, "Project not found")
 			return
 		}
-		errors.InternalServerError(w, r, err, "Failed to retrieve project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project")
 		return
 	}
 
 	source := r.URL.Query().Get("source")
 	if source == "list" {
 		if err = templ_project.ProjectContentOOB(*projectView).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "failed to render project content for id %d", id)
+			errors.InternalServerError(h.logger, w, r, err, "failed to render project content for id %d", id)
 			return
 		}
 		return
@@ -101,7 +101,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w); err != nil {
-		errors.InternalServerError(w, r, err, "failed to render project page")
+		errors.InternalServerError(h.logger, w, r, err, "failed to render project page")
 		return
 	}
 }
@@ -109,32 +109,32 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getProjectView(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 
 	project, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
-			errors.NotFound(w, r, err, "Project not found")
+			errors.NotFound(h.logger, w, r, err, "Project not found")
 			return
 		}
-		errors.InternalServerError(w, r, err, "Failed to retrieve project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project")
 		return
 	}
 	project.Tags, err = h.project_service.GetProjectTags(current_user_id, id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve project tags")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project tags")
 		return
 	}
 	if err = templ_project.ProjectContentOOB(*project).Render(r.Context(), w); err != nil {
-		errors.InternalServerError(w, r, err, "failed to render project content for id %d", id)
+		errors.InternalServerError(h.logger, w, r, err, "failed to render project content for id %d", id)
 		return
 	}
 }
@@ -142,32 +142,32 @@ func (h *Handler) getProjectView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getProjectEdit(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 
 	project, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
-			errors.NotFound(w, r, err, "Project not found")
+			errors.NotFound(h.logger, w, r, err, "Project not found")
 			return
 		}
-		errors.InternalServerError(w, r, err, "Failed to retrieve project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project")
 		return
 	}
 	project.Tags, err = h.project_service.GetProjectTags(current_user_id, id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve project tags")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project tags")
 		return
 	}
 	if err = templ_project.ProjectContentEditOOB(*project, map[string]string{}).Render(r.Context(), w); err != nil {
-		errors.InternalServerError(w, r, err, "failed to render project content for id %d", id)
+		errors.InternalServerError(h.logger, w, r, err, "failed to render project content for id %d", id)
 		return
 	}
 }
@@ -175,19 +175,19 @@ func (h *Handler) getProjectEdit(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 
 	hasProjects, err := h.project_service.DeleteProject(id, current_user_id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to delete project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to delete project")
 		return
 	}
 	if !hasProjects {
@@ -196,7 +196,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 	project_view, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve project information")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project information")
 		return
 	}
 
@@ -204,7 +204,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		templ_project.ProjectCardFront(*project_view),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project deletion result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project deletion result")
 		return
 	}
 }
@@ -212,13 +212,13 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	err = templ_project.ProjectListWithBody(models.ScreenProjects).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project list")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project list")
 		return
 	}
 }
@@ -226,19 +226,19 @@ func (h *Handler) getProjects(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getProjectsLazy(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	projects, err := h.project_service.GetAllProjectsForUser(current_user_id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve projects")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve projects")
 		return
 	}
 
 	err = templ_project.ProjectListContent(projects).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project list content")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project list content")
 		return
 	}
 }
@@ -246,7 +246,7 @@ func (h *Handler) getProjectsLazy(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
@@ -282,7 +282,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	if len(form.Errors) > 0 {
 		if err := templ_shared.EditPanel("Create New Project", templ_project.ProjectFormCard(form)).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display project form")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display project form")
 		}
 		return
 	}
@@ -294,12 +294,12 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		name, description,
 		&now, &due_date)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to create project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to create project")
 		return
 	}
 	projectView, err := h.project_service.GetProjectView(new_id, current_user_id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve newly created project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve newly created project")
 		return
 	}
 
@@ -311,7 +311,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastMessage("Project created successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project creation result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project creation result")
 		return
 	}
 }
@@ -319,13 +319,13 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 	form := form_models.NewProjectForm()
@@ -361,11 +361,11 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 	if len(form.Errors) > 0 {
 		project, err := h.project_service.GetProjectView(id, current_user_id)
 		if err != nil {
-			errors.InternalServerError(w, r, err, "Failed to retrieve project for editing")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project for editing")
 			return
 		}
 		if err := templ_shared.EditPanel("Edit Project", templ_project.ProjectContentEditOOB(*project, form.Errors)).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display project edit form")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display project edit form")
 		}
 		return
 	}
@@ -375,17 +375,17 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		name, description,
 		&due_date)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "failed to update project %d", id)
+		errors.InternalServerError(h.logger, w, r, err, "failed to update project %d", id)
 		return
 	}
 	project, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve updated project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve updated project")
 		return
 	}
 	project.Tags, err = h.project_service.GetProjectTags(current_user_id, id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project")
 		return
 	}
 
@@ -395,7 +395,7 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastMessage("Project updated successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project update result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project update result")
 		return
 	}
 }
@@ -403,14 +403,14 @@ func (h *Handler) updateProject(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getCreatePanel(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	form := form_models.NewDefaultProjectForm()
 
 	if err := templ_shared.EditPanel("Create New Project", templ_project.ProjectFormCard(form)).Render(r.Context(), w); err != nil {
-		errors.InternalServerError(w, r, err, "Failed to render project create panel")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to render project create panel")
 		return
 	}
 }
@@ -418,24 +418,24 @@ func (h *Handler) getCreatePanel(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 
 	project, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project")
 		return
 	}
 	project.Tags, err = h.project_service.GetProjectTags(current_user_id, id)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to retrieve project")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve project")
 		return
 	}
 
@@ -443,7 +443,7 @@ func (h *Handler) getEditPanel(w http.ResponseWriter, r *http.Request) {
 	form.Project = *project
 
 	if err := templ_shared.EditPanel("Edit Project", templ_project.ProjectContent(*project)).Render(r.Context(), w); err != nil {
-		errors.InternalServerError(w, r, err, "Failed to render project edit panel")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to render project edit panel")
 		return
 	}
 }
@@ -459,33 +459,33 @@ func formDataFromProject(project models.ProjectView) form_models.ProjectForm {
 func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Tag Name")
 	if name == "" {
-		errors.BadRequest(w, r, err, "Tag must have a name")
+		errors.BadRequest(h.logger, w, r, err, "Tag must have a name")
 		return
 	}
 	colorString, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to read tag color")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to read tag color")
 		return
 	}
 	color, err := models.ParseTagColor(colorString)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to parse tag color")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to parse tag color")
 		return
 	}
 
 	new_id, err := h.project_service.CreateProjectTag(current_user_id, project_id, name, color)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "failed to create tag")
+		errors.InternalServerError(h.logger, w, r, err, "failed to create tag")
 		return
 	}
 
@@ -500,7 +500,7 @@ func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastMessage("Tag Created", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project update result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project update result")
 		return
 	}
 }
@@ -508,22 +508,22 @@ func (h *Handler) createProjectTag(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getProjectTagEditor(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid tag ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid tag ID provided")
 		return
 	}
 	tag, err := h.project_service.GetProjectTagById(current_user_id, project_id, tag_id)
 	if err != nil {
-		errors.NotFound(w, r, err, "Tag not found")
+		errors.NotFound(h.logger, w, r, err, "Tag not found")
 		return
 	}
 
@@ -531,7 +531,7 @@ func (h *Handler) getProjectTagEditor(w http.ResponseWriter, r *http.Request) {
 		templ_project.TagItemEditorOOB(project_id, *tag),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project update result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project update result")
 		return
 	}
 }
@@ -539,22 +539,22 @@ func (h *Handler) getProjectTagEditor(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getProjectTagView(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid tag ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid tag ID provided")
 		return
 	}
 	tag, err := h.project_service.GetProjectTagById(current_user_id, project_id, tag_id)
 	if err != nil {
-		errors.NotFound(w, r, err, "Tag not found")
+		errors.NotFound(h.logger, w, r, err, "Tag not found")
 		return
 	}
 
@@ -562,7 +562,7 @@ func (h *Handler) getProjectTagView(w http.ResponseWriter, r *http.Request) {
 		templ_project.TagItemEditable(project_id, *tag, true),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display project update result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display project update result")
 		return
 	}
 }
@@ -570,39 +570,39 @@ func (h *Handler) getProjectTagView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) updateProjectTag(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid tag ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid tag ID provided")
 		return
 	}
 
 	name, err := models.GetRequiredPropertyFromRequest(r, "name", "Tag Name")
 	if name == "" {
-		errors.BadRequest(w, r, err, "Tag must have a name")
+		errors.BadRequest(h.logger, w, r, err, "Tag must have a name")
 		return
 	}
 	colorString, err := models.GetRequiredPropertyFromRequest(r, "color", "Tag Color")
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to read tag color")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to read tag color")
 		return
 	}
 	color, err := models.ParseTagColor(colorString)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to parse tag color")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to parse tag color")
 		return
 	}
 
 	tag, err := h.project_service.UpdateProjectTagById(current_user_id, project_id, tag_id, name, color)
 	if err != nil {
-		errors.NotFound(w, r, err, "Tag delete failed")
+		errors.NotFound(h.logger, w, r, err, "Tag delete failed")
 		return
 	}
 
@@ -611,7 +611,7 @@ func (h *Handler) updateProjectTag(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastMessage("Tag Deleted", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to render result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to render result")
 		return
 	}
 }
@@ -619,22 +619,22 @@ func (h *Handler) updateProjectTag(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteProjectTag(w http.ResponseWriter, r *http.Request) {
 	current_user_id, _, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
-		errors.Unauthorized(w, r, err, "user auth failed")
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
 	project_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid project ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid project ID provided")
 		return
 	}
 	tag_id, err := strconv.ParseInt(r.PathValue("tagId"), 10, 64)
 	if err != nil {
-		errors.BadRequest(w, r, err, "Invalid tag ID provided")
+		errors.BadRequest(h.logger, w, r, err, "Invalid tag ID provided")
 		return
 	}
 	err = h.project_service.DeleteProjectTagById(current_user_id, project_id, tag_id)
 	if err != nil {
-		errors.NotFound(w, r, err, "Tag delete failed")
+		errors.NotFound(h.logger, w, r, err, "Tag delete failed")
 		return
 	}
 
@@ -642,7 +642,7 @@ func (h *Handler) deleteProjectTag(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastMessage("Tag Deleted", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to render result")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to render result")
 		return
 	}
 }

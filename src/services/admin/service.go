@@ -71,7 +71,7 @@ func (s *AdminService) ActivateUser(currentUserId, userId int64) (string, error)
 		return "", err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User attempted to activate user without admin rights", "currentUserId", currentUserId, "userId", userId)
+		s.logger.Warn("User attempted to activate user without admin rights", "currentUserId", currentUserId, "user_id", userId)
 		return "", errors.New("only admins can activate users")
 	}
 	return s.usersRepo.UpdateUserEnabled(userId, true)
@@ -84,7 +84,7 @@ func (s *AdminService) DeactivateUser(currentUserId, userId int64) (string, erro
 		return "", err
 	}
 	if currentUser == nil || !currentUser.IsAdmin {
-		s.logger.Warn("User attempted to deactivate user without admin rights", "currentUserId", currentUserId, "userId", userId)
+		s.logger.Warn("User attempted to deactivate user without admin rights", "currentUserId", currentUserId, "user_id", userId)
 		return "", errors.New("only admins can deactivate users")
 	}
 	return s.usersRepo.UpdateUserEnabled(userId, false)

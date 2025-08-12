@@ -102,7 +102,7 @@ func (a *AuthenticationMiddleware) tryAuthenticateUser(r *http.Request) (*http.R
 	shouldRefresh := expDate.After(time.Now().Add(time.Duration(time.Hour)))
 	if shouldRefresh {
 		logger.TODO("Implement automatic token refresh when close to expiring")
-		a.logger.Info("Token for user is close to expiring", "userId", userId)
+		a.logger.Info("Token for user is close to expiring", "user_id", userId)
 	}
 
 	values := helpers.HttpContext{Values: map[constants.ContextKey]string{

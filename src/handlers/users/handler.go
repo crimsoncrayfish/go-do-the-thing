@@ -112,7 +112,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	tokenString, err := h.security.NewToken(user.Email, user.SessionId, user.SessionStartTime.Add(token_lifetime))
 	if err != nil {
 		http.SetCookie(w, &emptyAuthCookie)
-		errors.InternalServerError(w, r, err, "Failed to display login page")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display login page")
 		return
 	}
 	cookie := http.Cookie{
@@ -138,12 +138,12 @@ func (h Handler) GetLoginUI(w http.ResponseWriter, r *http.Request) {
 	isHtmxRequest := r.Header.Get("HX-Request") == "true"
 	if isHtmxRequest {
 		if err := templ_users.LoginFormOOB(form).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display login page")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display login page")
 			return
 		}
 	} else {
 		if err := templ_users.Login(form).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display login page")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display login page")
 			return
 		}
 	}
@@ -153,7 +153,7 @@ func (h Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 	current_user_id, currentUserEmail, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		h.logger.Warn("logout failed - user auth failed")
-		errors.InternalServerError(w, r, err, "User authentication failed")
+		errors.InternalServerError(h.logger, w, r, err, "User authentication failed")
 		return
 	}
 	if err := h.userService.LogoutUser(current_user_id); err != nil {
@@ -175,12 +175,12 @@ func (h Handler) GetRegisterUI(w http.ResponseWriter, r *http.Request) {
 	isHtmxRequest := r.Header.Get("HX-Request") == "true"
 	if isHtmxRequest {
 		if err := templ_users.RegistrationFormContianerOOB(form).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display registration page")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display registration page")
 			return
 		}
 	} else {
 		if err := templ_users.Register(form).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display registration page")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display registration page")
 			return
 		}
 	}
@@ -208,7 +208,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(form.GetErrors()) > 0 {
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display registration form")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display registration form")
 		}
 		return
 	}
@@ -217,7 +217,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 		form.SetError("register", "failed to register user")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := templ_users.RegistrationFormContent(form).Render(r.Context(), w); err != nil {
-			errors.InternalServerError(w, r, err, "Failed to display registration form")
+			errors.InternalServerError(h.logger, w, r, err, "Failed to display registration form")
 		}
 		return
 	}
@@ -244,7 +244,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 		templ_shared.ToastMessage("Registered successfully!", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
-		errors.InternalServerError(w, r, err, "Failed to display new task")
+		errors.InternalServerError(h.logger, w, r, err, "Failed to display new task")
 		return
 	}
 }
