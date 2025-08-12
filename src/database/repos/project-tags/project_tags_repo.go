@@ -3,23 +3,23 @@ package project_tags_repo
 import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 )
 
 type ProjectTagsRepo struct {
 	database database.DatabaseConnection
-	logger   *slog.Logger
+	logger   *logger.Logger
 }
 
 // NOTE: Depends on: [./projects_repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectTagsRepo {
-	logger := slog.With("source", "ProjectTagsRepo")
+	log := logger.NewLogger("ProjectTagsRepo")
 	return &ProjectTagsRepo{
 		database: database,
-		logger:   logger,
+		logger:   log,
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
 	"time"
 )
@@ -21,11 +22,13 @@ type ProjectService struct {
 	project_tags_repo  project_tags_repo.ProjectTagsRepo
 	roles_repo         roles_repo.RolesRepo
 	task_repo          tasks_repo.TasksRepo
+	logger             *logger.Logger
 }
 
 const serviceSource = "ProjectService"
 
 func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
+	log := logger.NewLogger(serviceSource)
 	return ProjectService{
 		project_repo:       *repo_container.GetProjectsRepo(),
 		users_repo:         *repo_container.GetUsersRepo(),
@@ -33,6 +36,7 @@ func SetupProjectService(repo_container *repos.RepoContainer) ProjectService {
 		project_users_repo: *repo_container.GetProjectUsersRepo(),
 		project_tags_repo:  *repo_container.GetProjectTagsRepo(),
 		task_repo:          *repo_container.GetTasksRepo(),
+		logger:             log,
 	}
 }
 

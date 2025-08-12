@@ -4,23 +4,23 @@ import (
 	"errors"
 	"go-do-the-thing/src/database"
 	app_errors "go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 )
 
 type ProjectUsersRepo struct {
 	database database.DatabaseConnection
-	logger   *slog.Logger
+	logger   *logger.Logger
 }
 
 // NOTE: Depends on: [./users_repo.go, ./projects_repo.go, ../roles/roles_repo.go]
 func InitRepo(database database.DatabaseConnection) *ProjectUsersRepo {
-	logger := slog.With("source", "ProjectUsersRepo")
+	log := logger.NewLogger("ProjectUsersRepo")
 	return &ProjectUsersRepo{
 		database: database,
-		logger:   logger,
+		logger:   log,
 	}
 }
 

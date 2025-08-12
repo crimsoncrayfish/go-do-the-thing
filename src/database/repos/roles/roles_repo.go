@@ -3,24 +3,24 @@ package roles_repo
 import (
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 )
 
 type RolesRepo struct {
 	database database.DatabaseConnection
-	logger   *slog.Logger
+	logger   *logger.Logger
 }
 
 // NOTE: Depends on: []
 // READONLY REPO
 func InitRepo(database database.DatabaseConnection) *RolesRepo {
-	logger := slog.With("source", "RolesRepo")
+	log := logger.NewLogger("RolesRepo")
 	return &RolesRepo{
 		database: database,
-		logger:   logger,
+		logger:   log,
 	}
 }
 

@@ -18,7 +18,6 @@ import (
 	projectService "go-do-the-thing/src/services/project"
 	taskService "go-do-the-thing/src/services/task"
 	user_service "go-do-the-thing/src/services/user"
-	"log/slog"
 	"net/http"
 	"os"
 )
@@ -45,7 +44,7 @@ const (
 
 func main() {
 	logger.SetupLogger()
-	log := slog.With("source", "Main")
+	log := logger.NewLogger("Main")
 
 	env := os.Getenv("ENV")
 	if env == "" {
@@ -67,12 +66,12 @@ func main() {
 	}
 
 	if db_connection_string == "" {
-		logger.Fatal("FATAL: DATABASE_URL environment variable not set.")
+		log.Fatal("FATAL: DATABASE_URL environment variable not set.")
 	}
 
 	working_dir, err := os.Getwd()
 	if err != nil {
-		logger.Fatal("Could not get working directory", "error", err)
+		log.Fatal("Could not get working directory", "error", err)
 	}
 	jwtHandler := security.NewJwtHandler(env)
 	router := http.NewServeMux()

@@ -4,22 +4,22 @@ import (
 	"errors"
 	"go-do-the-thing/src/database/repos"
 	users_repo "go-do-the-thing/src/database/repos/users"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
-	"log/slog"
 )
 
 type AdminService struct {
 	usersRepo users_repo.UsersRepo
-	logger    *slog.Logger
+	logger    *logger.Logger
 }
 
 const serviceSource = "AdminService"
 
 func SetupAdminService(repo_container *repos.RepoContainer) AdminService {
-	logger := slog.With("source", serviceSource)
+	log := logger.NewLogger(serviceSource)
 	return AdminService{
 		usersRepo: *repo_container.GetUsersRepo(),
-		logger:    logger,
+		logger:    log,
 	}
 }
 

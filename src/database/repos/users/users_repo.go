@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
-	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,15 +13,15 @@ import (
 
 type UsersRepo struct {
 	db     database.DatabaseConnection
-	logger *slog.Logger
+	logger *logger.Logger
 }
 
 // NOTE: Depends on: [none]
 func InitRepo(connection database.DatabaseConnection) *UsersRepo {
-	logger := slog.With("source", "UsersRepo")
+	log := logger.NewLogger("UsersRepo")
 	return &UsersRepo{
 		db:     connection,
-		logger: logger,
+		logger: log,
 	}
 }
 

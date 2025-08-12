@@ -6,13 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"go-do-the-thing/src/helpers/errors"
-	"log/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"os"
 
 	"github.com/google/uuid"
 )
 
-var keyProviderLogger = slog.With("source", "KeyProvider")
+var keyProviderLogger = logger.NewLogger("KeyProvider")
 
 type SecretKeyProvider struct {
 	keyList map[string]*rsa.PrivateKey

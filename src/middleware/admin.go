@@ -2,18 +2,18 @@ package middleware
 
 import (
 	"go-do-the-thing/src/helpers"
-	"log/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"net/http"
 )
 
 type AdminMiddleware struct {
-	logger *slog.Logger
+	logger *logger.Logger
 }
 
 func NewAdminMiddleware() AdminMiddleware {
-	logger := slog.With("source", "AdminMiddleware")
+	log := logger.NewLogger("AdminMiddleware")
 	return AdminMiddleware{
-		logger: logger,
+		logger: log,
 	}
 }
 

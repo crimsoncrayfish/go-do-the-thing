@@ -5,9 +5,9 @@ import (
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	users_repo "go-do-the-thing/src/database/repos/users"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/models"
-	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,17 +16,17 @@ import (
 type UserService struct {
 	usersRepo        users_repo.UsersRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
-	logger           *slog.Logger
+	logger           *logger.Logger
 }
 
 const serviceSource = "UserService"
 
 func SetupUserService(repo_container *repos.RepoContainer) UserService {
-	logger := slog.With("source", serviceSource)
+	log := logger.NewLogger(serviceSource)
 	return UserService{
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
-		logger:           logger,
+		logger:           log,
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go-do-the-thing/src/helpers/constants"
-	"log/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,15 +12,15 @@ import (
 
 type JwtHandler struct {
 	*SecretKeyProvider
-	logger *slog.Logger
+	logger *logger.Logger
 }
 
 func NewJwtHandler(env string) JwtHandler {
 	provider := newKeyProvider(env)
-	logger := slog.With("source", "JwtHandler")
+	log := logger.NewLogger("JwtHandler")
 	return JwtHandler{
 		SecretKeyProvider: provider,
-		logger:            logger,
+		logger:            log,
 	}
 }
 

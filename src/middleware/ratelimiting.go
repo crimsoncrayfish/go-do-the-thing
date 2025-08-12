@@ -3,7 +3,6 @@ package middleware
 import (
 	"fmt"
 	"go-do-the-thing/src/helpers/logger"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -17,11 +16,11 @@ type RateLimitMiddleWare struct {
 	current_window   time.Time
 	mu               sync.Mutex
 	maxRequestsLimit int
-	logger           *slog.Logger
+	logger           *logger.Logger
 }
 
 func NewRateLimiter() *RateLimitMiddleWare {
-	log := slog.With("source", "RateLimitMiddleware")
+	log := logger.NewLogger("RateLimitMiddleware")
 	maxRequests := 500
 	if envLimit := os.Getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"); envLimit != "" {
 		if parsed, err := strconv.Atoi(envLimit); err == nil && parsed > 0 {

@@ -8,7 +8,6 @@ import (
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,15 +16,15 @@ import (
 type AuthenticationMiddleware struct {
 	JwtHandler security.JwtHandler
 	UsersRepo  users_repo.UsersRepo
-	logger     *slog.Logger
+	logger     *logger.Logger
 }
 
 func NewAuthenticationMiddleware(jwt security.JwtHandler, usersRepo users_repo.UsersRepo) AuthenticationMiddleware {
-	logger := slog.With("source", "AuthMiddleware")
+	log := logger.NewLogger("AuthMiddleware")
 	return AuthenticationMiddleware{
 		UsersRepo:  usersRepo,
 		JwtHandler: jwt,
-		logger:     logger,
+		logger:     log,
 	}
 }
 

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"log/slog"
+	"go-do-the-thing/src/helpers/logger"
 	"net/http"
 	"time"
 )
@@ -17,13 +17,13 @@ func (w *wrappedWriter) WriteHeader(statusCode int) {
 }
 
 type LoggingMiddleWare struct {
-	logger *slog.Logger
+	logger *logger.Logger
 }
 
 func NewLoggingMiddleWare() *LoggingMiddleWare {
-	logger := slog.With("source", "LoggingMiddleware")
+	log := logger.NewLogger("LoggingMiddleware")
 	return &LoggingMiddleWare{
-		logger: logger,
+		logger: log,
 	}
 }
 
