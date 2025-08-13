@@ -19,7 +19,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -29,8 +35,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Download dependencies
+      - name: Install templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+
+      - name: Download Go dependencies
         run: go mod download
+
+      - name: Install Node.js dependencies
+        run: npm install
+
+      - name: Generate templates and build assets
+        run: |
+          npm run build
+          templ generate
 
       - name: Run unit tests with coverage
         id: test_results
@@ -56,7 +73,8 @@ jobs:
           echo "passed_count=$passed_count" >> $GITHUB_OUTPUT
           
           # Calculate total
-          total_count=$((passed_count + $(echo "${failed_count:-0}")))
+          failed_count_value=${failed_count:-0}
+          total_count=$((passed_count + failed_count_value))
           echo "total_count=$total_count" >> $GITHUB_OUTPUT
           
           # Get coverage percentage
