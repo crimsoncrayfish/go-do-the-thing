@@ -109,6 +109,9 @@ jobs:
         id: test_summary
         if: always()
         run: |
+          # Get current timestamp
+          timestamp=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          
           if [ "${{ steps.test_results.outputs.tests_failed }}" = "true" ]; then
             status="❌ **FAILED**"
             summary="**Unit Test Results - FAILED** ❌\\n\\n"
@@ -120,7 +123,8 @@ jobs:
           summary+="- Total Tests: ${{ steps.test_results.outputs.total_count }}\\n"
           summary+="- Passed: ${{ steps.test_results.outputs.passed_count }} ✅\\n"
           summary+="- Failed: ${{ steps.test_results.outputs.failed_count }} ❌\\n"
-          summary+="- Coverage: ${{ steps.test_results.outputs.coverage }}\\n\\n"
+          summary+="- Coverage: ${{ steps.test_results.outputs.coverage }}\\n"
+          summary+="- Last Updated: \`$timestamp\`\\n\\n"
           if [ "${{ steps.test_results.outputs.tests_failed }}" = "true" ]; then
             summary+="🚨 **Action Required:** Please fix the failing tests before merging.\\n\\n"
             summary+="<details>\\n<summary>View Test Output</summary>\\n\\n\`\`\`\\n"
