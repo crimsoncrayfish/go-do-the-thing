@@ -57,13 +57,7 @@ func main() {
 	}
 	log.Debug("This is the port", "port", port)
 
-	var db_connection_string string
-	if env == DEV {
-		db_connection_string = "postgres://admin:admin@localhost:5432/todo_db?sslmode=disable"
-	} else {
-		db_connection_string = os.Getenv("DATABASE_URL")
-	}
-
+	db_connection_string := os.Getenv("DATABASE_URL")
 	if db_connection_string == "" {
 		log.Fatal("FATAL: DATABASE_URL environment variable not set.")
 	}
