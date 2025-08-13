@@ -22,7 +22,6 @@ tasks:
 
   setup:env:
     desc: "Create .env file with generated JWT keys (interactive)"
-    # NOTE: This task is untested - please verify functionality before relying on it
     silent: true
     cmds:
       - |
@@ -242,7 +241,6 @@ tasks:
 
   setup:env:auto:
     desc: "Create .env files automatically (non-interactive, for CI/automation)"
-    # NOTE: This task is untested - please verify functionality before relying on it
     silent: true
     cmds:
       - |
@@ -328,7 +326,6 @@ tasks:
 
   setup:env:check:
     desc: "Create .env files only if they don't exist (safe mode)"
-    # NOTE: This task is untested - please verify functionality before relying on it
     silent: true
     cmds:
       - |
@@ -608,3 +605,54 @@ tasks:
       - task: _confirm:prod
       - echo "Running PRODUCTION migration to version {{.V}}..."
       #- migrate -path {{.MIGRATIONS_PATH}} -database $DATABASE_URL goto {{.V}}
+
+  # Testing tasks
+  test:
+    desc: "Run all unit tests"
+    cmds:
+      - echo "🧪 Running all unit tests..."
+      - go test ./... | grep -v "no test files"
+
+  test:verbose:
+    desc: "Run all unit tests with verbose output"
+    cmds:
+      - echo "🧪 Running all unit tests (verbose)..."
+      - go test -v ./... | grep -v "no test files"
+
+  test:coverage:
+    desc: "Run all unit tests with coverage report"
+    cmds:
+      - echo "🧪 Running all unit tests with coverage..."
+      - go test -coverprofile=coverage.out ./... | grep -v "no test files"
+      - echo "📊 Coverage summary:"
+      - go tool cover -func=coverage.out | tail -1
+
+  test:integration:
+    desc: "Run integration tests (requires TEST_DATABASE_URL)"
+    cmds:
+      - echo "🧪 Running integration tests..."
+      - |
+        if [ -z "$TEST_DATABASE_URL" ]; then
+          echo "⚠️  TEST_DATABASE_URL not set. Integration tests will be skipped."
+        fi
+      - go test -tags=integration ./... | grep -v "no test files"
+
+  test:watch:
+    desc: "Watch for changes and re-run tests"
+    cmds:
+      - echo "🧪 Watching for file changes..."
+      - ./scripts/test.sh --watch
+
+  test:coverage:html:
+    desc: "Generate HTML coverage report"
+    cmds:
+      - task: test:coverage
+      - echo "📊 Generating HTML coverage report..."
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "📊 Coverage report generated at coverage.html"
+
+  test:clean:
+    desc: "Clean test artifacts"
+    cmds:
+      - echo "🧹 Cleaning test artifacts..."
+      - rm -f coverage.out coverage.html test-results.txt

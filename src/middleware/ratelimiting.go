@@ -11,15 +11,30 @@ import (
 	"time"
 )
 
+type TimeProvider interface {
+	Now() time.Time
+}
+
+type RealTimeProvider struct{}
+
+func (r RealTimeProvider) Now() time.Time {
+	return time.Now()
+}
+
 type RateLimitMiddleWare struct {
 	current_counts   map[string]int
 	current_window   time.Time
-	mu               sync.Mutex
+	mu               sync.RWMutex
 	maxRequestsLimit int
 	logger           *logger.Logger
+	timeProvider     TimeProvider
 }
 
 func NewRateLimiter() *RateLimitMiddleWare {
+	return newRateLimiterWithTimeProvider(RealTimeProvider{})
+}
+
+func newRateLimiterWithTimeProvider(timeProvider TimeProvider) *RateLimitMiddleWare {
 	log := logger.NewLogger("RateLimitMiddleware")
 	maxRequests := 500
 	if envLimit := os.Getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"); envLimit != "" {
@@ -39,16 +54,26 @@ func NewRateLimiter() *RateLimitMiddleWare {
 		current_counts:   make(map[string]int),
 		maxRequestsLimit: maxRequests,
 		logger:           log,
+		timeProvider:     timeProvider,
 	}
 }
 
 func (mw *RateLimitMiddleWare) getRateAndUpdate(ip string, currentWindow time.Time) int {
+	mw.mu.RLock()
+	needsReset := !currentWindow.Equal(mw.current_window)
+	mw.mu.RUnlock()
+
+	if needsReset {
+		mw.mu.Lock()
+		if !currentWindow.Equal(mw.current_window) {
+			mw.current_counts = make(map[string]int)
+			mw.current_window = currentWindow
+		}
+		mw.mu.Unlock()
+	}
+
 	mw.mu.Lock()
 	defer mw.mu.Unlock()
-	if !currentWindow.Equal(mw.current_window) {
-		mw.current_counts = make(map[string]int)
-		mw.current_window = currentWindow
-	}
 	var current_count int
 	if count, ok := mw.current_counts[ip]; ok {
 		current_count = count + 1
@@ -62,7 +87,7 @@ func (mw *RateLimitMiddleWare) getRateAndUpdate(ip string, currentWindow time.Ti
 func (mw *RateLimitMiddleWare) RateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := ReadUserIP(r)
-		now := time.Now()
+		now := mw.timeProvider.Now()
 		currentWindow := now.Truncate(time.Minute)
 		secondsUntilReset := 60 - now.Second()
 
