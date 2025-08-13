@@ -35,8 +35,13 @@ jobs:
       - name: Run unit tests with coverage
         id: test_results
         run: |
-          set -e
+          # Run all tests and capture output (don't exit on failure yet)
+          set +e
           go test -v -coverprofile=coverage.out ./... > test-results.txt 2>&1
+          test_exit_code=$?
+          set -e
+          
+          # Parse test results
           if grep -q "FAIL" test-results.txt; then
             echo "tests_failed=true" >> $GITHUB_OUTPUT
             failed_count=$(grep -c "FAIL:" test-results.txt || echo "0")
@@ -45,6 +50,28 @@ jobs:
             echo "tests_failed=false" >> $GITHUB_OUTPUT
             echo "failed_count=0" >> $GITHUB_OUTPUT
           fi
+          
+          # Count passed tests
+          passed_count=$(grep -c "PASS:" test-results.txt || echo "0")
+          echo "passed_count=$passed_count" >> $GITHUB_OUTPUT
+          
+          # Calculate total
+          total_count=$((passed_count + $(echo "${failed_count:-0}")))
+          echo "total_count=$total_count" >> $GITHUB_OUTPUT
+          
+          # Get coverage percentage
+          if [ -f coverage.out ]; then
+            coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}')
+            echo "coverage=$coverage" >> $GITHUB_OUTPUT
+          else
+            echo "coverage=0%" >> $GITHUB_OUTPUT
+          fi
+          
+          # Store full test output for comment
+          cat test-results.txt
+          
+          # Exit with the original test exit code
+          exit $test_exit_code
           passed_count=$(grep -c "PASS:" test-results.txt || echo "0")
           echo "passed_count=$passed_count" >> $GITHUB_OUTPUT
           total_count=$((passed_count + $(echo "${failed_count:-0}")))
