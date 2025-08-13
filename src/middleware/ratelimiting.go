@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"go-do-the-thing/src/helpers/logger"
 	"net"
@@ -21,11 +23,16 @@ func (r RealTimeProvider) Now() time.Time {
 	return time.Now()
 }
 
+type rateLimitShard struct {
+	current_counts map[string]int
+	current_window time.Time
+	mu             sync.RWMutex
+}
+
 type RateLimitMiddleWare struct {
-	current_counts   map[string]int
-	current_window   time.Time
-	mu               sync.RWMutex
+	shards           []*rateLimitShard
 	maxRequestsLimit int
+	shardCount       int
 	logger           *logger.Logger
 	timeProvider     TimeProvider
 }
@@ -43,44 +50,52 @@ func newRateLimiterWithTimeProvider(timeProvider TimeProvider) *RateLimitMiddleW
 		}
 	}
 
-	logger.TODO("Consider implementing sliding window algorithm instead of fixed windows")
-	logger.TODO("Add circuit breaker logic for graceful degradation under high load")
-	logger.TODO("Implement Redis/external store for multi-instance deployments")
-	logger.TODO("Add configurable rate limits per endpoint or user type")
-	logger.TODO("Add metrics collection (requests/sec, rate limit hits)")
-	logger.TODO("Consider rate limiting by user ID for authenticated requests")
+	// Configure shard count - default to 16 for good distribution
+	shardCount := 16
+	if envShards := os.Getenv("RATE_LIMIT_SHARD_COUNT"); envShards != "" {
+		if parsed, err := strconv.Atoi(envShards); err == nil && parsed > 0 && parsed <= 256 {
+			shardCount = parsed
+		}
+	}
+
+	// Initialize shards
+	shards := make([]*rateLimitShard, shardCount)
+	for i := range shardCount {
+		shards[i] = &rateLimitShard{
+			current_counts: make(map[string]int),
+		}
+	}
 
 	return &RateLimitMiddleWare{
-		current_counts:   make(map[string]int),
+		shards:           shards,
 		maxRequestsLimit: maxRequests,
+		shardCount:       shardCount,
 		logger:           log,
 		timeProvider:     timeProvider,
 	}
 }
 
 func (mw *RateLimitMiddleWare) getRateAndUpdate(ip string, currentWindow time.Time) int {
-	mw.mu.RLock()
-	needsReset := !currentWindow.Equal(mw.current_window)
-	mw.mu.RUnlock()
+	shardIndex := getShardIndex(ip, mw.shardCount)
+	shard := mw.shards[shardIndex]
 
-	if needsReset {
-		mw.mu.Lock()
-		if !currentWindow.Equal(mw.current_window) {
-			mw.current_counts = make(map[string]int)
-			mw.current_window = currentWindow
-		}
-		mw.mu.Unlock()
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
+
+	// Check if this shard needs a window reset
+	if !currentWindow.Equal(shard.current_window) {
+		// Reset this shard's counts for the new window
+		shard.current_counts = make(map[string]int)
+		shard.current_window = currentWindow
 	}
 
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
 	var current_count int
-	if count, ok := mw.current_counts[ip]; ok {
+	if count, ok := shard.current_counts[ip]; ok {
 		current_count = count + 1
 	} else {
 		current_count = 1
 	}
-	mw.current_counts[ip] = current_count
+	shard.current_counts[ip] = current_count
 	return current_count
 }
 
@@ -109,13 +124,19 @@ func (mw *RateLimitMiddleWare) RateLimit(next http.Handler) http.Handler {
 	})
 }
 
+func getShardIndex(ip string, shardCount int) int {
+	hashbytes := sha256.Sum256([]byte(ip))
+	// Use first 4 bytes for better distribution
+	n := int(binary.BigEndian.Uint32(hashbytes[:4]))
+	return n % shardCount
+}
+
 func ReadUserIP(r *http.Request) string {
 	IPAddress := r.Header.Get("X-Real-Ip")
 	if IPAddress == "" {
 		IPAddress = r.Header.Get("X-Forwarded-For")
 	}
 	if IPAddress == "" {
-
 		IPAddress, _, _ = net.SplitHostPort(r.RemoteAddr)
 		if IPAddress == "" {
 			IPAddress = r.RemoteAddr
