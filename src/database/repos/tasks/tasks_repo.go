@@ -41,7 +41,7 @@ func scanFromRow(row pgx.Row, task *models.Task) error {
 		&task.CompleteDate,
 	)
 	if err != nil {
-		return errors.New(errors.ErrDBGenericError, "failed to scan the row: %w", err)
+		return errors.NewDbGenericError("failed to scan task row", err, "", nil)
 	}
 	return nil
 }
@@ -63,7 +63,7 @@ func scanFromRows(rows pgx.Rows, task *models.Task) error {
 		&task.CompleteDate,
 	)
 	if err != nil {
-		return errors.New(errors.ErrDBGenericError, "failed to scan the rows: %w", err)
+		return errors.NewDbGenericError("failed to scan task rows", err, "", nil)
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func (r *TasksRepo) GetTasksForUser(userId int64) (tasks []*models.Task, err err
 	rows, err := r.database.Query(gettasksByAssignedUser, userId)
 	if err != nil {
 		r.logger.Error("failed to read tasks for user", "error", err, "sql", gettasksByAssignedUser, "user_id", userId)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to read tasks for user: %w", err)
+		return nil, errors.NewDbReadFailed("tasks", err, "for user", nil)
 	}
 	defer rows.Close()
 
@@ -93,7 +93,7 @@ func (r *TasksRepo) GetTasksForUser(userId int64) (tasks []*models.Task, err err
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GettasksForUser", "error", err, "user_id", userId)
-		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, errors.NewDbGenericError("rows error in GetTasksForUser", err, "", nil)
 	}
 	return tasks, nil
 }
@@ -104,7 +104,7 @@ func (r *TasksRepo) GetTasksForUserAndProject(user_id, project_id int64) (tasks 
 	rows, err := r.database.Query(getTasksByAssignedUserAndProject, user_id, project_id)
 	if err != nil {
 		r.logger.Error("failed to read tasks for user and project", "error", err, "sql", getTasksByAssignedUserAndProject, "user_id", user_id, "project_id", project_id)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to read tasks for user and project: %w", err)
+		return nil, errors.NewDbReadFailed("tasks", err, "for user and project", nil)
 	}
 	defer rows.Close()
 
@@ -122,7 +122,7 @@ func (r *TasksRepo) GetTasksForUserAndProject(user_id, project_id int64) (tasks 
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GettasksForUserAndProject", "error", err, "user_id", user_id, "project_id", project_id)
-		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, errors.NewDbGenericError("rows error in GetTasksForUser", err, "", nil)
 	}
 	r.logger.Debug("GettasksForUserAndProject succeeded", "count", len(tasks), "user_id", user_id, "project_id", project_id)
 	return tasks, nil
@@ -146,7 +146,7 @@ func (r *TasksRepo) InsertTask(task models.Task) (id int64, err error) {
 	).Scan(&id)
 	if err != nil {
 		r.logger.Error("failed to insert task", "error", err, "sql", inserttask, "task_name", task.Name, "project_id", task.Project)
-		return 0, errors.New(errors.ErrDBReadFailed, "failed to insert task: %w", err)
+		return 0, errors.NewDbInsertFailed("task", err, "", nil)
 	}
 	r.logger.Info("Task created successfully", "id", id, "name", task.Name, "project", task.Project)
 	return id, nil
@@ -158,7 +158,7 @@ func (r *TasksRepo) UpdateTask(task models.Task) (err error) {
 	_, err = r.database.Exec(updatetask, task.Id, task.Name, task.Description, task.AssignedTo, task.DueDate, task.Project)
 	if err != nil {
 		r.logger.Error("failed to update the task", "error", err, "sql", updatetask, "task_id", task.Id, "task_name", task.Name)
-		return errors.New(errors.ErrDBUpdateFailed, "failed to update the task: %w", err)
+		return errors.NewDbUpdateFailed("task", err, "", nil)
 	}
 	r.logger.Info("Task updated successfully", "id", task.Id, "name", task.Name)
 	return nil
@@ -170,7 +170,7 @@ func (r *TasksRepo) UpdateTaskStatus(id int64, completeDate *time.Time, status, 
 	_, err = r.database.Exec(updatetaskStatus, id, status, completeDate, modifiedBy, time.Now())
 	if err != nil {
 		r.logger.Error("failed to update the task status", "error", err, "sql", updatetaskStatus, "id", id, "status", status, "completeDate", completeDate, "modifiedBy", modifiedBy)
-		return errors.New(errors.ErrDBUpdateFailed, "failed to update the task: %w", err)
+		return errors.NewDbUpdateFailed("task", err, "", nil)
 	}
 	r.logger.Info("Task status updated successfully", "id", id, "status", status)
 	return nil
@@ -182,7 +182,7 @@ func (r *TasksRepo) DeleteTask(id, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(deletetask, id, modifiedBy, time.Now())
 	if err != nil {
 		r.logger.Error("failed to delete the task", "error", err, "sql", deletetask, "id", id, "modifiedBy", modifiedBy)
-		return errors.New(errors.ErrDBDeleteFailed, "failed to delete the task: %w", err)
+		return errors.NewDbDeleteFailed("task", err, "", nil)
 	}
 	r.logger.Info("Task deleted successfully", "id", id)
 	return nil
@@ -194,7 +194,7 @@ func (r *TasksRepo) RestoreTask(id, modifiedBy int64) (err error) {
 	_, err = r.database.Exec(restoretask, id, modifiedBy, time.Now())
 	if err != nil {
 		r.logger.Error("failed to restore the task", "error", err, "sql", restoretask, "id", id, "modifiedBy", modifiedBy)
-		return errors.New(errors.ErrDBUpdateFailed, "failed to restore the task: %w", err)
+		return errors.NewDbUpdateFailed("task", err, "restore", nil)
 	}
 	r.logger.Info("Task restored successfully", "id", id)
 	return nil
@@ -208,7 +208,7 @@ func (r *TasksRepo) GetTask(id int64) (*models.Task, error) {
 	err := scanFromRow(row, temp)
 	if err != nil {
 		r.logger.Error("failed to get the task", "error", err, "sql", gettask, "id", id)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to get the task: %w", err)
+		return nil, errors.NewDbReadFailed("task", err, "by id", nil)
 	}
 	r.logger.Debug("Gettask succeeded", "id", id)
 	return temp, nil
@@ -222,7 +222,7 @@ func (r *TasksRepo) GetTasksCount(userId int64) (int64, error) {
 	err := row.Scan(&count)
 	if err != nil {
 		r.logger.Error("failed to get tasks count", "error", err, "sql", gettasksCount, "user_id", userId)
-		return 0, errors.New(errors.ErrDBReadFailed, "failed to get tasks count: %w", err)
+		return 0, errors.NewDbReadFailed("tasks count", err, "", nil)
 	}
 	r.logger.Debug("GettasksCount succeeded", "count", count, "user_id", userId)
 	return count, nil
@@ -238,12 +238,12 @@ func (r *TasksRepo) GetProjectTaskCompletion(projectId int64) (int64, int64, err
 	err := r.database.QueryRow(totalTasks, projectId).Scan(&total)
 	if err != nil {
 		r.logger.Error("failed to count total tasks for project", "error", err, "project_id", projectId)
-		return 0, 0, err
+		return 0, 0, errors.NewDbReadFailed("total tasks count", err, "for project", nil)
 	}
 	err = r.database.QueryRow(completedTasks, projectId).Scan(&completed)
 	if err != nil {
 		r.logger.Error("failed to count completed tasks for project", "error", err, "project_id", projectId)
-		return completed, total, err
+		return completed, total, errors.NewDbReadFailed("completed tasks count", err, "for project", nil)
 	}
 	return completed, total, nil
 }
@@ -254,7 +254,7 @@ func (r TasksRepo) Search(user_id int64, search_text string) (tasks []*models.Ta
 	rows, err := r.database.Query(searchTasks, user_id, search_text)
 	if err != nil {
 		r.logger.Error("failed to read tasks for user", "error", err, "sql", searchTasks, "user_id", user_id)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to search for tasks: %w", err)
+		return nil, errors.NewDbReadFailed("tasks", err, "search", nil)
 	}
 	defer rows.Close()
 
@@ -273,7 +273,7 @@ func (r TasksRepo) Search(user_id int64, search_text string) (tasks []*models.Ta
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in SearchTasks", "error", err, "user_id", user_id)
-		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, errors.NewDbGenericError("rows error in GetTasksForUser", err, "", nil)
 	}
 	r.logger.Debug("Search succeeded", "count", len(tasks), "user_id", user_id)
 	return tasks, nil

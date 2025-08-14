@@ -1,7 +1,6 @@
 package projects_repo
 
 import (
-	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/logger"
@@ -65,7 +64,7 @@ func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 	rows, err := r.database.Query(getProjectsByUser, user_id)
 	if err != nil {
 		r.logger.Error("failed to get project list, query failed", "error", err, "sql", getProjectsByUser, "user_id", user_id)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to get project list, query failed: %w", err)
+		return nil, errors.NewDbReadFailed("projects", err, "list query failed", nil)
 	}
 	defer rows.Close()
 
@@ -75,14 +74,14 @@ func (r *ProjectsRepo) GetProjects(user_id int64) ([]models.Project, error) {
 		err = scanFromRows(rows, &item)
 		if err != nil {
 			r.logger.Error("failed to get project list, scan failed", "error", err, "user_id", user_id)
-			return nil, errors.New(errors.ErrDBGenericError, "failed to get project list, scan failed: %w", err)
+			return nil, errors.NewDbGenericError("projects", err, "scan failed", nil)
 		}
 		items = append(items, item)
 	}
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("failed to get project list, row error", "error", err, "user_id", user_id)
-		return nil, errors.New(errors.ErrDBGenericError, "failed to get project list, row error: %w", err)
+		return nil, errors.NewDbGenericError("projects", err, "row error", nil)
 	}
 	r.logger.Debug("GetProjects succeeded", "count", len(items), "user_id", user_id)
 	return items, nil
@@ -96,7 +95,7 @@ func (r *ProjectsRepo) GetProject(projectId int64) (*models.Project, error) {
 	err := scanFromRow(row, temp)
 	if err != nil {
 		r.logger.Error("failed to get project", "error", err, "sql", getProject, "project_id", projectId)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to get project: %w", err)
+		return nil, errors.NewDbReadFailed("project", err, "", nil)
 	}
 	r.logger.Debug("GetProject succeeded", "project_id", projectId)
 	return temp, nil
@@ -108,7 +107,7 @@ func (r *ProjectsRepo) DeleteProject(id, currentUser int64) error {
 	_, err := r.database.Exec(deleteProject, id, currentUser, time.Now())
 	if err != nil {
 		r.logger.Error("failed to update project", "error", err, "sql", deleteProject, "id", id, "currentUser", currentUser)
-		return errors.New(errors.ErrDBDeleteFailed, "failed to update project: %w", err)
+		return errors.NewDbDeleteFailed("project", err, "", nil)
 	}
 	r.logger.Debug("Project deleted successfully", "id", id)
 	return nil
@@ -121,7 +120,7 @@ func (r *ProjectsRepo) GetProjectCount(currentUser int64) (count int64, err erro
 	var temp int64
 	err = row.Scan(&temp)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get project count: %w", err)
+		return 0, errors.NewDbReadFailed("project", err, "count", nil)
 	}
 	return temp, nil
 }
@@ -141,7 +140,7 @@ func (r *ProjectsRepo) UpdateProject(project models.Project) (err error) {
 	)
 	if err != nil {
 		r.logger.Error("failed to update project", "error", err, "sql", updateProject, "project", project)
-		return errors.New(errors.ErrDBUpdateFailed, "failed to update project: %w", err)
+		return errors.NewDbUpdateFailed("project", err, "", nil)
 	}
 	r.logger.Debug("Project updated successfully", "id", project.Id, "name", project.Name)
 	return nil
@@ -171,7 +170,7 @@ func (r *ProjectsRepo) Insert(project models.Project) (id int64, err error) {
 	).Scan(&id)
 	if err != nil {
 		r.logger.Error("failed to create new project", "error", err, "sql", insertProject, "project", project)
-		return 0, errors.New(errors.ErrDBReadFailed, "failed to create new project: %w", err)
+		return 0, errors.NewDbInsertFailed("project", err, "", nil)
 	}
 	r.logger.Debug("Project created successfully", "id", id, "name", project.Name, "owner", project.Owner)
 	return id, nil

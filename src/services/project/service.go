@@ -1,7 +1,6 @@
 package projects_service
 
 import (
-	"fmt"
 	"go-do-the-thing/src/database/repos"
 	project_tags_repo "go-do-the-thing/src/database/repos/project-tags"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
@@ -63,12 +62,13 @@ func (s ProjectService) GetAllProjectsForUser(current_user_id int64) (projects [
 	}
 	pl_v, err := s.projectListToViewModels(project_list)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert project list to project view list: %w", err)
+		return nil, errors.NewValidationFailed("project list", "failed to convert to view models: %w", err)
 	}
 	return pl_v, nil
 }
 
 func (s ProjectService) DeleteProject(id, current_user_id int64) (hasProjects bool, err error) {
+	s.logger.Info("deleting project", "project_id", id, "user_id", current_user_id)
 	err = s.project_repo.DeleteProject(id, current_user_id)
 	if err != nil {
 		return false, err
@@ -110,6 +110,7 @@ func (s ProjectService) CreateProject(
 	if err != nil {
 		return 0, err
 	}
+	s.logger.Info("project created", "project_id", id, "name", name, "owner", owner, "created_by", current_user_id)
 	return id, nil
 }
 
@@ -262,7 +263,7 @@ func (s *ProjectService) UserBelongsToProject(user_id, project_id int64) (err er
 		return err
 	}
 	if len(roles) == 0 {
-		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
+		return errors.NewAccessDenied("project", "user %d does not belong to project %d", user_id, project_id)
 	}
 	return nil
 }
@@ -354,7 +355,7 @@ func (s *ProjectService) TagBelongsToProject(tag_id, project_id int64) (err erro
 		return err
 	}
 	if tag == nil {
-		return errors.New(errors.ErrAccessDenied, "permission denied: tag %d does not belong to project %d", tag_id, project_id)
+		return errors.NewAccessDenied("tag", "tag %d does not belong to project %d", tag_id, project_id)
 	}
 	return nil
 }

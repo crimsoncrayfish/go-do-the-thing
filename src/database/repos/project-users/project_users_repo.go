@@ -30,7 +30,7 @@ func scanFromRows(rows pgx.Rows, item *models.ProjectUser) error {
 		&item.UserId,
 		&item.RoleId,
 	)
-	return app_errors.New(app_errors.ErrDBGenericError, "failed to scan rows: %w", err)
+	return app_errors.NewDbGenericError("failed to scan rows", err, "", nil)
 }
 
 const getAllForProject = `SELECT * FROM sp_get_all_project_users_for_project($1)`
@@ -42,7 +42,7 @@ func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []model
 	}
 	if err != nil {
 		r.logger.Error("failed to get all project users for projectId - query failed", "error", err, "sql", getAllForProject, "project_id", projectId)
-		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get all project users for projectId - query failed: %w", err)
+		return nil, app_errors.NewDbReadFailed("project users", err, "for projectId", nil)
 	}
 	defer rows.Close()
 
@@ -59,7 +59,7 @@ func (r *ProjectUsersRepo) GetAllForProject(projectId int) (projectUsers []model
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GetAllForProject", "error", err, "project_id", projectId)
-		return nil, app_errors.New(app_errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, app_errors.NewDbGenericError("rows error in GetAllForProject", err, "", nil)
 	}
 	r.logger.Debug("GetAllForProject succeeded", "count", len(projectUsers), "project_id", projectId)
 	return projectUsers, nil
@@ -74,7 +74,7 @@ func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, erro
 	}
 	if err != nil {
 		r.logger.Error("failed to get all project users for userId - query failed", "error", err, "sql", getAllForUser, "user_id", userId)
-		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get all project users for userId - query failed: %w", err)
+		return nil, app_errors.NewDbReadFailed("project users", err, "for userId", nil)
 	}
 	defer rows.Close()
 
@@ -91,7 +91,7 @@ func (r *ProjectUsersRepo) GetAllForUser(userId int) ([]models.ProjectUser, erro
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GetAllForUser", "error", err, "user_id", userId)
-		return nil, app_errors.New(app_errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, app_errors.NewDbGenericError("rows error in GetAllForUser", err, "", nil)
 	}
 	r.logger.Debug("GetAllForUser succeeded", "count", len(projectUsers), "user_id", userId)
 	return projectUsers, nil
@@ -103,7 +103,7 @@ func (r *ProjectUsersRepo) Insert(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(insertProjectUser, projectId, userId, roleId)
 	if err != nil {
 		r.logger.Error("failed to link user", "error", err, "sql", insertProjectUser, "project_id", projectId, "user_id", userId, "roleId", roleId)
-		return app_errors.New(app_errors.ErrDBInsertFailed, "failed to link user (%d) to project (%d): %w", userId, projectId, err)
+		return app_errors.NewDbInsertFailed("project user link", err, "", nil)
 	}
 	r.logger.Info("User linked to project successfully", "project_id", projectId, "user_id", userId, "roleId", roleId)
 	return nil
@@ -115,7 +115,7 @@ func (r *ProjectUsersRepo) Update(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(updateProjectUser, roleId, projectId, userId)
 	if err != nil {
 		r.logger.Error("failed to update link for user", "error", err, "sql", updateProjectUser, "roleId", roleId, "project_id", projectId, "user_id", userId)
-		return app_errors.New(app_errors.ErrDBUpdateFailed, "failed to update link for user (%d) and project (%d): %w", userId, projectId, err)
+		return app_errors.NewDbUpdateFailed("project user link", err, "", nil)
 	}
 	r.logger.Info("User project role updated successfully", "project_id", projectId, "user_id", userId, "roleId", roleId)
 	return nil
@@ -127,7 +127,7 @@ func (r *ProjectUsersRepo) Delete(projectId, userId, roleId int64) error {
 	_, err := r.database.Exec(deleteProjectUser, projectId, userId)
 	if err != nil {
 		r.logger.Error("failed to remove link for user", "error", err, "sql", deleteProjectUser, "project_id", projectId, "user_id", userId)
-		return app_errors.New(app_errors.ErrDBDeleteFailed, "failed to remove link for user (%d) and project (%d): %w", userId, projectId, err)
+		return app_errors.NewDbDeleteFailed("project user link", err, "", nil)
 	}
 	r.logger.Info("User removed from project successfully", "project_id", projectId, "user_id", userId)
 	return nil
@@ -143,20 +143,20 @@ func (r *ProjectUsersRepo) GetProjectUserRoles(projectId, userId int64) (roleIds
 	}
 	if err != nil {
 		r.logger.Error("failed to get project_user roles", "error", err, "sql", getAllRolesForUserProject, "user_id", userId, "project_id", projectId)
-		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get project_user roles: %w", err)
+		return nil, app_errors.NewDbReadFailed("project user roles", err, "", nil)
 	}
 	for rows.Next() {
 		var val int64
 		if err := rows.Scan(&val); err != nil {
 			r.logger.Error("failed to get project user roles", "error", err, "sql", getAllRolesForUserProject, "user_id", userId, "project_id", projectId)
-			return nil, app_errors.New(app_errors.ErrDBGenericError, "failed to get project user roles: %w", err)
+			return nil, app_errors.NewDbGenericError("failed to scan project user roles", err, "", nil)
 		}
 		roleIds = append(roleIds, val)
 	}
 
 	if err := rows.Err(); err != nil {
 		r.logger.Error("rows.Err() in GetProjectUserRoles", "error", err, "user_id", userId, "project_id", projectId)
-		return nil, app_errors.New(app_errors.ErrDBReadFailed, "failed to get project_user roles: %w", err)
+		return nil, app_errors.NewDbReadFailed("project user roles", err, "rows error", nil)
 	}
 
 	r.logger.Debug("GetProjectUserRoles succeeded", "count", len(roleIds), "user_id", userId, "project_id", projectId)
