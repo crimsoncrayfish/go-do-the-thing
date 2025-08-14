@@ -57,87 +57,70 @@ func New(code AppErrorCode, msg_fmt string, args ...any) *AppError {
 }
 
 func NewDbReadFailed(entityType string, err error, additionalMsg string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("failed to read %s", entityType)
-	if additionalMsg != "" {
-		fullMsg := baseMsg + " - " + additionalMsg + ": %w"
-		allArgs := append(args, err)
-		return New(ErrDBReadFailed, fullMsg, allArgs...)
+	if additionalMsg == "" {
+		return New(ErrDBReadFailed, "failed to read %s: %w", entityType, err)
 	}
-	return New(ErrDBReadFailed, baseMsg+": %w", err)
+	fullMsg := fmt.Sprintf("failed to read %s - %s: %%w", entityType, additionalMsg)
+	allArgs := append(args, err)
+	return New(ErrDBReadFailed, fullMsg, allArgs...)
 }
 
 func NewDbInsertFailed(entityType string, err error, additionalMsg string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("failed to create %s", entityType)
-	if additionalMsg != "" {
-		fullMsg := baseMsg + " - " + additionalMsg + ": %w"
-		allArgs := append(args, err)
-		return New(ErrDBInsertFailed, fullMsg, allArgs...)
+	if additionalMsg == "" {
+		return New(ErrDBInsertFailed, "failed to create %s: %w", entityType, err)
 	}
-	return New(ErrDBInsertFailed, baseMsg+": %w", err)
+	fullMsg := fmt.Sprintf("failed to create %s - %s: %%w", entityType, additionalMsg)
+	allArgs := append(args, err)
+	return New(ErrDBInsertFailed, fullMsg, allArgs...)
 }
 
 func NewDbUpdateFailed(entityType string, err error, additionalMsg string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("failed to update %s", entityType)
-	if additionalMsg != "" {
-		fullMsg := baseMsg + " - " + additionalMsg + ": %w"
-		allArgs := append(args, err)
-		return New(ErrDBUpdateFailed, fullMsg, allArgs...)
+	if additionalMsg == "" {
+		return New(ErrDBUpdateFailed, "failed to update %s: %w", entityType, err)
 	}
-	return New(ErrDBUpdateFailed, baseMsg+": %w", err)
+	fullMsg := fmt.Sprintf("failed to update %s - %s: %%w", entityType, additionalMsg)
+	allArgs := append(args, err)
+	return New(ErrDBUpdateFailed, fullMsg, allArgs...)
 }
 
 func NewDbDeleteFailed(entityType string, err error, additionalMsg string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("failed to delete %s", entityType)
-	if additionalMsg != "" {
-		fullMsg := baseMsg + " - " + additionalMsg + ": %w"
-		allArgs := append(args, err)
-		return New(ErrDBDeleteFailed, fullMsg, allArgs...)
+	if additionalMsg == "" {
+		return New(ErrDBDeleteFailed, "failed to delete %s: %w", entityType, err)
 	}
-	return New(ErrDBDeleteFailed, baseMsg+": %w", err)
+	fullMsg := fmt.Sprintf("failed to delete %s - %s: %%w", entityType, additionalMsg)
+	allArgs := append(args, err)
+	return New(ErrDBDeleteFailed, fullMsg, allArgs...)
 }
 
 func NewDbGenericError(entityType string, err error, additionalMsg string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("database error for %s", entityType)
-	if additionalMsg != "" {
-		fullMsg := baseMsg + " - " + additionalMsg + ": %w"
-		allArgs := append(args, err)
-		return New(ErrDBGenericError, fullMsg, allArgs...)
+	if additionalMsg == "" {
+		return New(ErrDBGenericError, "database error for %s: %w", entityType, err)
 	}
-	return New(ErrDBGenericError, baseMsg+": %w", err)
+	fullMsg := fmt.Sprintf("database error for %s - %s: %%w", entityType, additionalMsg)
+	allArgs := append(args, err)
+	return New(ErrDBGenericError, fullMsg, allArgs...)
 }
 
 func NewAccessDenied(resourceType string, reason string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("access denied to %s", resourceType)
-	if reason != "" {
-		fullMsg := baseMsg + " - " + reason
-		if len(args) > 0 {
-			return New(ErrAccessDenied, fullMsg, args...)
-		}
-		return New(ErrAccessDenied, fullMsg)
+	if reason == "" {
+		return New(ErrAccessDenied, "access denied to %s", resourceType)
 	}
-	return New(ErrAccessDenied, baseMsg)
+	fullMsg := fmt.Sprintf("access denied to %s - %s", resourceType, reason)
+	return New(ErrAccessDenied, fullMsg, args...)
 }
 
 func NewAuthFailed(operation string, reason string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("%s failed", operation)
-	if reason != "" {
-		fullMsg := baseMsg + " - " + reason
-		if len(args) > 0 {
-			return New(AuthFailed, fullMsg, args...)
-		}
-		return New(AuthFailed, fullMsg)
+	if reason == "" {
+		return New(AuthFailed, "%s failed", operation)
 	}
-	return New(AuthFailed, baseMsg)
+	fullMsg := fmt.Sprintf("%s failed - %s", operation, reason)
+	return New(AuthFailed, fullMsg, args...)
 }
 
 func NewValidationFailed(field string, reason string, args ...any) *AppError {
-	baseMsg := fmt.Sprintf("validation failed for %s", field)
-	if reason != "" {
-		fullMsg := baseMsg + " - " + reason
-		if len(args) > 0 {
-			return New(ErrValidationFailed, fullMsg, args...)
-		}
-		return New(ErrValidationFailed, fullMsg)
+	if reason == "" {
+		return New(ErrValidationFailed, "validation failed for %s", field)
 	}
-	return New(ErrValidationFailed, baseMsg)
+	fullMsg := fmt.Sprintf("validation failed for %s - %s", field, reason)
+	return New(ErrValidationFailed, fullMsg, args...)
 }
