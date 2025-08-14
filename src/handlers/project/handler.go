@@ -70,7 +70,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectView, err := h.project_service.GetProjectView(id, current_user_id)
+	project_view, err := h.project_service.GetProjectView(id, current_user_id)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok && appErr.Code() == errors.ErrNotFound {
 			errors.NotFound(h.logger, w, r, err, "Project not found")
@@ -82,24 +82,25 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	source := r.URL.Query().Get("source")
 	if source == "list" {
-		if err = templ_project.ProjectContentOOB(*projectView).Render(r.Context(), w); err != nil {
+		if err = templ_project.ProjectContentOOB(*project_view).Render(r.Context(), w); err != nil {
 			errors.InternalServerError(h.logger, w, r, err, "failed to render project content for id %d", id)
 			return
 		}
 		return
 	}
 
-	formData := formDataFromProject(*projectView)
+	formData := formDataFromProject(*project_view)
 
 	var tasks []*models.TaskView
-	tasks, err = h.task_service.GetProjectTaskViewList(current_user_id, projectView.Id)
+	tasks, err = h.task_service.GetProjectTaskViewList(current_user_id, project_view.Id)
 	if err != nil {
 		h.logger.Error("failed to get tasks for project", "error", err, "project_id", id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errors.InternalServerError(h.logger, w, r, err, "failed to get tasks for project %d", project_view.Id)
+
 		return
 	}
 
-	if err = templ_project.ProjectWithBody(*projectView, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w); err != nil {
+	if err = templ_project.ProjectWithBody(*project_view, models.ScreenProjects, formData, form_models.NewDefaultTaskForm(), tasks).Render(r.Context(), w); err != nil {
 		errors.InternalServerError(h.logger, w, r, err, "failed to render project page")
 		return
 	}

@@ -1,7 +1,6 @@
 package users_repo
 
 import (
-	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/logger"
@@ -62,7 +61,7 @@ func (r *UsersRepo) Create(user *models.User) (int64, error) {
 	err := r.db.QueryRow(insertUser, user.Email, user.FullName, user.PasswordHash, time.Now()).Scan(&id)
 	if err != nil {
 		r.logger.Error("failed to insert user", "error", err, "sql", insertUser, "email", user.Email)
-		return 0, errors.New(errors.ErrDBInsertFailed, "failed to insert user: %w", err)
+		return 0, errors.NewDbInsertFailed("user", err, "", nil)
 	}
 	return id, nil
 }
@@ -73,7 +72,7 @@ func (r *UsersRepo) UpdateDetails(user models.User) error {
 	_, err := r.db.Exec(updateUserDetails, user.FullName, user.Id)
 	if err != nil {
 		r.logger.Error("failed to update user", "error", err, "sql", updateUserDetails, "user_id", user.Id, "full_name", user.FullName)
-		return errors.New(errors.ErrDBUpdateFailed, "failed to update user: %w", err)
+		return errors.NewDbUpdateFailed("user", err, "details", nil)
 	}
 	return nil
 }
@@ -84,7 +83,7 @@ func (r *UsersRepo) UpdatePassword(user models.User) error {
 	_, err := r.db.Exec(updateUserPassword, user.PasswordHash, user.Id)
 	if err != nil {
 		r.logger.Error("failed to set user password", "error", err, "sql", updateUserPassword, "user_id", user.Id)
-		return fmt.Errorf("failed to set user password: %w", err)
+		return errors.NewDbUpdateFailed("user", err, "password", nil)
 	}
 	return nil
 }
@@ -95,7 +94,7 @@ func (r *UsersRepo) UpdateSession(userId int64, sessionId string, sessionStartTi
 	_, err := r.db.Exec(updateUserSession, userId, sessionId, sessionStartTime)
 	if err != nil {
 		r.logger.Error("failed to set user session", "error", err, "sql", updateUserSession, "user_id", userId, "session_id", sessionId, "sessionStartTime", sessionStartTime)
-		return fmt.Errorf("failed to set user session: %w", err)
+		return errors.NewDbUpdateFailed("user", err, "session", nil)
 	}
 	return nil
 }
@@ -106,7 +105,7 @@ func (r *UsersRepo) UpdateIsAdmin(user models.User) error {
 	_, err := r.db.Exec(updateUserIsAdmin, user.IsAdmin, user.Id)
 	if err != nil {
 		r.logger.Error("failed to set user as admin", "error", err, "sql", updateUserIsAdmin, "user_id", user.Id)
-		return fmt.Errorf("failed to set user as admin: %w", err)
+		return errors.NewDbUpdateFailed("user", err, "admin status", nil)
 	}
 	return nil
 }
@@ -117,7 +116,7 @@ func (r *UsersRepo) Delete(user models.User) error {
 	_, err := r.db.Exec(deleteUser, user.Id)
 	if err != nil {
 		r.logger.Error("failed to delete user", "error", err, "sql", deleteUser, "user_id", user.Id)
-		return fmt.Errorf("failed to delete user: %w", err)
+		return errors.NewDbDeleteFailed("user", err, "", nil)
 	}
 	return nil
 }
@@ -132,7 +131,7 @@ func (r *UsersRepo) GetUserByEmail(email string) (*models.User, error) {
 	err := scanUserFromRow(row, temp)
 	if err != nil {
 		r.logger.Error("failed to get user by email", "error", err, "sql", getUserByEmail, "email", email)
-		return nil, fmt.Errorf("failed to get user by email: %w", err)
+		return nil, errors.NewDbReadFailed("user", err, "by email", nil)
 	}
 	return temp, nil
 }
@@ -145,7 +144,7 @@ func (r *UsersRepo) GetUserPassword(id int64) (string, error) {
 	err := row.Scan(&password)
 	if err != nil {
 		r.logger.Error("failed to get user password", "error", err, "sql", getUserPassword, "id", id)
-		return "", fmt.Errorf("failed to get user password: %w", err)
+		return "", errors.NewDbReadFailed("user", err, "password", nil)
 	}
 	return password, nil
 }
@@ -159,7 +158,7 @@ func (r *UsersRepo) GetUserById(id int64) (*models.User, error) {
 	err := scanUserFromRow(row, temp)
 	if err != nil {
 		r.logger.Error("failed to get user", "error", err, "sql", getUser, "id", id)
-		return nil, fmt.Errorf("failed to get user: %w", err)
+		return nil, errors.NewDbReadFailed("user", err, "by id", nil)
 	}
 	return temp, nil
 }
@@ -170,7 +169,7 @@ func (r *UsersRepo) GetUsers() ([]models.User, error) {
 	rows, err := r.db.Query(getAllUsersNotDeleted)
 	if err != nil {
 		r.logger.Error("query failed to get users", "error", err, "sql", getAllUsersNotDeleted)
-		return nil, fmt.Errorf("query failed to get users: %w", err)
+		return nil, errors.NewDbReadFailed("users", err, "", nil)
 	}
 
 	users := make([]models.User, 0)
@@ -180,14 +179,14 @@ func (r *UsersRepo) GetUsers() ([]models.User, error) {
 		err := scanUsersFromRows(rows, &user)
 		if err != nil {
 			r.logger.Error("scan failed to get users", "error", err)
-			return nil, fmt.Errorf("scan failed to get users: %w", err)
+			return nil, errors.NewDbGenericError("users", err, "scan failed", nil)
 		}
 		users = append(users, user)
 	}
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GetUsers", "error", err)
-		return nil, fmt.Errorf("failed to get users: %w", err)
+		return nil, errors.NewDbGenericError("users", err, "rows error", nil)
 	}
 	return users, nil
 }
@@ -198,7 +197,7 @@ func (r *UsersRepo) Logout(userId int64) error {
 	_, err := r.db.Exec(logoutUser, userId)
 	if err != nil {
 		r.logger.Error("failed to end user session", "error", err, "sql", logoutUser, "user_id", userId)
-		return fmt.Errorf("failed to end user session: %w", err)
+		return errors.NewDbUpdateFailed("user", err, "session logout", nil)
 	}
 	return nil
 }
@@ -211,7 +210,7 @@ func (r *UsersRepo) UpdateUserEnabled(id int64, enabled bool) (string, error) {
 	err := row.Scan(&email)
 	if err != nil {
 		r.logger.Error("failed to update user enabled status", "error", err, "sql", updateUserEnabled, "id", id, "enabled", enabled)
-		return "", fmt.Errorf("failed to update user enabled status: %w", err)
+		return "", errors.NewDbUpdateFailed("user", err, "enabled status", nil)
 	}
 	return email, nil
 }

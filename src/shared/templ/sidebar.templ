@@ -31,22 +31,6 @@ templ SideBar(activeScreen models.Screen) {
 				if isAdminFromCtx(ctx) {
 					@navBarListItem("Admin dashboard", activeScreen == models.ScreenAdmin, "/admin")
 				}
-				<li>
-					<a
-						hx-get="/error"
-						hx-target="body"
-						hx-indicator="#loader-page"
-						onclick="toggleClassForId('-translate-x-full', 'sidebar');toggleClassForId('hidden', 'sidebar-overlay')"
-						class="flex items-center p-2 text-text-on-light dark:text-text-on-dark cursor-pointer"
-					>
-						if activeScreen == models.ScreenError {
-							@SvgBracket()
-						} else {
-							@SvgSlash()
-						}
-						<span class="ms-3">This is an ERROR</span>
-					</a>
-				</li>
 			</ul>
 		</div>
 		<div class="absolute bottom-0 py-4 overflow-y-auto">

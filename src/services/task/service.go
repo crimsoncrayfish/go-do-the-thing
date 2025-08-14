@@ -7,6 +7,7 @@ import (
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/errors"
+	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
 	"sort"
 	"time"
@@ -17,16 +18,19 @@ type TaskService struct {
 	usersRepo        users_repo.UsersRepo
 	projectRepo      projects_repo.ProjectsRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
+	logger           *logger.Logger
 }
 
 const serviceSource = "TaskService"
 
 func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
+	log := logger.NewLogger(serviceSource)
 	return TaskService{
 		tasksRepo:        *repo_container.GetTasksRepo(),
 		usersRepo:        *repo_container.GetUsersRepo(),
 		projectRepo:      *repo_container.GetProjectsRepo(),
 		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
+		logger:           log,
 	}
 }
 
@@ -53,6 +57,7 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 	if err != nil {
 		return 0, err
 	}
+	s.logger.Info("task created", "task_id", id, "name", name, "project_id", project_id, "user_id", user_id)
 	return id, nil
 }
 
@@ -97,7 +102,7 @@ func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
 	}
 
 	if task.AssignedTo != user_id {
-		return errors.New(errors.ErrAccessDenied, "not user's task")
+		return errors.NewAccessDenied("task", "not user's task")
 	}
 
 	task.ToggleStatus(user_id)
@@ -111,7 +116,12 @@ func (s *TaskService) DeleteTask(user_id, task_id int64) error {
 		return err
 	}
 
-	return s.tasksRepo.DeleteTask(task_id, user_id)
+	err = s.tasksRepo.DeleteTask(task_id, user_id)
+	if err != nil {
+		return err
+	}
+	s.logger.Info("task deleted", "task_id", task_id, "user_id", user_id)
+	return nil
 }
 
 func (s *TaskService) RestoreTask(user_id, task_id int64) error {
@@ -288,7 +298,7 @@ func (s *TaskService) UserBelongsToProject(user_id, project_id int64) (err error
 		return err
 	}
 	if len(roles) == 0 {
-		return errors.New(errors.ErrAccessDenied, "permission denied: user %d does not belong to project %d", user_id, project_id)
+		return errors.NewAccessDenied("project", "user %d does not belong to project %d", user_id, project_id)
 	}
 	return nil
 }
