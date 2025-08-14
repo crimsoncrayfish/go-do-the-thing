@@ -56,8 +56,6 @@ func New(code AppErrorCode, msg_fmt string, args ...any) *AppError {
 	}
 }
 
-// Database error helper methods for consistent error messages
-
 func NewDbReadFailed(entityType string, err error, additionalMsg string, args ...any) *AppError {
 	baseMsg := fmt.Sprintf("failed to read %s", entityType)
 	if additionalMsg != "" {
@@ -107,8 +105,6 @@ func NewDbGenericError(entityType string, err error, additionalMsg string, args 
 	}
 	return New(ErrDBGenericError, baseMsg+": %w", err)
 }
-
-// Service layer error helper methods for consistent business logic errors
 
 func NewAccessDenied(resourceType string, reason string, args ...any) *AppError {
 	baseMsg := fmt.Sprintf("access denied to %s", resourceType)
