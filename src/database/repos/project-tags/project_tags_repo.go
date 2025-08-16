@@ -45,7 +45,7 @@ func (r *ProjectTagsRepo) GetTagsByProjectId(projectId int64) ([]models.Tag, err
 	rows, err := r.database.Query(getTagsByProjectId, projectId)
 	if err != nil {
 		r.logger.Error("failed to get tags by project id", "error", err, "sql", getTagsByProjectId, "project_id", projectId)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to get tags by project id: %w", err)
+		return nil, errors.NewDbReadFailed("tags", err, "by project id", nil)
 	}
 	defer rows.Close()
 	tags := make([]models.Tag, 0)
@@ -61,7 +61,7 @@ func (r *ProjectTagsRepo) GetTagsByProjectId(projectId int64) ([]models.Tag, err
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GetTagsByProjectId", "error", err)
-		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, errors.NewDbGenericError("rows error in GetTagsByProjectId", err, "", nil)
 	}
 	r.logger.Debug("GetTagsByProjectId succeeded", "count", len(tags))
 	return tags, nil
@@ -74,7 +74,7 @@ func (r *ProjectTagsRepo) CreateTag(name string, color models.TagColor, current_
 	err := r.database.QueryRow(insertTag, name, color, current_user_id, project_id).Scan(&id)
 	if err != nil {
 		r.logger.Error("failed to insert tag", "error", err, "sql", insertTag, "name", name, "color", color, "project_id", project_id)
-		return 0, errors.New(errors.ErrDBReadFailed, "failed to insert tag: %w", err)
+		return 0, errors.NewDbInsertFailed("tag", err, "", nil)
 	}
 	r.logger.Info("Tag created successfully", "id", id, "name", name)
 	return id, nil
@@ -86,7 +86,7 @@ func (r *ProjectTagsRepo) UpdateTag(id int64, name string, color models.TagColor
 	_, err := r.database.Exec(updateTag, id, name, color)
 	if err != nil {
 		r.logger.Error("failed to update tag", "error", err, "sql", updateTag, "id", id, "name", name, "color", color)
-		return errors.New(errors.ErrDBUpdateFailed, "failed to update tag: %w", err)
+		return errors.NewDbUpdateFailed("tag", err, "", nil)
 	}
 	r.logger.Info("Tag updated successfully", "id", id)
 	return nil
@@ -100,7 +100,7 @@ func (r *ProjectTagsRepo) GetTagById(id, project_id int64) (*models.Tag, error) 
 	err := scanTagFromRow(row, tag)
 	if err != nil {
 		r.logger.Error("failed to get tag by id", "error", err, "sql", getTagById, "id", id)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to get tag by id: %w", err)
+		return nil, errors.NewDbReadFailed("tag", err, "by id", nil)
 	}
 	r.logger.Debug("GetTagById succeeded", "id", id)
 	return tag, nil
@@ -112,7 +112,7 @@ func (r *ProjectTagsRepo) DeleteTag(id int64) error {
 	_, err := r.database.Exec(deleteTag, id)
 	if err != nil {
 		r.logger.Error("failed to delete tag by id", "error", err, "sql", deleteTag, "id", id)
-		return errors.New(errors.ErrDBReadFailed, "failed to get tag by id: %w", err)
+		return errors.NewDbDeleteFailed("tag", err, "by id", nil)
 	}
 	r.logger.Debug("DeleteTag succeeded", "id", id)
 	return nil

@@ -31,7 +31,7 @@ func scanRoleFromRows(rows pgx.Rows, item *models.Role) error {
 		&item.Description,
 	)
 	if err != nil {
-		return errors.New(errors.ErrDBGenericError, "failed to scan role from rows: %w", err)
+		return errors.NewDbGenericError("failed to scan role from rows", err, "", nil)
 	}
 	return nil
 }
@@ -42,7 +42,7 @@ func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
 	rows, err := r.database.Query(getAllRoles)
 	if err != nil {
 		r.logger.Error("failed to query roles", "error", err, "sql", getAllRoles)
-		return nil, errors.New(errors.ErrDBReadFailed, "failed to query roles: %w", err)
+		return nil, errors.NewDbReadFailed("roles", err, "", nil)
 	}
 	defer rows.Close()
 
@@ -60,7 +60,7 @@ func (r *RolesRepo) GetAll() (roles []models.Role, err error) {
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in GetAll", "error", err)
-		return nil, errors.New(errors.ErrDBGenericError, "some error contained in the rows: %w", err)
+		return nil, errors.NewDbGenericError("rows error in GetAll", err, "", nil)
 	}
 	r.logger.Debug("GetAll succeeded", "count", len(roles))
 	return roles, nil

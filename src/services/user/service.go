@@ -1,10 +1,10 @@
 package user_service
 
 import (
-	"errors"
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	users_repo "go-do-the-thing/src/database/repos/users"
+	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/helpers/security"
 	"go-do-the-thing/src/models"
@@ -33,27 +33,25 @@ func SetupUserService(repo_container *repos.RepoContainer) UserService {
 func (s *UserService) AuthenticateUser(email, password string) (*models.User, error) {
 	user, err := s.usersRepo.GetUserByEmail(email)
 	if err != nil {
-		s.logger.Error("AuthenticateUser: failed to get user by email", "error", err, "email", email)
 		return nil, err
 	}
 	if user.IsDeleted {
 		s.logger.Info("AuthenticateUser: user is deleted", "email", email)
-		return nil, errors.New("login failed")
+		return nil, errors.NewAuthFailed("login", "user is deleted")
 	}
 
 	passwordHash, err := s.usersRepo.GetUserPassword(user.Id)
 	if err != nil {
-		s.logger.Error("AuthenticateUser: failed to get user password", "error", err, "email", email, "user_id", user.Id)
 		return nil, err
 	}
 
 	if !security.CheckPassword(password, passwordHash) {
 		s.logger.Info("AuthenticateUser: invalid password", "email", email)
-		return nil, errors.New("login failed")
+		return nil, errors.NewAuthFailed("login", "invalid password")
 	}
 	if !user.IsEnabled {
 		s.logger.Warn("AuthenticateUser: user is not activated", "email", email)
-		return nil, errors.New("user not enabled")
+		return nil, errors.NewAuthFailed("login", "user not enabled")
 	}
 	sessionId := uuid.New().String()
 	now := time.Now().UTC()
@@ -69,11 +67,11 @@ func (s *UserService) AuthenticateUser(email, password string) (*models.User, er
 
 func (s *UserService) RegisterUser(name, email, password, password2 string) (*models.User, error) {
 	if password != password2 {
-		return nil, errors.New("passwords do not match")
+		return nil, errors.NewAuthFailed("registration", "passwords do not match")
 	}
 	user, _ := s.usersRepo.GetUserByEmail(email)
 	if user != nil {
-		return nil, errors.New("email already in use")
+		return nil, errors.NewValidationFailed("email", "already in use")
 	}
 	passwordHash, err := security.SetPassword(password)
 	if err != nil {
@@ -101,7 +99,6 @@ func (s *UserService) LogoutUser(userId int64) error {
 func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {
-		s.logger.Error("Failed to get user", "error", err, "user_id", userId)
 		return models.UserView{}, err
 	}
 	return user.ToViewModel(), nil
@@ -110,7 +107,6 @@ func (s *UserService) GetUserById(userId int64) (models.UserView, error) {
 func (s *UserService) IsUserAdmin(userId int64) (bool, error) {
 	user, err := s.usersRepo.GetUserById(userId)
 	if err != nil {
-		s.logger.Error("Failed to get user", "error", err, "user_id", userId)
 		return false, err
 	}
 	return user.IsAdmin, nil
