@@ -1,9 +1,11 @@
-package task_service
+// Package taskservice implements the service layer for interacting with tasks
+package taskservice
 
 import (
 	"go-do-the-thing/src/database/repos"
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
+	tasktagsrepo "go-do-the-thing/src/database/repos/task-tags"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/errors"
@@ -15,6 +17,7 @@ import (
 
 type TaskService struct {
 	tasksRepo        tasks_repo.TasksRepo
+	taskTagsRepo     tasktagsrepo.TaskTagsRepo
 	usersRepo        users_repo.UsersRepo
 	projectRepo      projects_repo.ProjectsRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
@@ -23,19 +26,20 @@ type TaskService struct {
 
 const serviceSource = "TaskService"
 
-func SetupTaskService(repo_container *repos.RepoContainer) TaskService {
+func SetupTaskService(repoContainer *repos.RepoContainer) TaskService {
 	log := logger.NewLogger(serviceSource)
 	return TaskService{
-		tasksRepo:        *repo_container.GetTasksRepo(),
-		usersRepo:        *repo_container.GetUsersRepo(),
-		projectRepo:      *repo_container.GetProjectsRepo(),
-		projectUsersRepo: *repo_container.GetProjectUsersRepo(),
+		tasksRepo:        *repoContainer.GetTasksRepo(),
+		taskTagsRepo:     *repoContainer.GetTaskTagsRepo(),
+		usersRepo:        *repoContainer.GetUsersRepo(),
+		projectRepo:      *repoContainer.GetProjectsRepo(),
+		projectUsersRepo: *repoContainer.GetProjectUsersRepo(),
 		logger:           log,
 	}
 }
 
-func (s *TaskService) CreateTask(user_id, project_id int64, name, description string, due_date *time.Time) (int64, error) {
-	err := s.UserBelongsToProject(user_id, project_id)
+func (s *TaskService) CreateTask(userID, projectID int64, name, description string, dueDate *time.Time, taskTags []int64) (int64, error) {
+	err := s.UserBelongsToProject(userID, projectID)
 	if err != nil {
 		return 0, err
 	}
@@ -43,13 +47,13 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 	task := models.Task{
 		Name:         name,
 		Description:  description,
-		DueDate:      due_date,
-		AssignedTo:   user_id, // TODO: need to update this
-		CreatedBy:    user_id,
+		DueDate:      dueDate,
+		AssignedTo:   userID, // TODO: need to update this
+		CreatedBy:    userID,
 		CreatedDate:  &now,
-		ModifiedBy:   user_id,
+		ModifiedBy:   userID,
 		ModifiedDate: &now,
-		Project:      project_id,
+		Project:      projectID,
 		IsDeleted:    false,
 	}
 
@@ -57,29 +61,34 @@ func (s *TaskService) CreateTask(user_id, project_id int64, name, description st
 	if err != nil {
 		return 0, err
 	}
-	s.logger.Info("task created", "task_id", id, "name", name, "project_id", project_id, "user_id", user_id)
+	s.logger.Info("task created", "taskID", id, "name", name, "projectID", projectID, "userID", userID)
+
+	if err = s.taskTagsRepo.SetTaskTags(projectID, id, taskTags); err != nil {
+		return id, err
+	}
+
 	return id, nil
 }
 
-func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, description string, due_date *time.Time, assigned_to int64) error {
-	err := s.userBelongsToTaskProject(user_id, task_id)
+func (s *TaskService) UpdateTask(userID, taskID, projectID int64, name, description string, dueDate *time.Time, assignedTo int64, taskTagIDs []int64) error {
+	err := s.userBelongsToTaskProject(userID, taskID)
 	if err != nil {
 		return err
 	}
-	err = s.UserBelongsToProject(user_id, project_id)
+	err = s.UserBelongsToProject(userID, projectID)
 	if err != nil {
 		return err
 	}
 	now := time.Now()
 	task := models.Task{
-		Id:           task_id,
+		ID:           taskID,
 		Name:         name,
 		Description:  description,
-		DueDate:      due_date,
-		AssignedTo:   assigned_to, // TODO: need to update this
-		ModifiedBy:   user_id,
+		DueDate:      dueDate,
+		AssignedTo:   assignedTo, // TODO: need to update this
+		ModifiedBy:   userID,
 		ModifiedDate: &now,
-		Project:      project_id,
+		Project:      projectID,
 		IsDeleted:    false,
 	}
 	err = s.tasksRepo.UpdateTask(task)
@@ -87,95 +96,118 @@ func (s *TaskService) UpdateTask(user_id, task_id, project_id int64, name, descr
 		return err
 	}
 
+	if err = s.taskTagsRepo.SetTaskTags(projectID, taskID, taskTagIDs); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *TaskService) UpdateTaskStatus(user_id, task_id int64) error {
-	err := s.userBelongsToTaskProject(user_id, task_id)
+func (s *TaskService) UpdateTaskStatus(userID, taskID int64) error {
+	err := s.userBelongsToTaskProject(userID, taskID)
 	if err != nil {
 		return err
 	}
 
-	task, err := s.tasksRepo.GetTask(task_id)
+	task, err := s.tasksRepo.GetTask(taskID)
 	if err != nil {
 		return err
 	}
 
-	if task.AssignedTo != user_id {
+	if task.AssignedTo != userID {
 		return errors.NewAccessDenied("task", "not user's task")
 	}
 
-	task.ToggleStatus(user_id)
+	task.ToggleStatus(userID)
 
-	return s.tasksRepo.UpdateTaskStatus(task_id, task.CompleteDate, int64(task.Status), user_id)
+	return s.tasksRepo.UpdateTaskStatus(taskID, task.CompleteDate, int64(task.Status), userID)
 }
 
-func (s *TaskService) DeleteTask(user_id, task_id int64) error {
-	err := s.userBelongsToTaskProject(user_id, task_id)
+func (s *TaskService) DeleteTask(userID, taskID int64) error {
+	err := s.userBelongsToTaskProject(userID, taskID)
 	if err != nil {
 		return err
 	}
 
-	err = s.tasksRepo.DeleteTask(task_id, user_id)
+	err = s.tasksRepo.DeleteTask(taskID, userID)
 	if err != nil {
 		return err
 	}
-	s.logger.Info("task deleted", "task_id", task_id, "user_id", user_id)
+	s.logger.Info("task deleted", "taskID", taskID, "userID", userID)
 	return nil
 }
 
-func (s *TaskService) RestoreTask(user_id, task_id int64) error {
-	err := s.userBelongsToTaskProject(user_id, task_id)
+func (s *TaskService) RestoreTask(userID, taskID int64) error {
+	err := s.userBelongsToTaskProject(userID, taskID)
 	if err != nil {
 		return err
 	}
 
-	return s.tasksRepo.RestoreTask(task_id, user_id)
+	return s.tasksRepo.RestoreTask(taskID, userID)
 }
 
-func (s *TaskService) GetTaskView(id, user_id int64) (*models.TaskView, error) {
+func (s *TaskService) GetTaskView(id, userID int64) (*models.TaskView, error) {
 	task, err := s.tasksRepo.GetTask(id)
 	if err != nil {
 		return nil, err
 	}
-	err = s.UserBelongsToProject(user_id, task.Project)
+	err = s.UserBelongsToProject(userID, task.Project)
 	if err != nil {
 		return nil, err
 	}
+	taskTags, err := s.taskTagsRepo.GetTagsByTaskID(id)
+	if err != nil {
+		return nil, err
+	}
+	task.Tags = taskTags
 
 	return s.taskToViewModel(task)
 }
 
-func (s *TaskService) Search(user_id int64, search_text string) ([]*models.TaskView, error) {
-	tasks, err := s.tasksRepo.Search(user_id, search_text)
+func (s *TaskService) Search(userID int64, searchText string, projectID int64) ([]*models.TaskView, error) {
+	tasks, err := s.tasksRepo.Search(userID, searchText, projectID)
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range tasks {
+		taskTags, err := s.taskTagsRepo.GetTagsByTaskID(task.ID)
+		if err != nil {
+			return nil, err
+		}
+		task.Tags = taskTags
+	}
+	return s.taskListToViewModels(tasks)
+}
+
+func (s *TaskService) GetTaskViewList(userID int64) ([]*models.TaskView, error) {
+	tasks, err := s.tasksRepo.GetTasksForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range tasks {
+		taskTags, err := s.taskTagsRepo.GetTagsByTaskID(task.ID)
+		if err != nil {
+			return nil, err
+		}
+		task.Tags = taskTags
+	}
+	return s.taskListToViewModels(tasks)
+}
+
+func (s *TaskService) GetProjectTaskViewList(userID, projectID int64) ([]*models.TaskView, error) {
+	tasks, err := s.tasksRepo.GetTasksForUserAndProject(userID, projectID)
 	if err != nil {
 		return nil, err
 	}
 	return s.taskListToViewModels(tasks)
 }
 
-func (s *TaskService) GetTaskViewList(user_id int64) ([]*models.TaskView, error) {
-	tasks, err := s.tasksRepo.GetTasksForUser(user_id)
-	if err != nil {
-		return nil, err
-	}
-	return s.taskListToViewModels(tasks)
-}
-
-func (s *TaskService) GetProjectTaskViewList(user_id, project_id int64) ([]*models.TaskView, error) {
-	tasks, err := s.tasksRepo.GetTasksForUserAndProject(user_id, project_id)
-	if err != nil {
-		return nil, err
-	}
-	return s.taskListToViewModels(tasks)
-}
-
-func (s *TaskService) GetTaskCount(user_id int64) (int64, error) {
-	task_count, err := s.tasksRepo.GetTasksCount(user_id)
+func (s *TaskService) GetTaskCount(userID int64) (int64, error) {
+	taskCount, err := s.tasksRepo.GetTasksCount(userID)
 	if err != nil {
 		return 0, err
 	}
-	return task_count, nil
+	return taskCount, nil
 }
 
 func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*models.TaskView, err error) {
@@ -183,35 +215,35 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 	users := make(map[int64]*models.User)
 	projects := make(map[int64]*models.Project)
 	for i, task := range tasks {
-		var assigned_to *models.User
+		var assignedTo *models.User
 
-		assigned_to, ok := users[task.AssignedTo]
+		assignedTo, ok := users[task.AssignedTo]
 		if !ok {
-			assigned_to, err = s.usersRepo.GetUserById(task.AssignedTo)
+			assignedTo, err = s.usersRepo.GetUserById(task.AssignedTo)
 			if err != nil {
 				return nil, err
 			}
-			users[task.AssignedTo] = assigned_to
+			users[task.AssignedTo] = assignedTo
 		}
 
-		var created_by *models.User
-		created_by, ok = users[task.CreatedBy]
+		var createdBy *models.User
+		createdBy, ok = users[task.CreatedBy]
 		if !ok {
-			created_by, err = s.usersRepo.GetUserById(task.CreatedBy)
+			createdBy, err = s.usersRepo.GetUserById(task.CreatedBy)
 			if err != nil {
 				return nil, err
 			}
-			users[task.ModifiedBy] = created_by
+			users[task.ModifiedBy] = createdBy
 		}
 
-		var modified_by *models.User
-		modified_by, ok = users[task.ModifiedBy]
+		var modifiedBy *models.User
+		modifiedBy, ok = users[task.ModifiedBy]
 		if !ok {
-			modified_by, err = s.usersRepo.GetUserById(task.ModifiedBy)
+			modifiedBy, err = s.usersRepo.GetUserById(task.ModifiedBy)
 			if err != nil {
 				return nil, err
 			}
-			users[task.ModifiedBy] = modified_by
+			users[task.ModifiedBy] = modifiedBy
 		}
 
 		var project *models.Project
@@ -224,7 +256,7 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 			projects[task.Project] = project
 		}
 
-		view, err := task.ToViewModel(assigned_to, created_by, modified_by, *project)
+		view, err := task.ToViewModel(assignedTo, createdBy, modifiedBy, *project)
 		if err != nil {
 			return nil, err
 		}
@@ -284,21 +316,21 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 	return view, nil
 }
 
-func (s *TaskService) userBelongsToTaskProject(user_id, task_id int64) (err error) {
-	task, err := s.tasksRepo.GetTask(task_id)
+func (s *TaskService) userBelongsToTaskProject(userID, taskID int64) (err error) {
+	task, err := s.tasksRepo.GetTask(taskID)
 	if err != nil {
 		return err
 	}
-	return s.UserBelongsToProject(user_id, task.Project)
+	return s.UserBelongsToProject(userID, task.Project)
 }
 
-func (s *TaskService) UserBelongsToProject(user_id, project_id int64) (err error) {
-	roles, err := s.projectUsersRepo.GetProjectUserRoles(project_id, user_id)
+func (s *TaskService) UserBelongsToProject(userID, projectID int64) (err error) {
+	roles, err := s.projectUsersRepo.GetProjectUserRoles(projectID, userID)
 	if err != nil {
 		return err
 	}
 	if len(roles) == 0 {
-		return errors.NewAccessDenied("project", "user %d does not belong to project %d", user_id, project_id)
+		return errors.NewAccessDenied("project", "user %d does not belong to project %d", userID, projectID)
 	}
 	return nil
 }

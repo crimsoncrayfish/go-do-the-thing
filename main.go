@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"embed"
-	"errors"
 	"fmt"
 	"go-do-the-thing/src/database"
 	"go-do-the-thing/src/database/repos"
@@ -20,6 +20,9 @@ import (
 	user_service "go-do-the-thing/src/services/user"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 //go:generate npm run build && templ generate
@@ -57,26 +60,26 @@ func main() {
 	}
 	log.Debug("This is the port", "port", port)
 
-	db_connection_string := os.Getenv("DATABASE_URL")
-	if db_connection_string == "" {
+	dbConnString := os.Getenv("DATABASE_URL")
+	if dbConnString == "" {
 		log.Fatal("FATAL: DATABASE_URL environment variable not set.")
 	}
 
-	working_dir, err := os.Getwd()
+	workDir, err := os.Getwd()
 	if err != nil {
 		log.Fatal("Could not get working directory", "error", err)
 	}
 	jwtHandler := security.NewJwtHandler(env)
 	router := http.NewServeMux()
-	faviconLocation = working_dir + "/static/img/todo.ico"
-	manifestLocation = working_dir + "/static/json/manifest.json"
-	swjsLocation = working_dir + "/static/json/manifest.json"
+	faviconLocation = workDir + "/static/img/todo.ico"
+	manifestLocation = workDir + "/static/json/manifest.json"
+	swjsLocation = workDir + "/static/json/manifest.json"
 
 	log.Info("Setting Up Database")
-	clientId := os.Getenv("AZURE_CLIENT_ID")
+	clientID := os.Getenv("AZURE_CLIENT_ID")
 
-	log.Debug("connecting to postgres db", "connection_string", db_connection_string, "client_id", clientId)
-	dbConnection := database.Init(db_connection_string, clientId)
+	log.Debug("connecting to postgres db", "connection_string", dbConnString, "client_id", clientID)
+	dbConnection := database.Init(dbConnString, clientID)
 	defer dbConnection.Close()
 
 	reposContainer := repos.NewContainer(dbConnection)
@@ -86,36 +89,56 @@ func main() {
 	rateLimeter := middleware.NewRateLimiter()
 	adminMW := middleware.NewAdminMiddleware()
 
-	middleware_admin := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication, adminMW.IsAdmin)
-	middleware_full := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication)
-	middleware_no_auth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.OptionalAuthentication)
+	middlewareAdmin := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication, adminMW.IsAdmin)
+	middlewareFull := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.Authentication)
+	middlewareNoAuth := middleware.CreateStack(rateLimeter.RateLimit, loggingMW.Logging, authMW.OptionalAuthentication)
 
-	user_service := user_service.SetupUserService(reposContainer)
-	task_service := taskService.SetupTaskService(reposContainer)
-	admin_service := adminService.SetupAdminService(reposContainer)
-	project_service := projectService.SetupProjectService(reposContainer)
+	userService := user_service.SetupUserService(reposContainer)
+	taskService := taskService.SetupTaskService(reposContainer)
+	adminService := adminService.SetupAdminService(reposContainer)
+	projectService := projectService.SetupProjectService(reposContainer)
 
-	users.SetupUserHandler(router, middleware_full, middleware_no_auth, jwtHandler, project_service, task_service, &user_service)
-	project.SetupProjectHandler(project_service, task_service, router, middleware_full)
-	task.SetupTodoHandler(task_service, project_service, router, middleware_full)
-	home.SetupHomeHandler(router, middleware_full)
-	admin.SetupAdminHandler(admin_service, router, middleware_admin)
+	users.SetupUserHandler(router, middlewareFull, middlewareNoAuth, jwtHandler, projectService, taskService, &userService)
+	project.SetupProjectHandler(projectService, taskService, router, middlewareFull)
+	task.SetupTodoHandler(taskService, projectService, router, middlewareFull)
+	home.SetupHomeHandler(router, middlewareFull)
+	admin.SetupAdminHandler(adminService, router, middlewareAdmin)
 	setupStaticContent(router)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
 		Handler: router,
 	}
-	if env == DEV {
-		log.Info("Start TLS server")
-		err = server.ListenAndServeTLS("server.crt", "server.key")
-	} else {
-		log.Info("Start server")
-		err = server.ListenAndServe()
-	}
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+
+	serverError := make(chan error)
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if env == DEV {
+			serverError <- server.ListenAndServeTLS("server.crt", "server.key")
+		} else {
+			serverError <- server.ListenAndServe()
+		}
+		log.Info("listening at port %s", port)
+	}()
+
+	select {
+	case err := <-serverError:
 		log.Error("Failed to start server", "error", err)
 		panic(fmt.Sprintf("Server startup failed: %v", err))
+	case sig := <-shutdown:
+		log.Warn("Shutdown signal received: %s", sig)
+		defer log.Warn("Shutdown complete")
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Error("Server shutdown failed: %v", err)
+			if err := server.Close(); err != nil {
+				log.Error("Server force shutdown failed: %v", err)
+				os.Exit(1)
+			}
+		}
 	}
 }
 

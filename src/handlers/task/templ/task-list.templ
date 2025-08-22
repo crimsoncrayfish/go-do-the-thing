@@ -120,14 +120,14 @@ templ TaskListContentOOB(tasks []*m.TaskView) {
 }
 
 templ searchBar(searchForm mf.TaskSearchForm, projects map[int64]string) {
-	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 pb-4 px-4 pt-2 border border-border-light dark:border-border-dark rounded-lg">
+	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 pb-4 px-2 pt-2 border border-border-light dark:border-border-dark rounded-lg">
 		<form
 			hx-post="/tasks/search"
-			hx-trigger="submit, keyup delay:500ms changed"
+			hx-trigger="submit, input changed delay:500ms, keyup delay:500ms, changed"
 			hx-target="#task-list-content"
 			hx-swap="outerHTML"
 		>
-			<div class="flex md:grid  md:grid-cols-2 gap-4">
+			<div class="flex md:grid px-2 md:grid-cols-2 gap-4">
 				<div class="flex-grow">
 					@templ_shared.FormTextInput("", "search", "Search...", searchForm.SearchText)
 				</div>
@@ -156,7 +156,7 @@ templ searchBar(searchForm mf.TaskSearchForm, projects map[int64]string) {
 			</div>
 			<div
 				id="advanced-search"
-				class="overflow-hidden transition-all duration-500 ease-in-out max-h-0 opacity-0"
+				class="overflow-hidden px-2 transition-all duration-500 ease-in-out max-h-0 opacity-0"
 			>
 				<div>
 					@templ_shared.FormListInputWithAllOption("", "project", searchForm.ProjectFilter, projects)

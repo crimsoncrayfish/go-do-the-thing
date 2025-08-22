@@ -231,7 +231,7 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("failed to create initial project", "error", err)
 	} else {
-		_, err := h.taskService.CreateTask(user.Id, project_id, "My First Task", "Complete my first task", &next_year)
+		_, err := h.taskService.CreateTask(user.Id, project_id, "My First Task", "Complete my first task", &next_year, make([]int64, 0))
 		if err != nil {
 			h.logger.Error("failed to create initial task", "error", err)
 		}

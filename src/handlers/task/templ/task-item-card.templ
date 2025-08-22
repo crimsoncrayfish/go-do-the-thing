@@ -9,17 +9,17 @@ import (
 
 templ NoDataTaskCard(task *models.TaskView) {
 	<div
-		id={ fmt.Sprintf("task-card-%d", task.Id) }
+		id={ fmt.Sprintf("task-card-%d", task.ID) }
 		class="relative [perspective:1000px]
            overflow-visible z-0
            focus-within:z-10 transition-all mb-4"
-		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.Id) }
-		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.Id) }
+		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.ID) }
+		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.ID) }
 		hx-on--after-request.from="closest button"
 	>
 		<div class="task-card-slide-wrapper">
 			<div
-				id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
+				id={ fmt.Sprintf("task-card-inner-%d", task.ID) }
 				class="task-card-child w-full transition-transform duration-500 relative
              [transform-style:preserve-3d]"
 			>
@@ -32,17 +32,17 @@ templ NoDataTaskCard(task *models.TaskView) {
 
 templ TaskItemCard(task *models.TaskView) {
 	<div
-		id={ fmt.Sprintf("task-card-%d", task.Id) }
+		id={ fmt.Sprintf("task-card-%d", task.ID) }
 		class="relative [perspective:1000px]
            overflow-visible z-0
            focus-within:z-10 transition-all mb-4"
-		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.Id) }
-		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.Id) }
+		hx-on--after-swap={ fmt.Sprintf("flipTaskCardUpdateToFront(event, %d)", task.ID) }
+		hx-on--before-request={ fmt.Sprintf("flipTaskCardUpdateToBack(event, %d)", task.ID) }
 		hx-on--after-request.from="closest button"
 	>
 		<div class="task-card-slide-wrapper">
 			<div
-				id={ fmt.Sprintf("task-card-inner-%d", task.Id) }
+				id={ fmt.Sprintf("task-card-inner-%d", task.ID) }
 				class="task-card-child w-full transition-transform duration-500 relative
              [transform-style:preserve-3d]"
 			>
@@ -87,7 +87,7 @@ templ TaskItemCardOOB(task *models.TaskView) {
 templ TaskCardFrontOOB(task *models.TaskView) {
 	<div
 		hx-swap-oob="true"
-		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
+		id={ fmt.Sprintf("task-card-front-%d", task.ID) }
 		class={
 			getPosAnd3dStyles(),
 			getTaskBorderStyle(task),
@@ -102,7 +102,7 @@ templ TaskCardFrontOOB(task *models.TaskView) {
 
 templ TaskCardFront(task *models.TaskView) {
 	<div
-		id={ fmt.Sprintf("task-card-front-%d", task.Id) }
+		id={ fmt.Sprintf("task-card-front-%d", task.ID) }
 		class={
 			getPosAnd3dStyles(),
 			getTaskBorderStyle(task),
@@ -173,8 +173,8 @@ templ editDeleteMenu(task *models.TaskView, editButton templ.Component) {
 					text-danger-light dark:text-danger-dark font-bold
 					hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center"
 						hx-swap="outerHTML swap:0.8s"
-						hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
-						hx-delete={ fmt.Sprintf("/todo/item/%d", task.Id) }
+						hx-target={ fmt.Sprintf("#task-card-front-%d", task.ID) }
+						hx-delete={ fmt.Sprintf("/todo/item/%d", task.ID) }
 						hx-indicator="false"
 						aria-label="Delete Task"
 					>
@@ -194,7 +194,7 @@ templ editFromList(task *models.TaskView) {
 			"text-text-on-light dark:text-text-on-dark",
 			"hover:bg-secondary-light dark:hover:bg-secondary-dark flex items-center",
 		}
-		hx-get={ fmt.Sprintf("/todo/item/%d/edit/panel", task.Id) }
+		hx-get={ fmt.Sprintf("/todo/item/%d/view/panel", task.ID) }
 		hx-target="#edit-panel"
 		hx-swap="outerHTML"
 		hx-on:click="openEditPanel()"
@@ -220,8 +220,8 @@ templ restoreTaskButton(task *models.TaskView) {
 				"dark:border-success-dark" }
 		aria-label="Mark as Complete"
 		hx-swap="outerHTML swap:0.8s"
-		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
-		hx-post={ fmt.Sprintf("/todo/item/restore/%d", task.Id) }
+		hx-target={ fmt.Sprintf("#task-card-front-%d", task.ID) }
+		hx-post={ fmt.Sprintf("/todo/item/restore/%d", task.ID) }
 		hx-indicator="false"
 	>
 		@templ_shared.SvgBin()
@@ -242,8 +242,8 @@ templ completeTaskButton(task *models.TaskView) {
 				"dark:border-success-dark" }
 		aria-label="Mark as Complete"
 		hx-swap="outerHTML swap:0.8s"
-		hx-target={ fmt.Sprintf("#task-card-front-%d", task.Id) }
-		hx-post={ fmt.Sprintf("/todo/item/status/%d", task.Id) }
+		hx-target={ fmt.Sprintf("#task-card-front-%d", task.ID) }
+		hx-post={ fmt.Sprintf("/todo/item/status/%d", task.ID) }
 		hx-indicator="false"
 	>
 		@templ_shared.SvgCheck()
@@ -298,8 +298,7 @@ templ taskStatusChip(task *models.TaskView) {
 templ cardDetails(task *models.TaskView) {
 	<div class="@sm:px-4 flex flex-col w-full justify-around space-y-4 pb-4 @sm:pb-0 @sm:border-x border-border-light dark:border-border-dark">
 		<div
-			class="flex flex-row items-start
-                       justify-between"
+			class="flex flex-row items-start justify-between"
 		>
 			@taskStatusChip(task)
 			<span
@@ -319,17 +318,20 @@ templ cardDetails(task *models.TaskView) {
 				}
 			</p>
 			<div class="flex items-center space-x-2">
-				@templ_shared.SvgTag(task.ProjectId)
+				@templ_shared.SvgTag(task.ProjectID)
 				<span>{ task.ProjectName }</span>
 			</div>
 		</div>
-		if (task.Description != "") {
-			<div
-				class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm whitespace-pre-line line-clamp-3" }
-			>
-				{ task.Description }
-			</div>
-		}
+		<div class="flex flex-row items-start justify-between">
+			if (task.Description != "") {
+				<div
+					class={ templ.KV("line-through",task.Status == models.Completed),"text-text-on-light dark:text-text-on-dark text-sm whitespace-pre-line line-clamp-3" }
+				>
+					{ task.Description }
+				</div>
+			}
+			@taskTagList(task.ID, task.Tags)
+		</div>
 		if (task.TimeSpent > 0) {
 			<div
 				class="text-sm text-text-on-light
@@ -393,7 +395,7 @@ templ cardActions(task *models.TaskView) {
 
 templ cardBack(task *models.TaskView) {
 	<div
-		id={ fmt.Sprintf("task-card-back-update-%d", task.Id) }
+		id={ fmt.Sprintf("task-card-back-update-%d", task.ID) }
 		class="hidden absolute inset-0 bg-success-light dark:bg-success-dark
          rounded-xl p-6 shadow-lg flex flex-col items-center
          justify-center [backface-visibility:hidden]
@@ -405,7 +407,7 @@ templ cardBack(task *models.TaskView) {
 		</span>
 	</div>
 	<div
-		id={ fmt.Sprintf("task-card-back-delete-%d", task.Id) }
+		id={ fmt.Sprintf("task-card-back-delete-%d", task.ID) }
 		class="hidden absolute inset-0 bg-danger-light dark:bg-danger-dark
          rounded-xl p-6 shadow-lg flex flex-col items-center
          justify-center [backface-visibility:hidden]

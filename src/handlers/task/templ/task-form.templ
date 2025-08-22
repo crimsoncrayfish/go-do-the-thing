@@ -1,11 +1,15 @@
 package templ_todo
 
 import (
+	"fmt"
+	"go-do-the-thing/src/models"
 	form_models "go-do-the-thing/src/models/forms"
 	templ_shared "go-do-the-thing/src/shared/templ"
+	"slices"
+	"strconv"
 )
 
-templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) {
+templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string, tags []models.TagView) {
 	<div class="space-y-6">
 		<form
 			hx-post="/todo/item"
@@ -14,7 +18,8 @@ templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) 
 			hx-indicator="#edit-panel-loader"
 			class="space-y-5"
 		>
-			@templ_shared.FormListInput("Project", "project", formdata.Task.ProjectId, projects)
+			@ProjectListInput(formdata.Task.ProjectID, projects)
+			@TagSelect(formdata.Task.Tags, tags)
 			@templ_shared.FormTextInput("Task Name", "name", "Enter task name...", formdata.Task.Name)
 			@templ_shared.FormTextInput("Description", "description", "Enter task description...",
 				formdata.Task.Description)
@@ -44,8 +49,110 @@ templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string) 
 	</div>
 }
 
-templ TaskFormCard(formdata form_models.TaskForm, projects map[int64]string) {
+templ TaskFormCard(formdata form_models.TaskForm, projects map[int64]string, tags []models.TagView) {
 	<div class="theme-transition bg-secondary-light dark:bg-secondary-dark rounded-xl p-4 border border-border-light dark:border-border-dark shadow-lg">
-		@TaskFormContent(formdata, projects)
+		@TaskFormContent(formdata, projects, tags)
 	</div>
+}
+
+templ ProjectListInput(project_id int64, projects map[int64]string) {
+	<div>
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			Project
+			<select
+				hx-get={ fmt.Sprintf("/task/%d/tag-select", 0) }
+				hx-target="#tag-selector"
+				hx-indicator="#tag-loader"
+				name="project"
+				class="mt-2 bg-primary-light dark:bg-primary-dark border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
+			>
+				for id, name := range projects {
+					if id == project_id {
+						<option class="text-accent-light dark:text-accent-dark" value={ strconv.FormatInt(id, 10) } selected>{ name }</option>
+					} else {
+						<option class="text-accent-light dark:text-accent-dark" value={ strconv.FormatInt(id, 10) }>{ name }</option>
+					}
+				}
+			</select>
+		</label>
+	</div>
+}
+
+templ TagSelect(selectedTags []models.TagView, tags []models.TagView) {
+	{{ tagIds := getTagIds(selectedTags) }}
+	<div id="tag-selector" class="relative">
+		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			Tags
+		</label>
+		if len(tags) > 0 {
+			<div
+				id="tag-options"
+				class="flex flex-wrap gap-2 p-2 bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg"
+			>
+				for _, tag := range tags {
+					{{
+						isSelected := slices.Contains(tagIds, tag.Id)
+						tagBtnId := fmt.Sprintf("tag-btn-%d", tag.Id)
+						tagInputId := fmt.Sprintf("tag-input-%d", tag.Id)
+					}}
+					<button
+						id={ tagBtnId }
+						type="button"
+						data-tag-color={ tag.Color }
+						class={
+							"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200",
+							fmt.Sprintf("[.selected&]:bg-%s-light [.selected&]:dark:bg-%s-dark [.selected&]:text-text-on-light [.selected&]:dark:text-text-on-dark [.selected&]:ring-2 [.selected&]:ring-accent-light [.selected&]:dark:ring-accent-dark", tag.Color, tag.Color),
+							fmt.Sprintf("[:not(.selected)&]:bg-secondary-light [:not(.selected)&]:dark:bg-secondary-dark [:not(.selected)&]:text-text-on-light/70 [:not(.selected)&]:dark:text-text-on-dark/70 [:not(.selected)&]:hover:bg-%s-light/30 [:not(.selected)&]:dark:hover:bg-%s-dark/30", tag.Color, tag.Color),
+							templ.KV("selected", isSelected),
+						}
+						onclick={ templ.JSFuncCall("toggleTagSelection", tagBtnId, tagInputId) }
+					>
+						@templ_shared.SvgHexTag("w-4 h-4")
+						{ tag.Name }
+					</button>
+					<input
+						id={ tagInputId }
+						type="hidden"
+						name="tags"
+						value={ strconv.FormatInt(tag.Id, 10) }
+						if (!isSelected) {
+							disabled
+						}
+					/>
+				}
+			</div>
+		} else {
+			<div
+				class="mt-2 bg-primary-light dark:bg-primary-dark border border-border-light text-accent-light text-sm rounded-lg block w-full p-2.5 dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-accent-dark"
+			>
+				No tags for project
+			</div>
+		}
+		<div
+			id="tag-loader"
+			class="absolute inset-0 justify-center items-center bg-secondary-light bg-opacity-80 dark:bg-secondary-dark dark:bg-opacity-80 z-50 my-indicator hidden"
+		>
+			<div class="loader-bounce flex space-x-2">
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.2s"></div>
+				<div class="w-4 h-4 bg-primary-light dark:bg-primary-dark rounded-full animate-pulse" style="animation-delay:0.4s"></div>
+			</div>
+		</div>
+	</div>
+	<script>
+	function toggleTagSelection(btnId, inputId) {
+		const btn = document.getElementById(btnId);
+		const input = document.getElementById(inputId);
+		btn.classList.toggle("selected");
+		input.disabled = !btn.classList.contains("selected");
+	}
+	</script>
+}
+
+func getTagIds(tags []models.TagView) []int64 {
+	tag_ids := make([]int64, len(tags))
+	for i, tag := range tags {
+		tag_ids[i] = tag.Id
+	}
+	return tag_ids
 }

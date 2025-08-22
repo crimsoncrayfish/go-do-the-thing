@@ -1,0 +1,43 @@
+package templ_shared
+
+import (
+	"fmt"
+	"go-do-the-thing/src/models"
+)
+
+templ TagItemOOB(tag models.TagView) {
+	<div id="tag-list" hx-swap-oob="beforeend">
+		<span
+			onclick={ templ.JSFuncCall("toggleTagEditorPopup", tag.Id) }
+			id={ fmt.Sprintf("tag-%d", tag.Id) }
+			class={
+				"inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+				fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+			}
+		>
+			@SvgHexTag("text-text-on-light dark:text-text-on-dark")
+			{ tag.Name }
+		</span>
+	</div>
+}
+
+templ TagItem(tag models.TagView) {
+	<span
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		class={
+			"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+		}
+	>
+		@SvgHexTag("text-text-on-light dark:text-text-on-dark")
+		{ tag.Name }
+	</span>
+}
+
+templ TagList(tags []models.TagView) {
+	<div id="tag-list" class="text-text-on-light dark:text-text-on-dark flex flex-wrap gap-2">
+		for _, tag := range tags {
+			@TagItem(tag)
+		}
+	</div>
+}

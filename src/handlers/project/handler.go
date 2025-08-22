@@ -608,7 +608,7 @@ func (h *Handler) updateProjectTag(w http.ResponseWriter, r *http.Request) {
 
 	err = templ_shared.RenderTempls(
 		templ_project.TagItemEditable(project_id, *tag, true),
-		templ_shared.ToastMessage("Tag Deleted", "success"),
+		templ_shared.ToastMessage("Tag Updated", "success"),
 	).Render(r.Context(), w)
 	if err != nil {
 		errors.InternalServerError(h.logger, w, r, err, "Failed to render result")

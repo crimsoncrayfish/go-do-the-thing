@@ -1,3 +1,4 @@
+// Package models implements the models for this project
 package models
 
 import (
@@ -6,7 +7,7 @@ import (
 )
 
 type Task struct {
-	Id           int64      `json:"id,omitempty"`
+	ID           int64      `json:"id,omitempty"`
 	Name         string     `json:"name"`
 	Description  string     `json:"description,omitempty"`
 	AssignedTo   int64      `json:"assigned_to"`
@@ -19,6 +20,7 @@ type Task struct {
 	ModifiedDate *time.Time `json:"modified_date"`
 	IsDeleted    bool       `json:"is_deleted"`
 	Project      int64      `json:"project_id"`
+	Tags         []Tag
 }
 
 type ItemStatus int
@@ -53,7 +55,7 @@ func (t *Task) IsValid() (bool, map[string]string) {
 }
 
 type TaskView struct {
-	Id            int64
+	ID            int64
 	Name          string
 	Description   string
 	AssignedTo    UserView
@@ -64,11 +66,12 @@ type TaskView struct {
 	CreatedBy     UserView
 	ModifiedDate  *time.Time
 	ModifiedBy    UserView
-	ProjectId     int64
+	ProjectID     int64
 	ProjectName   string
 	InProgress    bool
 	TimeSpent     time.Duration
 	IsDeleted     bool
+	Tags          []TagView
 }
 
 func (t *TaskView) IsOverDue() bool {
@@ -91,8 +94,12 @@ func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Proj
 	if modifiedBy == nil {
 		return nil, errors.New(errors.ErrValidationFailed, "task modified by cant be nil")
 	}
+	tagViews := make([]TagView, len(t.Tags))
+	for i, tag := range t.Tags {
+		tagViews[i] = *tag.ToView()
+	}
 	return &TaskView{
-		Id:            t.Id,
+		ID:            t.ID,
 		Name:          t.Name,
 		Description:   t.Description,
 		AssignedTo:    assignedTo.ToViewModel(),
@@ -103,8 +110,9 @@ func (t *Task) ToViewModel(assignedTo, createdBy, modifiedBy *User, project Proj
 		ModifiedDate:  t.ModifiedDate,
 		ModifiedBy:    modifiedBy.ToViewModel(),
 		DueDate:       t.DueDate,
-		ProjectId:     t.Project,
+		ProjectID:     t.Project,
 		ProjectName:   project.Name,
 		IsDeleted:     t.IsDeleted,
+		Tags:          tagViews,
 	}, nil
 }

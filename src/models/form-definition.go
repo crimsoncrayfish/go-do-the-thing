@@ -31,3 +31,11 @@ func GetRequiredPropertyFromRequest(r *http.Request, propName, title string) (st
 func GetPropertyFromRequest(r *http.Request, propName string) string {
 	return r.FormValue(propName)
 }
+
+func GetListPropertyFromRequest(r *http.Request, propName string) ([]string, error) {
+	err := r.ParseForm()
+	if err != nil {
+		return nil, err
+	}
+	return r.Form[propName], nil
+}

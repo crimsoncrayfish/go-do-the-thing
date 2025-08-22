@@ -200,7 +200,6 @@ JWT_PUBLIC_KEY=$(base64 -i public.key)
 3. **`keys/private.key`** (optional) - JWT private key file (also stored as base64 in .env)
 4. **`keys/public.key`** (optional) - JWT public key file (also stored as base64 in .env)
 
-**Note**: The `task setup:env` command creates both `.env` and `.dev.env` files automatically. Alternatively, you can copy the provided `.env.example` file and customize it manually.
 
 ## Getting Started
 
@@ -218,24 +217,15 @@ JWT_PUBLIC_KEY=$(base64 -i public.key)
    ```bash
    # Install Taskfile first if not already installed
    go install github.com/go-task/task/v3/cmd/task@latest
-   
-   # Complete setup: dependencies + environment with JWT keys
-   task setup:init
    ```
-   
+
    **Option B: Step-by-step setup**
    ```bash
    # Install Taskfile first if not already installed
    go install github.com/go-task/task/v3/cmd/task@latest
-   
-   # Install dependencies only
-   task install:deps
-   
-   # Create .env file with generated JWT keys
-   task setup:env
    ```
 
-3. **Manual installation (if not using Taskfile)**
+3. **Manual installation
    ```bash
    # Configure environment variables manually (using provided example)
    cp .env.example .env
@@ -260,15 +250,6 @@ JWT_PUBLIC_KEY=$(base64 -i public.key)
    npm install
    ```
 
-3. **Start the PostgreSQL database**
-   ```bash
-   # Start local PostgreSQL database using Docker
-   docker compose -f docker-compose-db-local.yml up -d
-   
-   # Verify database is running
-   docker compose -f docker-compose-db-local.yml ps
-   ```
-
 4. **Run database migrations**
    
    **Option A: Using Taskfile (Recommended)**
@@ -280,7 +261,7 @@ JWT_PUBLIC_KEY=$(base64 -i public.key)
    task local:migrate -- up
    
    # Or migrate to specific version
-   task local:migrate:goto V=3
+   task local:migrate -- goto 3
    ```
    
    **Option B: Manual (No Taskfile dependency)**
@@ -324,13 +305,6 @@ Before starting development, ensure you have the following installed:
 ```bash
 # Install Taskfile
 go install github.com/go-task/task/v3/cmd/task@latest
-
-# Complete project initialization (dependencies + environment)
-task setup:init
-
-# Or run individual tasks:
-# task install:deps    # Install dependencies only
-# task setup:env       # Create .env with JWT keys only
 ```
 
 **Manual Setup (if you prefer not to use Taskfile):**
@@ -386,7 +360,6 @@ openssl req -new -x509 -key private_key.pem -out certificate.pem -days 365
 ## HTMX is wierd
 - Cant process <body></body> as an oob swap
 - oob swaps need to be before the main swap if there are 2 things being swopped
-- Cant get nested oob swaps to work :(
 - oob swaps with rows are [wierd](https://htmx.org/attributes/hx-swap-oob/)
 
 ## Development Roadmap
@@ -423,3 +396,12 @@ openssl req -new -x509 -key private_key.pem -out certificate.pem -days 365
 - [ ] Performance optimization
 - [ ] Enhanced error handling
 - [ ] Accessibility improvements
+
+
+### ENV SETUP things that bugged me
+- [ ] db setup using dbengin
+   - default user admin:admin
+   - db creation
+- [ ] set PATH in .bashrc
+
+

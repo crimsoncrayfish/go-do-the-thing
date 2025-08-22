@@ -10,6 +10,7 @@ type AppErrorCode string
 
 const (
 	AuthFailed            AppErrorCode = "auth checks failed"
+	ErrNotImplemented     AppErrorCode = "not implemented"
 	ErrAccessDenied       AppErrorCode = "no access"
 	ErrPermissionDenied   AppErrorCode = "no permission"
 	ErrNotFound           AppErrorCode = "not found"
@@ -54,6 +55,10 @@ func New(code AppErrorCode, msg_fmt string, args ...any) *AppError {
 		message: message,
 		error:   unwrapped,
 	}
+}
+
+func NewNotImplemented(reason string, args ...any) *AppError {
+	return New(ErrNotImplemented, reason, args...)
 }
 
 func NewDbReadFailed(entityType string, err error, additionalMsg string, args ...any) *AppError {

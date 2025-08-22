@@ -1,0 +1,48 @@
+package templ_todo
+
+import "go-do-the-thing/src/models"
+import "fmt"
+import "go-do-the-thing/src/shared/templ"
+
+templ taskTagList(task_id int64, tags []models.TagView) {
+	<div class="text-text-on-light dark:text-text-on-dark">
+		<div id="tag-list" class="flex flex-wrap gap-2">
+			for _, tag := range tags {
+				@TagItem(tag)
+			}
+		</div>
+	</div>
+}
+
+templ TagItemDot(tag models.TagView) {
+	<span
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		class={
+			"inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 group-[.is-editing]:hidden",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark", tag.Color, tag.Color),
+		}
+	></span>
+}
+
+templ TagItemOOB(tag models.TagView) {
+	<div id="tag-list" hx-swap-oob="beforeend">
+		@TagItem(tag)
+	</div>
+}
+
+templ TagItem(tag models.TagView) {
+	<div
+		id={ fmt.Sprintf("tag-%d", tag.Id) }
+		class={
+			"group relative flex items-center rounded-full",
+			"shadow-sm transition-all duration-300 overflow-hidden",
+			"h-8 max-w-8 hover:max-w-xs cursor-pointer",
+			fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-%s-dark dark:text-%s-light", tag.Color, tag.Color, tag.Color, tag.Color),
+		}
+	>
+		<div class="inline-flex items-center gap-1.5 px-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+			@templ_shared.SvgHexTag("text-text-on-light dark:text-text-on-dark")
+			{ tag.Name }
+		</div>
+	</div>
+}

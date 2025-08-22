@@ -13,10 +13,12 @@ type DatabaseConnection struct {
 	pool *pgxpool.Pool
 }
 
-var source = "Database"
-var log = logger.NewLogger(source)
+var (
+	source = "Database"
+	log    = logger.NewLogger(source)
+)
 
-func Init(connectionString, clientId string) DatabaseConnection {
+func Init(connectionString, clientId string) *DatabaseConnection {
 	conf, err := pgxpool.ParseConfig(connectionString)
 	if err != nil {
 		log.Fatal("Failed to parse connection string", "error", err)
@@ -28,28 +30,32 @@ func Init(connectionString, clientId string) DatabaseConnection {
 	if err != nil {
 		log.Fatal("Failed to connect to database", "error", err)
 	}
-	return DatabaseConnection{pool}
+	if pool == nil {
+		log.Fatal("Database connection is nil")
+	}
+	log.Info("Database setup complete")
+	return &DatabaseConnection{pool}
 }
 
-func (db DatabaseConnection) Close() {
+func (db *DatabaseConnection) Close() {
 	db.pool.Close()
 }
 
-func (db DatabaseConnection) QueryRow(query string, args ...any) pgx.Row {
+func (db *DatabaseConnection) QueryRow(query string, args ...any) pgx.Row {
 	if db.pool == nil {
 		log.Fatal("Database connection is nil")
 	}
 	return db.pool.QueryRow(context.Background(), query, args...)
 }
 
-func (db DatabaseConnection) Query(query string, args ...any) (pgx.Rows, error) {
+func (db *DatabaseConnection) Query(query string, args ...any) (pgx.Rows, error) {
 	if db.pool == nil {
 		log.Fatal("Database connection is nil")
 	}
 	return db.pool.Query(context.Background(), query, args...)
 }
 
-func (db DatabaseConnection) Exec(query string, args ...any) (pgconn.CommandTag, error) {
+func (db *DatabaseConnection) Exec(query string, args ...any) (pgconn.CommandTag, error) {
 	if db.pool == nil {
 		log.Fatal("Database connection is nil")
 	}

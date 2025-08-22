@@ -191,7 +191,7 @@ templ projectView(project models.ProjectView) {
 		<div class="text-sm text-text-on-light/70 dark:text-text-on-dark/70 mt-2">Created by: <span class="text-text-on-light dark:text-text-on-dark">{ project.CreatedBy.FullName }</span></div>
 		<div class="text-sm text-text-on-light/70 dark:text-text-on-dark/70">Created on: <span class="text-text-on-light dark:text-text-on-dark">{ project.CreatedDate.Format(constants.PrettyDateFormat) }</span></div>
 	</div>
-	@projectTagList(project.Id, project.Tags)
+	@templ_shared.TagList(project.Tags)
 }
 
 templ projectEditActions(project_id int64) {

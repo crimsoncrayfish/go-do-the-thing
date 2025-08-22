@@ -6,6 +6,7 @@ import (
 	project_users_repo "go-do-the-thing/src/database/repos/project-users"
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	roles_repo "go-do-the-thing/src/database/repos/roles"
+	tasktagsrepo "go-do-the-thing/src/database/repos/task-tags"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
 	users_repo "go-do-the-thing/src/database/repos/users"
 )
@@ -22,11 +23,11 @@ type RepoContainer struct {
 	projectTagsRepo  *project_tags_repo.ProjectTagsRepo
 
 	// NOTE: Tasks
-	tasksRepo *tasks_repo.TasksRepo
-	// TODO: taskTagsRepo *task_tags_repo.TaskTagsRepo
+	tasksRepo    *tasks_repo.TasksRepo
+	taskTagsRepo *tasktagsrepo.TaskTagsRepo
 }
 
-func NewContainer(connection database.DatabaseConnection) *RepoContainer {
+func NewContainer(connection *database.DatabaseConnection) *RepoContainer {
 	rolesRepo := roles_repo.InitRepo(connection)
 
 	usersRepo := users_repo.InitRepo(connection)
@@ -36,7 +37,7 @@ func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 	projectTagsRepo := project_tags_repo.InitRepo(connection)
 
 	tasksRepo := tasks_repo.InitRepo(connection)
-	// taskTagsRepo := task_tags_repo.InitRepo(connection)
+	taskTagsRepo := tasktagsrepo.InitRepo(connection)
 
 	return &RepoContainer{
 		rolesRepo: rolesRepo,
@@ -47,8 +48,8 @@ func NewContainer(connection database.DatabaseConnection) *RepoContainer {
 		projectUsersRepo: projectUsersRepo,
 		projectTagsRepo:  projectTagsRepo,
 
-		tasksRepo: tasksRepo,
-		// taskTagsRepo: taskTagsRepo,
+		tasksRepo:    tasksRepo,
+		taskTagsRepo: taskTagsRepo,
 	}
 }
 
@@ -56,12 +57,10 @@ func (r *RepoContainer) GetRolesRepo() *roles_repo.RolesRepo {
 	return r.rolesRepo
 }
 
-// NOTE: Users
 func (r *RepoContainer) GetUsersRepo() *users_repo.UsersRepo {
 	return r.usersRepo
 }
 
-// NOTE: Projects
 func (r *RepoContainer) GetProjectsRepo() *projects_repo.ProjectsRepo {
 	return r.projectsRepo
 }
@@ -74,11 +73,10 @@ func (r *RepoContainer) GetProjectTagsRepo() *project_tags_repo.ProjectTagsRepo 
 	return r.projectTagsRepo
 }
 
-// NOTE: Tasks
 func (r *RepoContainer) GetTasksRepo() *tasks_repo.TasksRepo {
 	return r.tasksRepo
 }
 
-//func (r *RepoContainer) GetTaskTagsRepo() *task_tags_repo.TaskTagsRepo {
-//	return r.taskTagsRepo
-//}
+func (r *RepoContainer) GetTaskTagsRepo() *tasktagsrepo.TaskTagsRepo {
+	return r.taskTagsRepo
+}
