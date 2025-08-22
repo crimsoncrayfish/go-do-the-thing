@@ -36,5 +36,5 @@ func (f *TaskForm) SetError(name, value string) {
 }
 
 func (f *TaskForm) SetProject(project_id int64) {
-	f.Task.ProjectId = project_id
+	f.Task.ProjectID = project_id
 }

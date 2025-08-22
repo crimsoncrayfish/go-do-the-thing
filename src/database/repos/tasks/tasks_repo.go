@@ -11,12 +11,12 @@ import (
 )
 
 type TasksRepo struct {
-	database database.DatabaseConnection
+	database *database.DatabaseConnection
 	logger   *logger.Logger
 }
 
 // NOTE: Depends on: [./projects_repo.go, ./users_repo.go]
-func InitRepo(database database.DatabaseConnection) *TasksRepo {
+func InitRepo(database *database.DatabaseConnection) *TasksRepo {
 	log := logger.NewLogger("TasksRepo")
 	return &TasksRepo{
 		database: database,
@@ -26,7 +26,7 @@ func InitRepo(database database.DatabaseConnection) *TasksRepo {
 
 func scanFromRow(row pgx.Row, task *models.Task) error {
 	err := row.Scan(
-		&task.Id,
+		&task.ID,
 		&task.Name,
 		&task.Description,
 		&task.Status,
@@ -48,7 +48,7 @@ func scanFromRow(row pgx.Row, task *models.Task) error {
 
 func scanFromRows(rows pgx.Rows, task *models.Task) error {
 	err := rows.Scan(
-		&task.Id,
+		&task.ID,
 		&task.Name,
 		&task.Description,
 		&task.Status,
@@ -128,11 +128,11 @@ func (r *TasksRepo) GetTasksForUserAndProject(user_id, project_id int64) (tasks 
 	return tasks, nil
 }
 
-const inserttask = `SELECT sp_insert_task($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+const insertTask = `SELECT sp_insert_task($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 func (r *TasksRepo) InsertTask(task models.Task) (id int64, err error) {
 	err = r.database.QueryRow(
-		inserttask,
+		insertTask,
 		task.Name,
 		task.Description,
 		task.Status,
@@ -145,7 +145,7 @@ func (r *TasksRepo) InsertTask(task models.Task) (id int64, err error) {
 		task.Project,
 	).Scan(&id)
 	if err != nil {
-		r.logger.Error("failed to insert task", "error", err, "sql", inserttask, "task_name", task.Name, "project_id", task.Project)
+		r.logger.Error("failed to insert task", "error", err, "sql", insertTask, "task_name", task.Name, "project_id", task.Project)
 		return 0, errors.NewDbInsertFailed("task", err, "", nil)
 	}
 	r.logger.Info("Task created successfully", "id", id, "name", task.Name, "project", task.Project)
@@ -155,12 +155,12 @@ func (r *TasksRepo) InsertTask(task models.Task) (id int64, err error) {
 const updatetask = `SELECT sp_update_task($1, $2, $3, $4, $5, $6)`
 
 func (r *TasksRepo) UpdateTask(task models.Task) (err error) {
-	_, err = r.database.Exec(updatetask, task.Id, task.Name, task.Description, task.AssignedTo, task.DueDate, task.Project)
+	_, err = r.database.Exec(updatetask, task.ID, task.Name, task.Description, task.AssignedTo, task.DueDate, task.Project)
 	if err != nil {
-		r.logger.Error("failed to update the task", "error", err, "sql", updatetask, "task_id", task.Id, "task_name", task.Name)
+		r.logger.Error("failed to update the task", "error", err, "sql", updatetask, "task_id", task.ID, "task_name", task.Name)
 		return errors.NewDbUpdateFailed("task", err, "", nil)
 	}
-	r.logger.Info("Task updated successfully", "id", task.Id, "name", task.Name)
+	r.logger.Info("Task updated successfully", "id", task.ID, "name", task.Name)
 	return nil
 }
 
@@ -248,12 +248,12 @@ func (r *TasksRepo) GetProjectTaskCompletion(projectId int64) (int64, int64, err
 	return completed, total, nil
 }
 
-const searchTasks = `SELECT * FROM sp_get_tasks_by_search($1, $2)`
+const searchTasks = `SELECT * FROM sp_get_tasks_by_search($1, $2, $3)`
 
-func (r TasksRepo) Search(user_id int64, search_text string) (tasks []*models.Task, err error) {
-	rows, err := r.database.Query(searchTasks, user_id, search_text)
+func (r TasksRepo) Search(userID int64, searchText string, projectID int64) (tasks []*models.Task, err error) {
+	rows, err := r.database.Query(searchTasks, userID, searchText, projectID)
 	if err != nil {
-		r.logger.Error("failed to read tasks for user", "error", err, "sql", searchTasks, "user_id", user_id)
+		r.logger.Error("failed to read tasks for user", "error", err, "sql", searchTasks, "user_id", userID)
 		return nil, errors.NewDbReadFailed("tasks", err, "search", nil)
 	}
 	defer rows.Close()
@@ -265,16 +265,16 @@ func (r TasksRepo) Search(user_id int64, search_text string) (tasks []*models.Ta
 		err = scanFromRows(rows, task)
 		if err != nil {
 			// NOTE: Already wrapped
-			r.logger.Error("failed to scan row in GettasksForUser", "error", err, "user_id", user_id)
+			r.logger.Error("failed to scan row in GettasksForUser", "error", err, "user_id", userID)
 			return nil, err
 		}
 		tasks = append(tasks, task)
 	}
 	err = rows.Err()
 	if err != nil {
-		r.logger.Error("rows.Err() in SearchTasks", "error", err, "user_id", user_id)
+		r.logger.Error("rows.Err() in SearchTasks", "error", err, "user_id", userID)
 		return nil, errors.NewDbGenericError("rows error in GetTasksForUser", err, "", nil)
 	}
-	r.logger.Debug("Search succeeded", "count", len(tasks), "user_id", user_id)
+	r.logger.Debug("Search succeeded", "count", len(tasks), "user_id", userID)
 	return tasks, nil
 }

@@ -10,12 +10,12 @@ import (
 )
 
 type ProjectTagsRepo struct {
-	database database.DatabaseConnection
+	database *database.DatabaseConnection
 	logger   *logger.Logger
 }
 
 // NOTE: Depends on: [./projects_repo.go]
-func InitRepo(database database.DatabaseConnection) *ProjectTagsRepo {
+func InitRepo(database *database.DatabaseConnection) *ProjectTagsRepo {
 	log := logger.NewLogger("ProjectTagsRepo")
 	return &ProjectTagsRepo{
 		database: database,

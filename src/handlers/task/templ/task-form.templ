@@ -18,7 +18,7 @@ templ TaskFormContent(formdata form_models.TaskForm, projects map[int64]string, 
 			hx-indicator="#edit-panel-loader"
 			class="space-y-5"
 		>
-			@ProjectListInput(formdata.Task.ProjectId, projects)
+			@ProjectListInput(formdata.Task.ProjectID, projects)
 			@TagSelect(formdata.Task.Tags, tags)
 			@templ_shared.FormTextInput("Task Name", "name", "Enter task name...", formdata.Task.Name)
 			@templ_shared.FormTextInput("Description", "description", "Enter task description...",
@@ -78,7 +78,8 @@ templ ProjectListInput(project_id int64, projects map[int64]string) {
 	</div>
 }
 
-templ TagSelect(selected_tags []models.TagView, tags []models.TagView) {
+templ TagSelect(selectedTags []models.TagView, tags []models.TagView) {
+	{{ tagIds := getTagIds(selectedTags) }}
 	<div id="tag-selector" class="relative">
 		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
 			Tags
@@ -90,7 +91,7 @@ templ TagSelect(selected_tags []models.TagView, tags []models.TagView) {
 			>
 				for _, tag := range tags {
 					{{
-						isSelected := slices.Contains(getTagIds(selected_tags), tag.Id)
+						isSelected := slices.Contains(tagIds, tag.Id)
 						tagBtnId := fmt.Sprintf("tag-btn-%d", tag.Id)
 						tagInputId := fmt.Sprintf("tag-input-%d", tag.Id)
 					}}
@@ -112,9 +113,11 @@ templ TagSelect(selected_tags []models.TagView, tags []models.TagView) {
 					<input
 						id={ tagInputId }
 						type="hidden"
-						name="tag-list-input"
+						name="tags"
 						value={ strconv.FormatInt(tag.Id, 10) }
-						disabled={ !isSelected }
+						if (!isSelected) {
+							disabled
+						}
 					/>
 				}
 			</div>

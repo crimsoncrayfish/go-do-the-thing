@@ -11,12 +11,12 @@ import (
 )
 
 type UsersRepo struct {
-	db     database.DatabaseConnection
+	db     *database.DatabaseConnection
 	logger *logger.Logger
 }
 
 // NOTE: Depends on: [none]
-func InitRepo(connection database.DatabaseConnection) *UsersRepo {
+func InitRepo(connection *database.DatabaseConnection) *UsersRepo {
 	log := logger.NewLogger("UsersRepo")
 	return &UsersRepo{
 		db:     connection,
@@ -124,7 +124,6 @@ func (r *UsersRepo) Delete(user models.User) error {
 const getUserByEmail = `SELECT * FROM sp_get_user_by_email($1)`
 
 func (r *UsersRepo) GetUserByEmail(email string) (*models.User, error) {
-
 	row := r.db.QueryRow(getUserByEmail, email)
 
 	temp := &models.User{}

@@ -10,13 +10,13 @@ import (
 )
 
 type RolesRepo struct {
-	database database.DatabaseConnection
+	database *database.DatabaseConnection
 	logger   *logger.Logger
 }
 
 // NOTE: Depends on: []
 // READONLY REPO
-func InitRepo(database database.DatabaseConnection) *RolesRepo {
+func InitRepo(database *database.DatabaseConnection) *RolesRepo {
 	log := logger.NewLogger("RolesRepo")
 	return &RolesRepo{
 		database: database,

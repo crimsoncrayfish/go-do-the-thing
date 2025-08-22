@@ -5,7 +5,6 @@ import (
 	ts "go-do-the-thing/src/shared/templ"
 )
 
-// Main project list page with lazy loading
 templ ProjectListWithBody(activeScreen m.Screen) {
 	@ts.Main(ProjectListPage(activeScreen))
 }
