@@ -59,6 +59,10 @@ func SetupTodoHandler(
 	router.Handle("GET /todo/item/{id}/edit/panel", mwStack(http.HandlerFunc(todoHandler.getEditPanel)))
 
 	router.Handle("GET /task/{id}/tag-select", mwStack(http.HandlerFunc(todoHandler.getTagSelector)))
+
+	// Time tracking routes
+	router.Handle("POST /todo/item/{id}/time/start", mwStack(http.HandlerFunc(todoHandler.startTimeTracking)))
+	router.Handle("POST /todo/item/{id}/time/stop", mwStack(http.HandlerFunc(todoHandler.stopTimeTracking)))
 }
 
 func (h *Handler) createItem(w http.ResponseWriter, r *http.Request) {
@@ -399,32 +403,116 @@ func (h *Handler) listItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) search(w http.ResponseWriter, r *http.Request) {
-	currentUserid, currentUseremail, _, err := helpers.GetUserFromContext(r)
+	currentUserID, currentUseremail, _, err := helpers.GetUserFromContext(r)
 	if err != nil {
 		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
 		return
 	}
-	searchText := models.GetPropertyFromRequest(r, "search")
-	tags := models.GetPropertyFromRequest(r, "tags")
 
-	project, err := models.GetRequiredPropertyFromRequest(r, "project", "Project")
-	if err != nil {
-		errors.BadRequest(h.logger, w, r, err, "Project select value malformed")
+	var searchText string
+	var projectID int64
+	var status fm.ItemStatusFilter
+	var tagIDs []int64
+
+	// Check if clearing all filters
+	clearAll := models.GetPropertyFromRequest(r, "clear-all")
+	if clearAll == "true" {
+		// Reset all filters to defaults
+		searchText = ""
+		projectID = 0
+		status = fm.All
+		tagIDs = []int64{}
+	} else {
+		// Parse search text
+		searchText = models.GetPropertyFromRequest(r, "search")
+
+		// Parse project filter
+		project := models.GetPropertyFromRequest(r, "project")
+		if project != "" {
+			projectID, err = strconv.ParseInt(project, 10, 64)
+			if err != nil {
+				errors.BadRequest(h.logger, w, r, err, "Unable to read project id")
+				return
+			}
+		}
+
+		// Parse status filter
+		statusStr := models.GetPropertyFromRequest(r, "status")
+		status = fm.ParseStatusFilter(statusStr)
+
+		// Parse tag filters
+		tagStrings, _ := models.GetListPropertyFromRequest(r, "tags")
+		tagIDs = make([]int64, 0, len(tagStrings))
+		for _, tagStr := range tagStrings {
+			tagID, err := strconv.ParseInt(tagStr, 10, 64)
+			if err != nil {
+				continue // Skip invalid tag IDs
+			}
+			tagIDs = append(tagIDs, tagID)
+		}
+
+		// Handle tag removal
+		removeTagStr := models.GetPropertyFromRequest(r, "remove-tag")
+		if removeTagStr != "" {
+			removeTagID, err := strconv.ParseInt(removeTagStr, 10, 64)
+			if err == nil {
+				filteredTags := make([]int64, 0, len(tagIDs))
+				for _, id := range tagIDs {
+					if id != removeTagID {
+						filteredTags = append(filteredTags, id)
+					}
+				}
+				tagIDs = filteredTags
+			}
+		}
 	}
-	projectID, err := strconv.ParseInt(project, 10, 64)
-	if err != nil {
-		errors.BadRequest(h.logger, w, r, err, "Unable to read project id")
-	}
-	status := models.GetPropertyFromRequest(r, "project")
-	h.logger.Debug("Got search fields", "search_text", searchText, "tags", tags, "project", project, "status", status)
-	tasks, err := h.taskService.Search(currentUserid, searchText, projectID)
+
+	h.logger.Debug("Got search fields", "search_text", searchText, "tags", tagIDs, "project", projectID, "status", status)
+
+	// Perform search with all filters
+	tasks, err := h.taskService.Search(currentUserID, searchText, projectID, status, tagIDs)
 	if err != nil {
 		h.logger.Error("failed to search for tasks", "error", err, "user_email", currentUseremail)
 		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve tasks")
 		return
 	}
 
-	if err := templ_todo.TaskListContentOOB(tasks).Render(r.Context(), w); err != nil {
+	// Get available tags for the selected project (for OOB update)
+	var projectTags []models.TagView
+	if projectID > 0 {
+		projectTags, err = h.projectService.GetProjectTags(currentUserID, projectID)
+		if err != nil {
+			h.logger.Warn("failed to get project tags for search", "error", err, "project_id", projectID)
+			projectTags = []models.TagView{}
+		}
+	}
+
+	// Get all projects for filter summary
+	projects, err := h.projectService.GetAllProjectsForUser(currentUserID)
+	if err != nil {
+		h.logger.Warn("failed to get projects for filter summary", "error", err)
+		projects = []models.ProjectView{}
+	}
+
+	// Build search form for filter summary
+	searchForm := fm.TaskSearchForm{
+		SearchText:    searchText,
+		ProjectFilter: projectID,
+		StatusFilter:  status,
+		TagFilters:    tagIDs,
+	}
+
+	// Render task list + OOB updates for filters
+	projectsMap := models.ProjectListToMap(projects)
+	err = templ_shared.RenderTempls(
+		templ_todo.TaskListContentOOB(tasks),
+		templ_todo.SearchTagFilterOOB(projectTags, tagIDs),
+		templ_todo.SearchStatusFilterOOB(status),
+		templ_todo.FilterSummaryOOB(searchForm, projectsMap, projectTags),
+		templ_todo.SearchProjectSelectOOB(projectID, projectsMap),
+		templ_todo.SearchInputOOB(searchText),
+	).Render(r.Context(), w)
+	if err != nil {
 		errors.InternalServerError(h.logger, w, r, err, "Failed to display task list")
 		return
 	}
@@ -660,6 +748,89 @@ func (h *Handler) getTagSelector(w http.ResponseWriter, r *http.Request) {
 	}
 	if err = templ_todo.TagSelect([]models.TagView{}, tags).Render(r.Context(), w); err != nil {
 		errors.InternalServerError(h.logger, w, r, err, "failed to render project content for id %d", projectID)
+		return
+	}
+}
+
+func (h *Handler) startTimeTracking(w http.ResponseWriter, r *http.Request) {
+	currentUserID, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
+		return
+	}
+
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(h.logger, w, r, err, "Invalid task ID provided")
+		return
+	}
+
+	previousTaskID, err := h.taskService.StartTimeTracking(currentUserID, id)
+	if err != nil {
+		errors.InternalServerError(h.logger, w, r, err, "Failed to start time tracking")
+		return
+	}
+
+	// Get the updated task view
+	task, err := h.taskService.GetTaskView(id, currentUserID)
+	if err != nil {
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve task")
+		return
+	}
+
+	// If we stopped a previous task, we need to update its card too
+	if previousTaskID > 0 {
+		previousTask, err := h.taskService.GetTaskView(previousTaskID, currentUserID)
+		if err != nil {
+			// Log but don't fail - the main action succeeded
+			h.logger.Warn("failed to get previous task for OOB update", "previousTaskID", previousTaskID, "error", err)
+		} else {
+			err = templ_shared.RenderTempls(
+				templ_todo.TaskCardFront(task),
+				templ_todo.TaskCardFrontOOB(previousTask),
+			).Render(r.Context(), w)
+			if err != nil {
+				errors.InternalServerError(h.logger, w, r, err, "Failed to render task cards")
+			}
+			return
+		}
+	}
+
+	// Just render the current task card
+	if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
+		errors.InternalServerError(h.logger, w, r, err, "Failed to render task card")
+		return
+	}
+}
+
+func (h *Handler) stopTimeTracking(w http.ResponseWriter, r *http.Request) {
+	currentUserID, _, _, err := helpers.GetUserFromContext(r)
+	if err != nil {
+		errors.Unauthorized(h.logger, w, r, err, "user auth failed")
+		return
+	}
+
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		errors.BadRequest(h.logger, w, r, err, "Invalid task ID provided")
+		return
+	}
+
+	err = h.taskService.StopTimeTracking(currentUserID, id)
+	if err != nil {
+		errors.InternalServerError(h.logger, w, r, err, "Failed to stop time tracking")
+		return
+	}
+
+	// Get the updated task view
+	task, err := h.taskService.GetTaskView(id, currentUserID)
+	if err != nil {
+		errors.InternalServerError(h.logger, w, r, err, "Failed to retrieve task")
+		return
+	}
+
+	if err = templ_todo.TaskCardFront(task).Render(r.Context(), w); err != nil {
+		errors.InternalServerError(h.logger, w, r, err, "Failed to render task card")
 		return
 	}
 }

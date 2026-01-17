@@ -8,6 +8,7 @@ import (
 	roles_repo "go-do-the-thing/src/database/repos/roles"
 	tasktagsrepo "go-do-the-thing/src/database/repos/task-tags"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
+	timeeventsrepo "go-do-the-thing/src/database/repos/time-events"
 	users_repo "go-do-the-thing/src/database/repos/users"
 )
 
@@ -23,8 +24,9 @@ type RepoContainer struct {
 	projectTagsRepo  *project_tags_repo.ProjectTagsRepo
 
 	// NOTE: Tasks
-	tasksRepo    *tasks_repo.TasksRepo
-	taskTagsRepo *tasktagsrepo.TaskTagsRepo
+	tasksRepo      *tasks_repo.TasksRepo
+	taskTagsRepo   *tasktagsrepo.TaskTagsRepo
+	taskEventsRepo *timeeventsrepo.TaskEventsRepo
 }
 
 func NewContainer(connection *database.DatabaseConnection) *RepoContainer {
@@ -38,6 +40,7 @@ func NewContainer(connection *database.DatabaseConnection) *RepoContainer {
 
 	tasksRepo := tasks_repo.InitRepo(connection)
 	taskTagsRepo := tasktagsrepo.InitRepo(connection)
+	taskEventsRepo := timeeventsrepo.InitRepo(connection)
 
 	return &RepoContainer{
 		rolesRepo: rolesRepo,
@@ -48,8 +51,9 @@ func NewContainer(connection *database.DatabaseConnection) *RepoContainer {
 		projectUsersRepo: projectUsersRepo,
 		projectTagsRepo:  projectTagsRepo,
 
-		tasksRepo:    tasksRepo,
-		taskTagsRepo: taskTagsRepo,
+		tasksRepo:      tasksRepo,
+		taskTagsRepo:   taskTagsRepo,
+		taskEventsRepo: taskEventsRepo,
 	}
 }
 
@@ -79,4 +83,8 @@ func (r *RepoContainer) GetTasksRepo() *tasks_repo.TasksRepo {
 
 func (r *RepoContainer) GetTaskTagsRepo() *tasktagsrepo.TaskTagsRepo {
 	return r.taskTagsRepo
+}
+
+func (r *RepoContainer) GetTaskEventsRepo() *timeeventsrepo.TaskEventsRepo {
+	return r.taskEventsRepo
 }

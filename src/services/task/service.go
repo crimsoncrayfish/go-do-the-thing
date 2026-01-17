@@ -7,10 +7,12 @@ import (
 	projects_repo "go-do-the-thing/src/database/repos/projects"
 	tasktagsrepo "go-do-the-thing/src/database/repos/task-tags"
 	tasks_repo "go-do-the-thing/src/database/repos/tasks"
+	timeeventsrepo "go-do-the-thing/src/database/repos/time-events"
 	users_repo "go-do-the-thing/src/database/repos/users"
 	"go-do-the-thing/src/helpers/errors"
 	"go-do-the-thing/src/helpers/logger"
 	"go-do-the-thing/src/models"
+	fm "go-do-the-thing/src/models/forms"
 	"sort"
 	"time"
 )
@@ -18,6 +20,7 @@ import (
 type TaskService struct {
 	tasksRepo        tasks_repo.TasksRepo
 	taskTagsRepo     tasktagsrepo.TaskTagsRepo
+	taskEventsRepo   timeeventsrepo.TaskEventsRepo
 	usersRepo        users_repo.UsersRepo
 	projectRepo      projects_repo.ProjectsRepo
 	projectUsersRepo project_users_repo.ProjectUsersRepo
@@ -31,6 +34,7 @@ func SetupTaskService(repoContainer *repos.RepoContainer) TaskService {
 	return TaskService{
 		tasksRepo:        *repoContainer.GetTasksRepo(),
 		taskTagsRepo:     *repoContainer.GetTaskTagsRepo(),
+		taskEventsRepo:   *repoContainer.GetTaskEventsRepo(),
 		usersRepo:        *repoContainer.GetUsersRepo(),
 		projectRepo:      *repoContainer.GetProjectsRepo(),
 		projectUsersRepo: *repoContainer.GetProjectUsersRepo(),
@@ -164,8 +168,8 @@ func (s *TaskService) GetTaskView(id, userID int64) (*models.TaskView, error) {
 	return s.taskToViewModel(task)
 }
 
-func (s *TaskService) Search(userID int64, searchText string, projectID int64) ([]*models.TaskView, error) {
-	tasks, err := s.tasksRepo.Search(userID, searchText, projectID)
+func (s *TaskService) Search(userID int64, searchText string, projectID int64, status fm.ItemStatusFilter, tagIDs []int64) ([]*models.TaskView, error) {
+	tasks, err := s.tasksRepo.Search(userID, searchText, projectID, status.String(), tagIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -260,6 +264,17 @@ func (s *TaskService) taskListToViewModels(tasks []*models.Task) (taskViews []*m
 		if err != nil {
 			return nil, err
 		}
+
+		// Populate time tracking info
+		inProgress, timeSpent, err := s.GetTaskTimeInfo(task.ID)
+		if err != nil {
+			s.logger.Warn("failed to get time info for task", "taskID", task.ID, "error", err)
+			// Don't fail the whole request, just leave time info empty
+		} else {
+			view.InProgress = inProgress
+			view.TimeSpent = time.Duration(timeSpent) * time.Second
+		}
+
 		taskViews[i] = view
 	}
 
@@ -313,6 +328,16 @@ func (s *TaskService) taskToViewModel(task *models.Task) (view *models.TaskView,
 		return nil, err
 	}
 
+	// Populate time tracking info
+	inProgress, timeSpent, err := s.GetTaskTimeInfo(task.ID)
+	if err != nil {
+		s.logger.Warn("failed to get time info for task", "taskID", task.ID, "error", err)
+		// Don't fail the whole request, just leave time info empty
+	} else {
+		view.InProgress = inProgress
+		view.TimeSpent = time.Duration(timeSpent) * time.Second
+	}
+
 	return view, nil
 }
 
@@ -333,4 +358,107 @@ func (s *TaskService) UserBelongsToProject(userID, projectID int64) (err error) 
 		return errors.NewAccessDenied("project", "user %d does not belong to project %d", userID, projectID)
 	}
 	return nil
+}
+
+// StartTimeTracking begins time tracking for a task.
+// If another task is currently in progress for this user, it will be stopped first.
+// Returns the ID of the previously tracked task (0 if none).
+func (s *TaskService) StartTimeTracking(userID, taskID int64) (previousTaskID int64, err error) {
+	err = s.userBelongsToTaskProject(userID, taskID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Check if this specific task is already in progress
+	inProgress, err := s.taskEventsRepo.IsTaskInProgress(taskID)
+	if err != nil {
+		return 0, err
+	}
+	if inProgress {
+		// Already tracking this task, nothing to do
+		return 0, nil
+	}
+
+	// Check if user has any other task in progress and stop it
+	previousTaskID, err = s.stopAnyInProgressTask(userID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Start tracking the new task
+	_, err = s.taskEventsRepo.InsertTimeEvent(taskID, userID, models.EventTypeTimeStart)
+	if err != nil {
+		return previousTaskID, err
+	}
+
+	s.logger.Info("time tracking started", "taskID", taskID, "userID", userID, "previousTaskID", previousTaskID)
+	return previousTaskID, nil
+}
+
+// stopAnyInProgressTask finds and stops any task currently in progress for the user.
+// Returns the task ID that was stopped (0 if none).
+func (s *TaskService) stopAnyInProgressTask(userID int64) (int64, error) {
+	// Get all tasks for the user and check which one is in progress
+	tasks, err := s.tasksRepo.GetTasksForUser(userID)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, task := range tasks {
+		inProgress, err := s.taskEventsRepo.IsTaskInProgress(task.ID)
+		if err != nil {
+			continue // Skip on error, try next task
+		}
+		if inProgress {
+			// Stop this task
+			_, err = s.taskEventsRepo.InsertTimeEvent(task.ID, userID, models.EventTypeTimeStop)
+			if err != nil {
+				return 0, err
+			}
+			s.logger.Info("auto-stopped previous task", "taskID", task.ID, "userID", userID)
+			return task.ID, nil
+		}
+	}
+
+	return 0, nil
+}
+
+// StopTimeTracking stops time tracking for a task
+func (s *TaskService) StopTimeTracking(userID, taskID int64) error {
+	err := s.userBelongsToTaskProject(userID, taskID)
+	if err != nil {
+		return err
+	}
+
+	// Check if task is actually in progress
+	inProgress, err := s.taskEventsRepo.IsTaskInProgress(taskID)
+	if err != nil {
+		return err
+	}
+	if !inProgress {
+		return errors.New(errors.ErrValidationFailed, "task is not currently being tracked")
+	}
+
+	_, err = s.taskEventsRepo.InsertTimeEvent(taskID, userID, models.EventTypeTimeStop)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Info("time tracking stopped", "taskID", taskID, "userID", userID)
+	return nil
+}
+
+// GetTaskTimeInfo returns time tracking info for a task (in progress status and time spent)
+func (s *TaskService) GetTaskTimeInfo(taskID int64) (inProgress bool, timeSpentSeconds int64, err error) {
+	inProgress, err = s.taskEventsRepo.IsTaskInProgress(taskID)
+	if err != nil {
+		return false, 0, err
+	}
+
+	timeSpentSeconds, err = s.taskEventsRepo.GetTaskTimeSpent(taskID)
+	if err != nil {
+		return inProgress, 0, err
+	}
+
+	return inProgress, timeSpentSeconds, nil
 }

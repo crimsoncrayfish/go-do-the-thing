@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.time-marker::after {
+  content: attr(data-time);
+  position: absolute;
+  bottom: -1.5rem;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.timeline-container.is-resizing .group:hover .resize-handle {
+  opacity: 0;
+}
+
+.task-element.is-active .resize-handle {
+  opacity: 1 !important;
+}
+
+.timeline-context-bar {
+  transition:
+    opacity 0.2s ease-in-out,
+    max-height 0.2s ease-in-out,
+    margin-top 0.2s ease-in-out;
+}
+.timeline-state-icon {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  transform: translate(0, 0);
+  color: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.show-on-hover > svg {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+/* Reveal only on hover AND only if this container is at least 28px wide */
+@container (min-width: 28px) {
+  .show-on-hover:hover > svg {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeline Component Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bg-gray-100 p-8 font-sans">
+    <div class="max-w-6xl mx-auto">
+      <h1 class="text-2xl font-bold mb-4">Daily Task Timeline</h1>
+
+      <!-- Component Controls -->
+      <div class="mb-4 space-x-2">
+        <span class="font-semibold">Mode:</span>
+        <button data-mode="view" class="mode-btn">View</button>
+        <button data-mode="edit" class="mode-btn">Edit</button>
+        <button data-mode="scroll" class="mode-btn">Scroll/Zoom</button>
+      </div>
+
+      <!-- Timeline Component Container -->
+      <div
+        id="daily-timeline"
+        class="w-full"
+        hx-swap="outerHTML"
+        data-tasks='[
+          {"id": 1, "name": "Initial Planning", "project": "Project A", "start": "09:00", "end": "10:30"},
+          {"id": 2, "name": "Code Review", "project": "Project B", "start": "11:00", "end": "11:45"},
+          {"id": 3, "name": "Client Meeting", "project": "Project A", "start": "14:00", "end": "15:00"}
+        ]'
+        data-update-url="/tasks/update"
+        data-create-url="/tasks/create-form"
+        data-mode="edit"
+      ></div>
+
+      <!-- This is where the HTMX response for creating a task would go -->
+      <div id="modal-container"></div>
+    </div>
+
+    <script src="timeline.js"></script>
+<script>
+  /**
+   * Scans the document for uninitialized timeline components and initializes them.
+   * This is safe to call multiple times, as it checks for an initialization marker.
+   */
+  function initTimelineComponents() {
+    const timelineEl = document.getElementById('daily-timeline');
+
+    // Check if the element exists and has not been initialized yet
+    if (timelineEl && !timelineEl.dataset.timelineInitialized) {
+      console.log('Initializing new timeline component...');
+      const timeline = new Timeline(timelineEl);
+      timeline.init();
+      // Mark the element as initialized to prevent re-creating it
+      timelineEl.dataset.timelineInitialized = 'true';
+
+      // Attach mode-switching controls if they exist outside the component
+      // Note: In a real app, these might be part of the swapped content too.
+      document.querySelectorAll('.mode-btn').forEach((btn) => {
+        // Simple way to avoid duplicate listeners, replace with a fresh node.
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', () => {
+          const mode = newBtn.getAttribute('data-mode');
+          timeline.setMode(mode);
+        });
+      });
+    }
+  }
+
+  // --- HTMX Integration ---
+
+  // 1. Initialize on the first page load
+  document.addEventListener('DOMContentLoaded', () => {
+    initTimelineComponents();
+  });
+
+  // 2. Re-initialize after HTMX swaps content into the page
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    // We check if the swapped content includes our timeline container.
+    // The hx-target on the event detail might be useful for more complex cases.
+    console.log('HTMX swap detected. Checking for timeline component...');
+    initTimelineComponents();
+  });
+</script>
+  </body>
+</html>

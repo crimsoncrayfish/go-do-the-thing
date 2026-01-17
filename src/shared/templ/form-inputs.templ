@@ -58,6 +58,23 @@ templ FormTextInput(title, name, placeholder, value string) {
 	</div>
 }
 
+templ FormTextInputWithId(title, name, id, placeholder, value string) {
+	<div>
+		<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			{ title }
+			<input
+				type="text"
+				id={ id }
+				name={ name }
+				placeholder={ placeholder }
+				value={ value }
+				class="
+				bg-primary-light mt-2 border border-border-light text-text-on-light text-sm rounded-lg focus:ring-accent-light focus:border-border-light block w-full p-2.5 dark:bg-primary-dark dark:border-border-dark placeholder-accent-light dark:placeholder-accent-dark dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-border-dark"
+			/>
+		</label>
+	</div>
+}
+
 templ FormPasswordInput(title, name, placeholder string) {
 	<div>
 		<label for={ name } class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">{ title }</label>

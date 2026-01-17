@@ -35,33 +35,6 @@ templ ProjectListPage(activeScreen m.Screen) {
 		</div>
 		@ts.EditPanel("Edit Project", projectEditContent())
 	</div>
-	<script>
-function flipProjectCardUpdateToBack(event, id) {
-    const method = event.detail.requestConfig.verb.toUpperCase();
-    if (method === "GET") {
-        return;
-    }
-    if (method === "POST") {
-	    console.error('not implemented')
-	    return
-    } else if (method === "DELETE") {
-        toggleClassForId('hidden', 'project-card-back-delete-'+id)
-    }
-    const inner = document.getElementById('project-card-inner-' + id);
-    if (!inner) return;
-    inner.style.transform = 'rotateX(180deg)';
-};
-function flipProjectCardUpdateToFront(event, id) {
-    const method = event.detail.requestConfig.verb.toUpperCase();
-    const inner = document.getElementById('project-card-inner-' + id);
-    if (!inner) return;
-    inner.style.transform = 'rotateX(0deg)';
-    inner.addEventListener('transitionend', function hideBack() {
-	toggleClassForId('hidden', 'project-card-back-delete-'+id);
-	inner.removeEventListener('transitionend', hideBack);
-    });
-};
-	</script>
 }
 
 templ ProjectListContent(projects []m.ProjectView) {

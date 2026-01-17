@@ -39,7 +39,7 @@ func (t *Task) ToggleStatus(modifiedBy int64) {
 		t.CompleteDate = &now
 	} else {
 		t.Status = Scheduled
-		t.CompleteDate = &time.Time{}
+		t.CompleteDate = nil
 	}
 }
 
