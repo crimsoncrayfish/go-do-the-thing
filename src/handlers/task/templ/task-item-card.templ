@@ -79,7 +79,7 @@ templ noTasksCard() {
 }
 
 templ TaskItemCardOOB(task *models.TaskView) {
-	<div id="task-list-container" hx-swap-oob="afterbegin">
+	<div id="task-list-content" hx-swap-oob="afterbegin">
 		@TaskItemCard(task)
 	</div>
 }
@@ -334,10 +334,12 @@ templ cardDetails(task *models.TaskView) {
 		</div>
 		if (task.TimeSpent > 0) {
 			<div
-				class="text-sm text-text-on-light
-                       dark:text-text-on-dark"
+				class="text-sm text-text-on-light dark:text-text-on-dark flex items-center gap-1"
 			>
-				{ task.TimeSpent }
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+				</svg>
+				{ models.FormatDuration(int64(task.TimeSpent.Seconds())) }
 			</div>
 		}
 	</div>
@@ -371,16 +373,7 @@ templ cardActions(task *models.TaskView) {
                      justify-start @sm:justify-center @lg:justify-end
                      @sm:flex-col @lg:flex-row"
 	>
-		<button
-			class="theme-transition 
-			bg-success-light dark:bg-success-dark 
-			hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 
-			focus:ring-success-light dark:focus:ring-success-dark
-			focus:ring-opacity-50 flex items-center justify-center"
-			aria-label="Start Task"
-		>
-			@templ_shared.SvgPlay()
-		</button>
+		@timeTrackingButton(task)
 		<div
 			class="flex items-center justify-start
            @sm:justify-center @lg:justify-end"
@@ -391,6 +384,44 @@ templ cardActions(task *models.TaskView) {
 			@completeTaskButton(task)
 		</div>
 	</div>
+}
+
+templ timeTrackingButton(task *models.TaskView) {
+	if task.Status == models.Completed || task.IsDeleted {
+		// Don't show time tracking for completed/deleted tasks
+	} else if task.InProgress {
+		<button
+			class="theme-transition 
+			bg-accent-light dark:bg-accent-dark 
+			hover:opacity-80 text-primary-light dark:text-primary-dark font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 
+			focus:ring-accent-light dark:focus:ring-accent-dark
+			focus:ring-opacity-50 flex items-center justify-center"
+			aria-label="Stop tracking time"
+			hx-post={ fmt.Sprintf("/todo/item/%d/time/stop", task.ID) }
+			hx-target={ fmt.Sprintf("#task-card-front-%d", task.ID) }
+			hx-swap="outerHTML swap:0.8s"
+			hx-indicator="false"
+			data-action="time-stop"
+		>
+			@templ_shared.SvgPause()
+		</button>
+	} else {
+		<button
+			class="theme-transition 
+			bg-success-light dark:bg-success-dark 
+			hover:opacity-80 text-white font-bold p-2 rounded-full shadow-md focus:outline-none focus:ring-2 
+			focus:ring-success-light dark:focus:ring-success-dark
+			focus:ring-opacity-50 flex items-center justify-center"
+			aria-label="Start tracking time"
+			hx-post={ fmt.Sprintf("/todo/item/%d/time/start", task.ID) }
+			hx-target={ fmt.Sprintf("#task-card-front-%d", task.ID) }
+			hx-swap="outerHTML swap:0.8s"
+			hx-indicator="false"
+			data-action="time-start"
+		>
+			@templ_shared.SvgPlay()
+		</button>
+	}
 }
 
 templ cardBack(task *models.TaskView) {
@@ -416,6 +447,30 @@ templ cardBack(task *models.TaskView) {
 		@templ_shared.LoaderSmall()
 		<span class="mt-4 text-white text-lg font-semibold">
 			Deleting "{ task.Name }"
+		</span>
+	</div>
+	<div
+		id={ fmt.Sprintf("task-card-back-time-start-%d", task.ID) }
+		class="hidden absolute inset-0 bg-success-light dark:bg-success-dark
+         rounded-xl p-6 shadow-lg flex flex-col items-center
+         justify-center [backface-visibility:hidden]
+         [transform:rotateX(180deg)]"
+	>
+		@templ_shared.LoaderSmall()
+		<span class="mt-4 text-white text-lg font-semibold">
+			Starting "{ task.Name }"
+		</span>
+	</div>
+	<div
+		id={ fmt.Sprintf("task-card-back-time-stop-%d", task.ID) }
+		class="hidden absolute inset-0 bg-accent-light dark:bg-accent-dark
+         rounded-xl p-6 shadow-lg flex flex-col items-center
+         justify-center [backface-visibility:hidden]
+         [transform:rotateX(180deg)]"
+	>
+		@templ_shared.LoaderSmall()
+		<span class="mt-4 text-primary-light dark:text-primary-dark text-lg font-semibold">
+			Stopping "{ task.Name }"
 		</span>
 	</div>
 }

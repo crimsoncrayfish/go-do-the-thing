@@ -2,6 +2,10 @@ version: '3'
 
 vars:
   MIGRATIONS_PATH: ./src/database/migrations/
+  DB_CONTAINER_NAME: todo-db
+  DB_VOLUME_NAME: todo_pgdata
+  DB_IMAGE_NAME: todo-postgres:local
+  DB_PORT: 5433
 
 tasks:
   default:
@@ -15,19 +19,82 @@ tasks:
     cmds:
       - air
 
+  # --------------------------------------------------------------------------
+  # Database: Docker commands for local PostgreSQL
+  # --------------------------------------------------------------------------
+
+  db:build:
+    desc: "Build local Postgres image"
+    cmds:
+      - docker build -f docker/dev.db.dockerfile -t {{.DB_IMAGE_NAME}} ./docker
+
+  db:up:
+    desc: "Start local Postgres container"
+    dotenv: [".env"]
+    cmds:
+      - |
+        docker volume inspect {{.DB_VOLUME_NAME}} >/dev/null 2>&1 || docker volume create {{.DB_VOLUME_NAME}} >/dev/null
+        docker rm -f {{.DB_CONTAINER_NAME}} >/dev/null 2>&1 || true
+        docker run -d \
+          --name {{.DB_CONTAINER_NAME}} \
+          -p "{{.DB_PORT}}:5432" \
+          -v {{.DB_VOLUME_NAME}}:/var/lib/postgresql/data \
+          {{.DB_IMAGE_NAME}}
+        echo "Postgres started on port {{.DB_PORT}}"
+
+  db:down:
+    desc: "Stop and remove the container (keeps data)"
+    cmds:
+      - docker rm -f {{.DB_CONTAINER_NAME}} >/dev/null 2>&1 || true
+      - echo "Container stopped"
+
+  db:logs:
+    desc: "Tail Postgres logs"
+    cmds:
+      - docker logs -f {{.DB_CONTAINER_NAME}}
+
+  db:wipe:
+    desc: "Stop container and remove the data volume"
+    cmds:
+      - task: db:down
+      - docker volume rm {{.DB_VOLUME_NAME}} >/dev/null 2>&1 || true
+      - echo "Volume removed"
+
+  db:reset:
+    desc: "Wipe data, recreate container, and run migrations"
+    dotenv: [".env"]
+    cmds:
+      - task: db:wipe
+      - task: db:up
+      - echo "Waiting for Postgres to be ready..."
+      - sleep 2
+      - task: local:migrate
+        vars:
+          CLI_ARGS: up
+      - echo "Database reset complete!"
+
+  db:shell:
+    desc: "Open psql shell to local database"
+    cmds:
+      - docker exec -it {{.DB_CONTAINER_NAME}} psql -U admin -d todo_db
+
+  # --------------------------------------------------------------------------
+  # Migrations
+  # --------------------------------------------------------------------------
+
   local:migrate:
-    desc: "Runs migrations on LOCAL db (e.g., `task local:migrate up`)"
+    desc: "Runs migrations on LOCAL db (e.g., `task local:migrate -- up`)"
     dotenv: [".env"]
     cmds:
       - migrate -path {{.MIGRATIONS_PATH}} -database $DATABASE_URL {{.CLI_ARGS}}
 
   prod:migrate:
-    desc: "Runs migrations on PRODUCTION db (e.g., `task prod:migrate up`)"
+    desc: "Runs migrations on PRODUCTION db (e.g., `task prod:migrate -- up`)"
     dotenv: [".prod.env"]
     cmds:
       - |
         #!/bin/sh
-        printf "⚠️  WARNING: You are about to run a migration on the PRODUCTION database.\n"
+        printf "WARNING: You are about to run a migration on the PRODUCTION database.\n"
         printf "Are you absolutely sure you want to continue? (y/N): "
         IFS= read -r confirm
         case "$confirm" in
@@ -41,4 +108,17 @@ tasks:
         fi
       - migrate -path {{.MIGRATIONS_PATH}} -database $DATABASE_URL {{.CLI_ARGS}}
 
+  # --------------------------------------------------------------------------
+  # Build
+  # --------------------------------------------------------------------------
 
+  build:
+    desc: "Build production binary"
+    cmds:
+      - templ generate
+      - go build -o bin/todo-app .
+
+  templ:
+    desc: "Generate templ files"
+    cmds:
+      - templ generate

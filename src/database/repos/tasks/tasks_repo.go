@@ -248,10 +248,10 @@ func (r *TasksRepo) GetProjectTaskCompletion(projectId int64) (int64, int64, err
 	return completed, total, nil
 }
 
-const searchTasks = `SELECT * FROM sp_get_tasks_by_search($1, $2, $3)`
+const searchTasks = `SELECT * FROM sp_get_tasks_by_search($1, $2, $3, $4, $5)`
 
-func (r TasksRepo) Search(userID int64, searchText string, projectID int64) (tasks []*models.Task, err error) {
-	rows, err := r.database.Query(searchTasks, userID, searchText, projectID)
+func (r TasksRepo) Search(userID int64, searchText string, projectID int64, status string, tagIDs []int64) (tasks []*models.Task, err error) {
+	rows, err := r.database.Query(searchTasks, userID, searchText, projectID, status, tagIDs)
 	if err != nil {
 		r.logger.Error("failed to read tasks for user", "error", err, "sql", searchTasks, "user_id", userID)
 		return nil, errors.NewDbReadFailed("tasks", err, "search", nil)
@@ -265,7 +265,7 @@ func (r TasksRepo) Search(userID int64, searchText string, projectID int64) (tas
 		err = scanFromRows(rows, task)
 		if err != nil {
 			// NOTE: Already wrapped
-			r.logger.Error("failed to scan row in GettasksForUser", "error", err, "user_id", userID)
+			r.logger.Error("failed to scan row in Search", "error", err, "user_id", userID)
 			return nil, err
 		}
 		tasks = append(tasks, task)
@@ -273,8 +273,8 @@ func (r TasksRepo) Search(userID int64, searchText string, projectID int64) (tas
 	err = rows.Err()
 	if err != nil {
 		r.logger.Error("rows.Err() in SearchTasks", "error", err, "user_id", userID)
-		return nil, errors.NewDbGenericError("rows error in GetTasksForUser", err, "", nil)
+		return nil, errors.NewDbGenericError("rows error in Search", err, "", nil)
 	}
-	r.logger.Debug("Search succeeded", "count", len(tasks), "user_id", userID)
+	r.logger.Debug("Search succeeded", "count", len(tasks), "user_id", userID, "status", status, "tags", tagIDs)
 	return tasks, nil
 }

@@ -1,10 +1,13 @@
 package templ_todo
 
 import (
+	"fmt"
 	m "go-do-the-thing/src/models"
 	mf "go-do-the-thing/src/models/forms"
 	"go-do-the-thing/src/shared/templ"
 	ts "go-do-the-thing/src/shared/templ"
+	"slices"
+	"strconv"
 )
 
 templ TaskListWithBody(activeScreen m.Screen, searchForm mf.TaskSearchForm, projects map[int64]string) {
@@ -63,36 +66,6 @@ templ TaskListPage(activeScreen m.Screen, searchForm mf.TaskSearchForm, projects
 		</div>
 		@ts.EditPanel("Edit Task", taskEditContent())
 	</div>
-	<script>
-function flipTaskCardUpdateToBack(event, id) {
-    const method = event.detail.requestConfig.verb.toUpperCase();
-    if (method === "GET") {
-        return
-    }
-    if (method === "POST") {
-	toggleClassForId('hidden', 'task-card-back-update-'+id)
-    } else if (method === "DELETE") {
-	toggleClassForId('hidden', 'task-card-back-delete-'+id)
-    }
-    const inner = document.getElementById('task-card-inner-' + id);
-    if (!inner) return;
-    inner.style.transform = 'rotateX(180deg)';
-};
-function flipTaskCardUpdateToFront(event, id) {
-    const method = event.detail.requestConfig.verb.toUpperCase();
-    if (method === "GET") {
-        return
-    }
-    const inner = document.getElementById('task-card-inner-' + id);
-    if (!inner) return;
-    inner.style.transform = 'rotateX(0deg)';
-    inner.addEventListener('transitionend', function hideBack() {
-        addClassForId('hidden', 'task-card-back-update-'+id);
-	addClassForId('hidden', 'task-card-back-delete-'+id);
-	inner.removeEventListener('transitionend', hideBack);
-    });
-};
-	</script>
 }
 
 templ TaskListContent(tasks []*m.TaskView) {
@@ -120,19 +93,20 @@ templ TaskListContentOOB(tasks []*m.TaskView) {
 }
 
 templ searchBar(searchForm mf.TaskSearchForm, projects map[int64]string) {
-	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 pb-4 px-2 pt-2 border border-border-light dark:border-border-dark rounded-lg">
+	<div class="bg-secondary-light dark:bg-secondary-dark mb-4 p-4 border border-border-light dark:border-border-dark rounded-lg">
 		<form
+			id="task-search-form"
 			hx-post="/tasks/search"
-			hx-trigger="submit, input changed delay:500ms, keyup delay:500ms, changed"
+			hx-trigger="submit"
 			hx-target="#task-list-content"
 			hx-swap="outerHTML"
 		>
-			<div class="flex md:grid px-2 md:grid-cols-2 gap-4">
-				<div class="flex-grow">
-					@templ_shared.FormTextInput("", "search", "Search...", searchForm.SearchText)
+			<div class="flex md:grid md:grid-cols-2 gap-4">
+				<div id="search-input-wrapper" class="flex-grow">
+					@searchTextInput(searchForm.SearchText)
 				</div>
 				<button
-					class="self-center justify-end text-link flex items-center font-semibold py-2 px-4 rounded  underline"
+					class="self-center justify-end text-link flex items-center font-semibold py-2 px-4 rounded underline"
 					onclick="swapClassesForId(['max-h-0', 'opacity-0'], ['max-h-screen', 'opacity-100'], 'advanced-search');toggleClassForId('rotate-180', 'arrow-icon')"
 					aria-label="More Search Options"
 					type="button"
@@ -154,30 +128,272 @@ templ searchBar(searchForm mf.TaskSearchForm, projects map[int64]string) {
 					</svg>
 				</button>
 			</div>
+			@FilterSummary(searchForm, projects, []m.TagView{})
 			<div
 				id="advanced-search"
-				class="overflow-hidden px-2 transition-all duration-500 ease-in-out max-h-0 opacity-0"
+				class="overflow-hidden transition-all duration-500 ease-in-out max-h-0 opacity-0"
 			>
-				<div>
-					@templ_shared.FormListInputWithAllOption("", "project", searchForm.ProjectFilter, projects)
-					@templ_shared.FormTextInput("", "tag", "Tags comma separated...", "")
+				<div class="mb-3">
+					@SearchProjectSelect(searchForm.ProjectFilter, projects)
 				</div>
-				<div class="flex flex-wrap gap-2 pt-2">
-					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-						All
-					</button>
-					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-						Completed
-					</button>
-					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-						Incomplete
-					</button>
-					<button class="theme-transition bg-secondary-light dark:bg-secondary-dark hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark focus:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md">
-						Overdue
-					</button>
-				</div>
+				@SearchTagFilter([]m.TagView{}, searchForm.TagFilters)
+				@SearchStatusFilter(searchForm.StatusFilter)
 			</div>
 		</form>
+	</div>
+}
+
+templ filterSummaryContent(searchForm mf.TaskSearchForm, projects map[int64]string, tags []m.TagView) {
+	if searchForm.HasActiveFilters() {
+		<div class="flex flex-wrap items-center gap-2 py-2">
+			<span class="text-sm text-text-on-light/70 dark:text-text-on-dark/70">Filters:</span>
+			if searchForm.ProjectFilter != 0 {
+				@filterChip("Project", projects[searchForm.ProjectFilter], "project", "0")
+			}
+			if searchForm.StatusFilter != mf.All {
+				@filterChip("Status", searchForm.StatusFilter.Label(), "status", "all")
+			}
+			for _, tagID := range searchForm.TagFilters {
+				for _, tag := range tags {
+					if tag.Id == tagID {
+						@filterTagChip(tag)
+					}
+				}
+			}
+			<button
+				type="button"
+				class="text-sm text-danger-light dark:text-danger-dark hover:underline ml-2"
+				hx-post="/tasks/search"
+				hx-target="#task-list-content"
+				hx-swap="outerHTML"
+				hx-vals='{"search": "", "project": "0", "status": "all", "clear-all": "true"}'
+			>
+				Clear all
+			</button>
+		</div>
+	}
+}
+
+templ FilterSummary(searchForm mf.TaskSearchForm, projects map[int64]string, tags []m.TagView) {
+	<div id="filter-summary">
+		@filterSummaryContent(searchForm, projects, tags)
+	</div>
+}
+
+templ FilterSummaryOOB(searchForm mf.TaskSearchForm, projects map[int64]string, tags []m.TagView) {
+	<div id="filter-summary" hx-swap-oob="true">
+		@filterSummaryContent(searchForm, projects, tags)
+	</div>
+}
+
+templ filterChip(label, value, fieldName, clearValue string) {
+	<span class="inline-flex items-center gap-1 bg-accent-light/20 dark:bg-accent-dark/20 text-text-on-light dark:text-text-on-dark text-sm px-2 py-1 rounded-full">
+		<span class="text-text-on-light/70 dark:text-text-on-dark/70">{ label }:</span>
+		{ value }
+		<button
+			type="button"
+			class="ml-1 hover:text-danger-light dark:hover:text-danger-dark"
+			hx-post="/tasks/search"
+			hx-target="#task-list-content"
+			hx-swap="outerHTML"
+			hx-include="#task-search-form"
+			hx-vals={ fmt.Sprintf(`{"%s": "%s"}`, fieldName, clearValue) }
+		>
+			@templ_shared.SvgClose()
+		</button>
+	</span>
+}
+
+templ filterTagChip(tag m.TagView) {
+	<span class={ fmt.Sprintf("inline-flex items-center gap-1 bg-%s-light dark:bg-%s-dark text-text-on-light dark:text-text-on-dark text-sm px-2 py-1 rounded-full border border-border-light dark:border-border-dark", tag.Color, tag.Color) }>
+		@templ_shared.SvgHexTag("w-3 h-3")
+		{ tag.Name }
+		<button
+			type="button"
+			class="ml-1 hover:text-danger-light dark:hover:text-danger-dark"
+			hx-post="/tasks/search"
+			hx-target="#task-list-content"
+			hx-swap="outerHTML"
+			hx-include="#task-search-form"
+			hx-vals={ fmt.Sprintf(`{"remove-tag": "%d"}`, tag.Id) }
+		>
+			@templ_shared.SvgClose()
+		</button>
+	</span>
+}
+
+templ projectSelectInner(projectFilter int64, projects map[int64]string) {
+	<select
+		id="project-select"
+		name="project"
+		hx-post="/tasks/search"
+		hx-trigger="change"
+		hx-target="#task-list-content"
+		hx-swap="outerHTML"
+		hx-include="#task-search-form"
+		class="mt-2 bg-primary-light dark:bg-primary-dark border border-border-light text-text-on-light text-sm rounded-lg block w-full p-2.5 dark:border-border-dark dark:placeholder-accent-dark placeholder-accent-light dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-accent-dark focus:ring-accent-light focus:border-accent-light"
+	>
+		<option value="0" selected?={ projectFilter == 0 }>All Projects</option>
+		for id, name := range projects {
+			<option value={ strconv.FormatInt(id, 10) } selected?={ id == projectFilter }>{ name }</option>
+		}
+	</select>
+}
+
+templ SearchProjectSelect(projectFilter int64, projects map[int64]string) {
+	<div id="search-project-wrapper">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			Project
+			@projectSelectInner(projectFilter, projects)
+		</label>
+	</div>
+}
+
+templ SearchProjectSelectOOB(projectFilter int64, projects map[int64]string) {
+	<div id="search-project-wrapper" hx-swap-oob="true">
+		<label class="block mb-2 p-0 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			Project
+			@projectSelectInner(projectFilter, projects)
+		</label>
+	</div>
+}
+
+templ searchTextInput(searchText string) {
+	<input
+		type="text"
+		id="search-input"
+		name="search"
+		placeholder="Search..."
+		value={ searchText }
+		hx-post="/tasks/search"
+		hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+		hx-target="#task-list-content"
+		hx-swap="outerHTML"
+		hx-include="#task-search-form"
+		class="bg-primary-light border border-border-light text-text-on-light text-sm rounded-lg focus:ring-accent-light focus:border-border-light block w-full p-2.5 dark:bg-primary-dark dark:border-border-dark placeholder-accent-light dark:placeholder-accent-dark dark:text-text-on-dark dark:focus:ring-accent-dark dark:focus:border-border-dark"
+	/>
+}
+
+templ SearchInputOOB(searchText string) {
+	<div id="search-input-wrapper" hx-swap-oob="true" class="flex-grow">
+		@searchTextInput(searchText)
+	</div>
+}
+
+templ searchTagCheckbox(tag m.TagView, isSelected bool) {
+	<label
+		class={
+			"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium shadow-sm transition-colors duration-200 cursor-pointer",
+			templ.KV(fmt.Sprintf("bg-%s-light dark:bg-%s-dark text-text-on-light dark:text-text-on-dark ring-2 ring-accent-light dark:ring-accent-dark", tag.Color, tag.Color), isSelected),
+			templ.KV(fmt.Sprintf("bg-secondary-light dark:bg-secondary-dark text-text-on-light/70 dark:text-text-on-dark/70 hover:bg-%s-light/30 dark:hover:bg-%s-dark/30", tag.Color, tag.Color), !isSelected),
+		}
+	>
+		<input
+			type="checkbox"
+			name="tags"
+			value={ strconv.FormatInt(tag.Id, 10) }
+			checked?={ isSelected }
+			class="sr-only"
+			hx-post="/tasks/search"
+			hx-trigger="change"
+			hx-target="#task-list-content"
+			hx-swap="outerHTML"
+			hx-include="#task-search-form"
+		/>
+		@templ_shared.SvgHexTag("w-4 h-4")
+		{ tag.Name }
+	</label>
+}
+
+templ SearchTagFilter(tags []m.TagView, selectedTagIds []int64) {
+	<div id="search-tag-filter" class="mb-3 relative">
+		if len(tags) > 0 {
+			<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+				Filter by Tags
+			</label>
+			<div
+				class="flex flex-wrap gap-2 p-2 bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg"
+			>
+				for _, tag := range tags {
+					{{ isSelected := slices.Contains(selectedTagIds, tag.Id) }}
+					@searchTagCheckbox(tag, isSelected)
+				}
+			</div>
+		} else {
+			<p class="text-sm text-text-on-light/50 dark:text-text-on-dark/50 italic">
+				Select a project to filter by tags
+			</p>
+		}
+	</div>
+}
+
+templ SearchTagFilterOOB(tags []m.TagView, selectedTagIds []int64) {
+	<div id="search-tag-filter" hx-swap-oob="true" class="mb-3 relative">
+		if len(tags) > 0 {
+			<label class="block mb-2 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+				Filter by Tags
+			</label>
+			<div
+				class="flex flex-wrap gap-2 p-2 bg-primary-light dark:bg-primary-dark border border-border-light dark:border-border-dark rounded-lg"
+			>
+				for _, tag := range tags {
+					{{ isSelected := slices.Contains(selectedTagIds, tag.Id) }}
+					@searchTagCheckbox(tag, isSelected)
+				}
+			</div>
+		} else {
+			<p class="text-sm text-text-on-light/50 dark:text-text-on-dark/50 italic">
+				Select a project to filter by tags
+			</p>
+		}
+	</div>
+}
+
+templ statusRadio(value, label string, isSelected bool, activeColor string) {
+	<label
+		class={
+			"theme-transition hover:opacity-80 text-text-on-light dark:text-text-on-dark text-sm font-medium py-2 px-4 rounded-full focus-within:ring-2 focus-within:ring-accent-light dark:focus-within:ring-accent-dark focus-within:ring-opacity-50 border border-border-light dark:border-border-dark shadow-md cursor-pointer",
+			templ.KV(activeColor, isSelected),
+			templ.KV("bg-secondary-light dark:bg-secondary-dark", !isSelected),
+		}
+	>
+		<input
+			type="radio"
+			name="status"
+			value={ value }
+			checked?={ isSelected }
+			class="sr-only"
+			hx-post="/tasks/search"
+			hx-trigger="change"
+			hx-target="#task-list-content"
+			hx-swap="outerHTML"
+			hx-include="#task-search-form"
+		/>
+		{ label }
+	</label>
+}
+
+templ SearchStatusFilter(statusFilter mf.ItemStatusFilter) {
+	<div id="search-status-filter" class="flex flex-wrap gap-2 pt-2">
+		<label class="block w-full mb-1 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			Status
+		</label>
+		@statusRadio("all", "All", statusFilter == mf.All, "bg-accent-light dark:bg-accent-dark")
+		@statusRadio("completed", "Completed", statusFilter == mf.Completed, "bg-success-light dark:bg-success-dark")
+		@statusRadio("incomplete", "Incomplete", statusFilter == mf.Incomplete, "bg-warning-light dark:bg-warning-dark")
+		@statusRadio("overdue", "Overdue", statusFilter == mf.OverDue, "bg-danger-light dark:bg-danger-dark")
+	</div>
+}
+
+templ SearchStatusFilterOOB(statusFilter mf.ItemStatusFilter) {
+	<div id="search-status-filter" hx-swap-oob="true" class="flex flex-wrap gap-2 pt-2">
+		<label class="block w-full mb-1 text-sm font-medium text-text-on-light/70 dark:text-text-on-dark/70">
+			Status
+		</label>
+		@statusRadio("all", "All", statusFilter == mf.All, "bg-accent-light dark:bg-accent-dark")
+		@statusRadio("completed", "Completed", statusFilter == mf.Completed, "bg-success-light dark:bg-success-dark")
+		@statusRadio("incomplete", "Incomplete", statusFilter == mf.Incomplete, "bg-warning-light dark:bg-warning-dark")
+		@statusRadio("overdue", "Overdue", statusFilter == mf.OverDue, "bg-danger-light dark:bg-danger-dark")
 	</div>
 }
 
